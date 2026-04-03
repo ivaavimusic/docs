@@ -60,6 +60,18 @@ The full Python source code for all scripts is available in this repository: [Vi
 
 ### Installation
 
+#### ClawHub / OpenClaw
+
+```bash
+npx clawhub@latest install x402-layer
+pnpm dlx clawhub@latest install x402-layer
+bunx clawhub@latest install x402-layer
+```
+
+ClawHub listing:
+
+- `https://clawhub.ai/ivaavimusic/x402-layer`
+
 Install directly via our self-hosted endpoint:
 
 ```bash
@@ -77,6 +89,19 @@ git clone https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill.git
 cd x402-Layer-Clawhub-Skill/scripts
 pip install -r ../requirements.txt
 ```
+
+#### Self-hosted installer
+
+```bash
+curl -fsSL https://api.x402layer.cc/skill/x402-layer/install | bash
+```
+
+#### What this package includes
+
+- OpenClaw-native `x402-layer` skill distribution
+- ClawHub install path
+- self-hosted worker install path
+- full script set for payments, endpoints, marketplace, webhooks, support, and agent identity
 
 ### Environment Setup
 

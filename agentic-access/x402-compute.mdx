@@ -47,9 +47,25 @@ Recommended agent flow:
 
 ## Install Skill
 
+### ClawHub / OpenClaw
+
+```bash
+npx clawhub@latest install x402-compute
+pnpm dlx clawhub@latest install x402-compute
+bunx clawhub@latest install x402-compute
+```
+
+ClawHub listing:
+
+- `https://clawhub.ai/ivaavimusic/x402-compute`
+
+### Self-hosted installer
+
 ```bash
 curl -fsSL https://api.x402layer.cc/skill/x402-compute/install | bash
 ```
+
+This install path is served by the compute skill handler in the compute backend.
 
 ## Scripts Included
 
