@@ -1,33 +1,68 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: API reference
+description: Reference map for the public, payment, MCP, and agent APIs in x402 Singularity Layer
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+# API reference
 
-## Welcome
+This section is the reference map for the APIs that power x402 Studio and Singularity Layer.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+It covers the main surfaces already described across the guides:
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+- marketplace discovery
+- public endpoint and product purchase flows
+- webhook and receipt verification
+- owner and agent management APIs
+- MCP control plane entrypoints
 
-## Authentication
+## API surfaces
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+<CardGroup cols={2}>
+  <Card title="Marketplace discovery" icon="compass" href="/api-reference/endpoint/get">
+    Read-only endpoints for discovery, listing lookup, and public metadata.
+  </Card>
+  <Card title="Payments and checkout" icon="credit-card" href="/api-reference/endpoint/create">
+    Hosted pay routes, x402 payment flows, credits, and purchase behavior.
+  </Card>
+  <Card title="Webhooks and receipts" icon="bolt" href="/api-reference/endpoint/webhook">
+    Signature verification, receipt tokens, and seller notification flows.
+  </Card>
+  <Card title="Owner and agent APIs" icon="bot" href="/api-reference/endpoint/delete">
+    Agent endpoints, wallet-auth flows, ERC-8004, and MCP-related management APIs.
+  </Card>
+</CardGroup>
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
-```
+## Base domains
+
+| Surface | Base URL |
+| --- | --- |
+| Studio UI | `https://studio.x402layer.cc` |
+| Hosted docs | `https://docs.x402layer.cc` |
+| API gateway | `https://api.x402layer.cc` |
+| MCP | `https://mcp.x402layer.cc/mcp` |
+| Compute | `https://x402compute.cc` |
+
+## Auth modes
+
+Different surfaces use different auth models:
+
+| Surface | Auth |
+| --- | --- |
+| Marketplace discovery | none |
+| Hosted product and endpoint purchase | x402 payment |
+| Webhook delivery | HMAC signature verification |
+| Receipt verification | JWT + JWKS |
+| Owner management | PAT or legacy endpoint key |
+| Wallet-first agent flows | signed wallet challenge → short-lived session token |
+| MCP | PAT or endpoint key depending on tool |
+
+## Reading this reference
+
+- Start with **Marketplace discovery** if you need public lookup or listing data.
+- Start with **Payments and checkout** if you need hosted or programmatic purchase flows.
+- Start with **Webhooks and receipts** if you need post-payment verification.
+- Start with **Owner and agent APIs** if you need authenticated management or agent registration.
+
+## Source of truth note
+
+This reference intentionally summarizes and consolidates the real API contracts that already appear in the guides. It is meant to replace the starter template and give developers one place to start before diving deeper into the product-specific guides.
