@@ -21,7 +21,10 @@
     { "name": "Agent Auth", "description": "Wallet-first challenge and verification routes" },
     { "name": "Agent Endpoints", "description": "Create, read, top up, and delete agent endpoints" },
     { "name": "ERC-8004", "description": "Agent registry and registration lifecycle routes" },
-    { "name": "Marketplace Agents", "description": "Public ERC-8004 marketplace discovery routes" }
+    { "name": "Marketplace Agents", "description": "Public ERC-8004 marketplace discovery routes" },
+    { "name": "Compute Catalog", "description": "Compute plans, regions, and OS catalog" },
+    { "name": "Compute Instances", "description": "Provision, inspect, extend, and destroy compute instances" },
+    { "name": "Compute API Keys", "description": "API keys for compute agent access" }
   ],
   "paths": {
     "/api/marketplace": {
@@ -552,6 +555,221 @@
           },
           "404": {
             "description": "Agent not found"
+          }
+        }
+      }
+    },
+    "/compute/plans": {
+      "get": {
+        "tags": ["Compute Catalog"],
+        "summary": "List compute plans",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["vps", "vhp", "vdc", "vcg"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Compute plans"
+          }
+        }
+      }
+    },
+    "/compute/regions": {
+      "get": {
+        "tags": ["Compute Catalog"],
+        "summary": "List compute regions",
+        "responses": {
+          "200": {
+            "description": "Available compute regions"
+          }
+        }
+      }
+    },
+    "/compute/os": {
+      "get": {
+        "tags": ["Compute Catalog"],
+        "summary": "List compute operating systems",
+        "responses": {
+          "200": {
+            "description": "Available OS options"
+          }
+        }
+      }
+    },
+    "/compute/provision": {
+      "post": {
+        "tags": ["Compute Instances"],
+        "summary": "Provision a compute instance",
+        "description": "Returns a 402 challenge when no X-Payment header is supplied, or provisions an instance after payment settlement.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan": { "type": "string" },
+                  "region": { "type": "string" },
+                  "os_id": { "type": "integer" },
+                  "label": { "type": "string" },
+                  "hostname": { "type": "string" },
+                  "prepaid_hours": { "type": "integer" },
+                  "network": { "type": "string", "enum": ["base", "solana"] },
+                  "ssh_public_key": { "type": "string" }
+                },
+                "required": ["plan", "region", "os_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Provisioning started"
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compute/api-keys": {
+      "get": {
+        "tags": ["Compute API Keys"],
+        "summary": "List compute API keys",
+        "responses": {
+          "200": {
+            "description": "Compute API keys"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Compute API Keys"],
+        "summary": "Create compute API key",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "API key created"
+          }
+        }
+      }
+    },
+    "/compute/api-keys/{id}": {
+      "delete": {
+        "tags": ["Compute API Keys"],
+        "summary": "Revoke compute API key",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "API key revoked"
+          }
+        }
+      }
+    },
+    "/compute/instances": {
+      "get": {
+        "tags": ["Compute Instances"],
+        "summary": "List compute instances",
+        "parameters": [
+          { "name": "wallet", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Compute instances"
+          }
+        }
+      }
+    },
+    "/compute/instances/{id}": {
+      "get": {
+        "tags": ["Compute Instances"],
+        "summary": "Get compute instance",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Instance details"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Compute Instances"],
+        "summary": "Destroy compute instance",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Instance destroyed"
+          }
+        }
+      }
+    },
+    "/compute/instances/{id}/password": {
+      "post": {
+        "tags": ["Compute Instances"],
+        "summary": "Retrieve one-time instance password",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One-time password access"
+          }
+        }
+      }
+    },
+    "/compute/instances/{id}/extend": {
+      "post": {
+        "tags": ["Compute Instances"],
+        "summary": "Extend compute instance expiry",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "extend_hours": { "type": "integer" },
+                  "network": { "type": "string", "enum": ["base", "solana"] }
+                },
+                "required": ["extend_hours"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Instance extended"
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+              }
+            }
           }
         }
       }

@@ -131,6 +131,38 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Singularity Compute",
+        "groups": [
+          {
+            "group": "Catalog",
+            "pages": [
+              "api-reference/compute-plans",
+              "api-reference/compute-regions",
+              "api-reference/compute-os"
+            ]
+          },
+          {
+            "group": "Provisioning and instances",
+            "pages": [
+              "api-reference/compute-provision",
+              "api-reference/compute-instances-list",
+              "api-reference/compute-instance-get",
+              "api-reference/compute-instance-password",
+              "api-reference/compute-instance-extend",
+              "api-reference/compute-instance-delete"
+            ]
+          },
+          {
+            "group": "API keys",
+            "pages": [
+              "api-reference/compute-api-keys-list",
+              "api-reference/compute-api-keys-create",
+              "api-reference/compute-api-keys-delete"
+            ]
+          }
+        ]
       }
     ],
     "global": {
