@@ -7,7 +7,7 @@
     "light": "#F5EEE2",
     "dark": "#0A0A0A"
   },
-  "favicon": "/images/logo-icon.png",
+  "favicon": "/images/sgl-logo.webp",
   "navigation": {
     "tabs": [
       {
@@ -80,8 +80,8 @@
           "icon": "book-open-cover"
         },
         {
-          "anchor": "GitHub",
-          "href": "https://github.com/ivaavimusic/x402Studio-frontend",
+          "anchor": "SDK",
+          "href": "https://github.com/ivaavimusic/Singularity-SDK",
           "icon": "github"
         }
       ]
