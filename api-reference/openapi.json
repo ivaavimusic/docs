@@ -13,11 +13,15 @@
   "tags": [
     { "name": "Marketplace", "description": "Public discovery and listing lookup" },
     { "name": "Public Endpoints", "description": "Public endpoint metadata and hosted checkout context" },
+    { "name": "Public Payment Links", "description": "Hosted public payment-link lookup" },
     { "name": "Payments", "description": "Hosted x402 payment challenge routes" },
+    { "name": "Receipts", "description": "Signed receipt lookup and verification helpers" },
+    { "name": "Ratings", "description": "Public listing ratings and authenticated rating actions" },
     { "name": "Webhooks", "description": "Seller webhook management API" },
     { "name": "Agent Auth", "description": "Wallet-first challenge and verification routes" },
     { "name": "Agent Endpoints", "description": "Create, read, top up, and delete agent endpoints" },
-    { "name": "ERC-8004", "description": "Agent registry and registration lifecycle routes" }
+    { "name": "ERC-8004", "description": "Agent registry and registration lifecycle routes" },
+    { "name": "Marketplace Agents", "description": "Public ERC-8004 marketplace discovery routes" }
   ],
   "paths": {
     "/api/marketplace": {
@@ -90,6 +94,47 @@
         }
       }
     },
+    "/api/public/endpoints/{slug}/credits": {
+      "get": {
+        "tags": ["Public Endpoints"],
+        "summary": "Get public credit packs for an endpoint",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint credit pack information"
+          }
+        }
+      }
+    },
+    "/api/public/payment-links/{id}": {
+      "get": {
+        "tags": ["Public Payment Links"],
+        "summary": "Get public payment link details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment link details"
+          },
+          "404": {
+            "description": "Payment link not found"
+          }
+        }
+      }
+    },
     "/e/{slug}": {
       "get": {
         "tags": ["Payments"],
@@ -145,6 +190,87 @@
                 "schema": { "$ref": "#/components/schemas/X402Challenge" }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/receipts/{token}": {
+      "get": {
+        "tags": ["Receipts"],
+        "summary": "Resolve a signed payment receipt token",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receipt details"
+          },
+          "401": {
+            "description": "Invalid receipt token"
+          },
+          "404": {
+            "description": "Receipt not found"
+          }
+        }
+      }
+    },
+    "/api/ratings": {
+      "get": {
+        "tags": ["Ratings"],
+        "summary": "List ratings for an endpoint or product",
+        "parameters": [
+          { "name": "endpoint_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "product_id", "in": "query", "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ratings list"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Ratings"],
+        "summary": "Create or update a rating",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint_id": { "type": "string", "format": "uuid" },
+                  "product_id": { "type": "string", "format": "uuid" },
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "review": { "type": "string" }
+                },
+                "required": ["rating"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rating created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Ratings"],
+        "summary": "Delete a rating",
+        "parameters": [
+          { "name": "id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rating deleted"
           }
         }
       }
@@ -391,6 +517,41 @@
         "responses": {
           "200": {
             "description": "Finalized registration"
+          }
+        }
+      }
+    },
+    "/api/marketplace/agents": {
+      "get": {
+        "tags": ["Marketplace Agents"],
+        "summary": "List public ERC-8004 marketplace agents",
+        "parameters": [
+          { "name": "network", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Marketplace agent list"
+          }
+        }
+      }
+    },
+    "/api/marketplace/agents/{id}": {
+      "get": {
+        "tags": ["Marketplace Agents"],
+        "summary": "Get a single public marketplace agent",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "network", "in": "query", "schema": { "type": "string" } },
+          { "name": "contract", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Marketplace agent details"
+          },
+          "404": {
+            "description": "Agent not found"
           }
         }
       }

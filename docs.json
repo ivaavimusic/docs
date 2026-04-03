@@ -74,7 +74,20 @@
             "group": "Marketplace",
             "pages": [
               "api-reference/marketplace-browse",
-              "api-reference/public-endpoint"
+              "api-reference/public-endpoint",
+              "api-reference/marketplace-agents-list",
+              "api-reference/marketplace-agent-get"
+            ]
+          },
+          {
+            "group": "Public commerce",
+            "pages": [
+              "api-reference/public-payment-link",
+              "api-reference/public-endpoint-credits",
+              "api-reference/ratings-list",
+              "api-reference/ratings-create",
+              "api-reference/ratings-delete",
+              "api-reference/receipt-resolve"
             ]
           },
           {
