@@ -90,6 +90,16 @@
           "icon": "book-open-cover"
         },
         {
+          "anchor": "Singularity Compute",
+          "href": "https://x402compute.cc",
+          "icon": "server"
+        },
+        {
+          "anchor": "Website",
+          "href": "https://x402layer.cc",
+          "icon": "globe"
+        },
+        {
           "anchor": "SDK",
           "href": "https://github.com/ivaavimusic/Singularity-SDK",
           "icon": "github"
@@ -104,12 +114,8 @@
   "navbar": {
     "links": [
       {
-        "label": "Singularity Compute",
-        "href": "https://x402compute.cc"
-      },
-      {
-        "label": "Website",
-        "href": "https://x402layer.cc"
+        "label": "Marketplace",
+        "href": "https://studio.x402layer.cc/marketplace"
       }
     ],
     "primary": {
