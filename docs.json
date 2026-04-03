@@ -71,12 +71,50 @@
             ]
           },
           {
-            "group": "Endpoints",
+            "group": "Marketplace",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/marketplace-browse",
+              "api-reference/public-endpoint"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "api-reference/endpoint-access",
+              "api-reference/product-purchase"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks-list",
+              "api-reference/webhooks-create",
+              "api-reference/webhooks-update",
+              "api-reference/webhooks-delete"
+            ]
+          },
+          {
+            "group": "Agent Auth",
+            "pages": [
+              "api-reference/agent-auth-challenge",
+              "api-reference/agent-auth-verify"
+            ]
+          },
+          {
+            "group": "Agent Endpoints",
+            "pages": [
+              "api-reference/agent-endpoints-list",
+              "api-reference/agent-endpoints-create",
+              "api-reference/agent-endpoints-update",
+              "api-reference/agent-endpoints-delete"
+            ]
+          },
+          {
+            "group": "ERC-8004",
+            "pages": [
+              "api-reference/erc8004-registry",
+              "api-reference/erc8004-prepare",
+              "api-reference/erc8004-finalize"
             ]
           }
         ]

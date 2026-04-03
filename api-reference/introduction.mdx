@@ -1,68 +1,47 @@
 ---
 title: API reference
-description: Reference map for the public, payment, MCP, and agent APIs in x402 Singularity Layer
+description: OpenAPI-backed reference for the main x402 Singularity Layer endpoints
 ---
 
 # API reference
 
-This section is the reference map for the APIs that power x402 Studio and Singularity Layer.
+This section uses Mintlify's API reference methodology instead of prose-only guides.
 
-It covers the main surfaces already described across the guides:
+It covers the most important live API surfaces documented across the platform:
 
 - marketplace discovery
-- public endpoint and product purchase flows
-- webhook and receipt verification
-- owner and agent management APIs
-- MCP control plane entrypoints
-
-## API surfaces
-
-<CardGroup cols={2}>
-  <Card title="Marketplace discovery" icon="compass" href="/api-reference/endpoint/get">
-    Read-only endpoints for discovery, listing lookup, and public metadata.
-  </Card>
-  <Card title="Payments and checkout" icon="credit-card" href="/api-reference/endpoint/create">
-    Hosted pay routes, x402 payment flows, credits, and purchase behavior.
-  </Card>
-  <Card title="Webhooks and receipts" icon="bolt" href="/api-reference/endpoint/webhook">
-    Signature verification, receipt tokens, and seller notification flows.
-  </Card>
-  <Card title="Owner and agent APIs" icon="bot" href="/api-reference/endpoint/delete">
-    Agent endpoints, wallet-auth flows, ERC-8004, and MCP-related management APIs.
-  </Card>
-</CardGroup>
+- public endpoint metadata
+- hosted x402 payment routes
+- seller webhook management
+- wallet-first agent auth
+- agent endpoint management
+- ERC-8004 prepare and finalize flows
 
 ## Base domains
 
 | Surface | Base URL |
 | --- | --- |
-| Studio UI | `https://studio.x402layer.cc` |
-| Hosted docs | `https://docs.x402layer.cc` |
 | API gateway | `https://api.x402layer.cc` |
+| Studio web app | `https://studio.x402layer.cc` |
 | MCP | `https://mcp.x402layer.cc/mcp` |
-| Compute | `https://x402compute.cc` |
 
-## Auth modes
-
-Different surfaces use different auth models:
+## Authentication summary
 
 | Surface | Auth |
 | --- | --- |
 | Marketplace discovery | none |
-| Hosted product and endpoint purchase | x402 payment |
-| Webhook delivery | HMAC signature verification |
-| Receipt verification | JWT + JWKS |
-| Owner management | PAT or legacy endpoint key |
-| Wallet-first agent flows | signed wallet challenge → short-lived session token |
-| MCP | PAT or endpoint key depending on tool |
+| Hosted payment challenge routes | x402 `X-Payment` |
+| Webhook management | dashboard auth / seller session |
+| Wallet-first agent auth | signed wallet challenge |
+| Agent endpoint management | x402 payment + `X-API-Key` or owner auth |
+| ERC-8004 prepare/finalize | bearer session token from wallet auth |
 
-## Reading this reference
+## OpenAPI source
 
-- Start with **Marketplace discovery** if you need public lookup or listing data.
-- Start with **Payments and checkout** if you need hosted or programmatic purchase flows.
-- Start with **Webhooks and receipts** if you need post-payment verification.
-- Start with **Owner and agent APIs** if you need authenticated management or agent registration.
-
-## Source of truth note
-
-This reference intentionally summarizes and consolidates the real API contracts that already appear in the guides. It is meant to replace the starter template and give developers one place to start before diving deeper into the product-specific guides.
+<Card
+  title="View the API specification"
+  icon="terminal"
+  href="/api-reference/openapi.json"
+>
+  This Mintlify API reference is driven by the repo's OpenAPI spec.
+</Card>

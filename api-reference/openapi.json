@@ -1,0 +1,458 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "x402 Singularity Layer API",
+    "description": "OpenAPI-backed reference for marketplace discovery, payment routes, webhooks, wallet-first auth, agent endpoints, and ERC-8004 flows.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.x402layer.cc"
+    }
+  ],
+  "tags": [
+    { "name": "Marketplace", "description": "Public discovery and listing lookup" },
+    { "name": "Public Endpoints", "description": "Public endpoint metadata and hosted checkout context" },
+    { "name": "Payments", "description": "Hosted x402 payment challenge routes" },
+    { "name": "Webhooks", "description": "Seller webhook management API" },
+    { "name": "Agent Auth", "description": "Wallet-first challenge and verification routes" },
+    { "name": "Agent Endpoints", "description": "Create, read, top up, and delete agent endpoints" },
+    { "name": "ERC-8004", "description": "Agent registry and registration lifecycle routes" }
+  ],
+  "paths": {
+    "/api/marketplace": {
+      "get": {
+        "tags": ["Marketplace"],
+        "summary": "Browse marketplace listings",
+        "description": "Lists public endpoints, products, and agentic listings with optional filters.",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["endpoint", "agentic", "product", "all"] } },
+          { "name": "chain", "in": "query", "schema": { "type": "string", "enum": ["base", "solana"] } },
+          { "name": "mode", "in": "query", "schema": { "type": "string", "enum": ["direct", "credits"] } },
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Marketplace listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "listings": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Listing" }
+                    },
+                    "total": { "type": "integer" },
+                    "limit": { "type": "integer" },
+                    "offset": { "type": "integer" },
+                    "hasMore": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/endpoints/{slug}": {
+      "get": {
+        "tags": ["Public Endpoints"],
+        "summary": "Get public endpoint payment metadata",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint metadata",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PublicEndpoint" }
+              }
+            }
+          },
+          "404": {
+            "description": "Endpoint not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/e/{slug}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Access a paid endpoint or return an x402 challenge",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["purchase"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful paid endpoint response"
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/p/{slug}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Access a paid product or return an x402 challenge",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful paid product response"
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "List seller webhooks",
+        "responses": {
+          "200": {
+            "description": "Webhook list"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Create seller webhook",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string", "format": "uri" },
+                  "events": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                },
+                "required": ["url"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Webhook created"
+          }
+        }
+      }
+    },
+    "/api/webhooks/{id}": {
+      "patch": {
+        "tags": ["Webhooks"],
+        "summary": "Update seller webhook",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Webhooks"],
+        "summary": "Delete seller webhook",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook deleted"
+          }
+        }
+      }
+    },
+    "/agent/auth/challenge": {
+      "post": {
+        "tags": ["Agent Auth"],
+        "summary": "Request a wallet-auth challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "chain": { "type": "string" },
+                  "walletAddress": { "type": "string" },
+                  "action": { "type": "string" }
+                },
+                "required": ["chain", "walletAddress", "action"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Challenge payload"
+          }
+        }
+      }
+    },
+    "/agent/auth/verify": {
+      "post": {
+        "tags": ["Agent Auth"],
+        "summary": "Verify a wallet-auth challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "chain": { "type": "string" },
+                  "walletAddress": { "type": "string" },
+                  "nonce": { "type": "string" },
+                  "signature": { "type": "string" }
+                },
+                "required": ["chain", "walletAddress", "nonce", "signature"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Short-lived session token"
+          }
+        }
+      }
+    },
+    "/agent/endpoints": {
+      "get": {
+        "tags": ["Agent Endpoints"],
+        "summary": "Get agent endpoint status",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint status"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Agent Endpoints"],
+        "summary": "Create agent endpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": { "type": "string" },
+                  "name": { "type": "string" },
+                  "origin_url": { "type": "string", "format": "uri" },
+                  "chain": { "type": "string" },
+                  "wallet_address": { "type": "string" },
+                  "price": { "type": "number" }
+                },
+                "required": ["slug", "name", "origin_url", "chain", "wallet_address", "price"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Endpoint created"
+          },
+          "402": {
+            "description": "Payment required"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Agent Endpoints"],
+        "summary": "Top up an agent endpoint",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint topped up"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Agent Endpoints"],
+        "summary": "Delete an agent endpoint",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint deleted"
+          }
+        }
+      }
+    },
+    "/agent/erc8004/registry": {
+      "get": {
+        "tags": ["ERC-8004"],
+        "summary": "Get ERC-8004 registry information",
+        "responses": {
+          "200": {
+            "description": "Registry info"
+          }
+        }
+      }
+    },
+    "/agent/erc8004/prepare": {
+      "post": {
+        "tags": ["ERC-8004"],
+        "summary": "Prepare ERC-8004 registration",
+        "responses": {
+          "200": {
+            "description": "Prepared registration transaction payload"
+          }
+        }
+      }
+    },
+    "/agent/erc8004/finalize": {
+      "post": {
+        "tags": ["ERC-8004"],
+        "summary": "Finalize ERC-8004 registration",
+        "responses": {
+          "200": {
+            "description": "Finalized registration"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Listing": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "description": { "type": "string" },
+          "type": { "type": "string" },
+          "mode": { "type": "string" },
+          "price": { "type": "number" },
+          "currency": { "type": "string" },
+          "chain": { "type": "string" }
+        }
+      },
+      "PublicEndpoint": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "mode": { "type": "string" },
+          "price": { "type": "number" },
+          "currency": { "type": "string" },
+          "wallet_address": { "type": "string" },
+          "chain": { "type": "string" }
+        }
+      },
+      "X402Challenge": {
+        "type": "object",
+        "properties": {
+          "x402Version": { "type": "integer" },
+          "accepts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "scheme": { "type": "string" },
+                "network": { "type": "string" },
+                "maxAmountRequired": { "type": "string" },
+                "resource": { "type": "string" },
+                "description": { "type": "string" },
+                "payTo": { "type": "string" },
+                "asset": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}
