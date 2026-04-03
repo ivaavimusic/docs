@@ -31,12 +31,7 @@
               "user-guide/components",
               "user-guide/marketplace"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Agentic Access",
-        "groups": [
+          },
           {
             "group": "Core flows",
             "pages": [
@@ -56,17 +51,32 @@
               "agentic-access/singularity-skill",
               "agentic-access/x402-compute"
             ]
+          },
+          {
+            "group": "Singularity Payments",
+            "pages": [
+              "payments/webhooks",
+              "payments/sdk-receipts"
+            ]
           }
         ]
       },
       {
-        "tab": "Singularity Payments",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "Payments infrastructure",
+            "group": "Overview",
             "pages": [
-              "payments/webhooks",
-              "payments/sdk-receipts"
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api-reference/endpoint/get",
+              "api-reference/endpoint/create",
+              "api-reference/endpoint/delete",
+              "api-reference/endpoint/webhook"
             ]
           }
         ]
@@ -94,8 +104,12 @@
   "navbar": {
     "links": [
       {
-        "label": "Marketplace",
-        "href": "https://studio.x402layer.cc/marketplace"
+        "label": "Singularity Compute",
+        "href": "https://x402compute.cc"
+      },
+      {
+        "label": "Website",
+        "href": "https://x402layer.cc"
       }
     ],
     "primary": {
