@@ -1,0 +1,100 @@
+---
+title: "Agentic Access: Introduction - x402 Studio Docs"
+description: How AI agents can discover and pay for x402-enabled APIs
+---
+
+# Agentic Access: Introduction
+
+x402 Studio enables AI agents to discover, evaluate, and pay for API access automatically, without human intervention.
+
+## What is Agentic Access?
+
+Agentic access means your API can be called by autonomous systems (AI agents, automated scripts, bots) that:
+
+1.  **Discover** – Find your API and understand its pricing
+2.  **Evaluate** – Decide if the price is worth paying
+3.  **Pay** – Submit payment cryptographically
+4.  **Access** – Receive the response after payment verification
+
+All of this happens in a single request-response cycle on any supported chain:
+- **Base** (Coinbase L2)
+- **Solana** (High-speed L1)
+- **Ethereum** (Mainnet & Sepolia)
+- **Polygon** (PoS & Amoy)
+- **BSC** (BNB Chain)
+- **Monad** (Parallel EVM L1)
+
+## The 402 Protocol
+
+HTTP status code `402 Payment Required` was reserved for exactly this use case.
+
+```
+Client → Server: GET /api/data
+Server → Client: 402 Payment Required + payment details
+Client → Server: GET /api/data + X-Payment header
+Server → Client: 200 OK + actual response
+```
+
+## Base Endpoint & Authentication
+
+### Gateway URL
+
+All x402-enabled endpoints are accessible through our gateway:
+
+```
+https://api.x402layer.cc
+```
+
+### Endpoint Paths
+
+Each endpoint has a unique slug accessible at:
+
+```
+https://api.x402layer.cc/e/{slug}
+```
+
+For example, if an endpoint's slug is `my-api`, the full URL would be:
+```
+https://api.x402layer.cc/e/my-api
+```
+
+### Authentication
+
+For non-agentic access (e.g., testing, direct API calls with credits), use the `x-header-key` header:
+
+```bash
+curl https://api.x402layer.cc/e/my-api \
+  -H "x-header-key: YOUR_API_KEY"
+```
+
+API keys can be generated from the [Dashboard](/dashboard).
+
+<Note>
+For agentic/402 payment access, the `X-Payment` header contains the cryptographic payment proof instead. See [Pay-Per-Request](/docs/agentic-access/pay-per-request) for details.
+</Note>
+
+## Documentation Sections
+
+<CardGroup cols={2}>
+  <Card title="Pay-Per-Request" href="/docs/agentic-access/pay-per-request" icon="money-bill">
+    Implementation details for the Request-402-Pay flow.
+  </Card>
+  <Card title="Credit-Based Access" href="/docs/agentic-access/credit-based" icon="credit-card">
+    High-performance credit consumption protocol.
+  </Card>
+  <Card title="Marketplace API" href="/docs/agentic-access/marketplace" icon="shop">
+    Discovery and metadata resolution for agents.
+  </Card>
+  <Card title="Agent Management" href="/docs/agentic-access/agent-management" icon="robot">
+    Programmatic endpoint creation and control.
+  </Card>
+  <Card title="OpenClaw Skill" href="/docs/agentic-access/openclaw-skill" icon="bolt">
+    Production-ready skill for OpenClaw agents.
+  </Card>
+  <Card title="x402 Compute Skill" href="/docs/agentic-access/x402-compute" icon="server">
+    Provision and manage VPS/GPU compute with x402 payments, signed auth, and API keys.
+  </Card>
+  <Card title="ERC-8004 Agent Identity" href="/docs/agentic-access/erc8004-registration" icon="id-card">
+    Register on-chain AI agent identities with reputation.
+  </Card>
+</CardGroup>

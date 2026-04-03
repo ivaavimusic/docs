@@ -1,0 +1,368 @@
+---
+title: OpenClaw x402-Layer Skill - x402 Studio Docs
+description: Production-ready skill for OpenClaw agents to interact with x402 Singularity Layer
+---
+
+# OpenClaw x402-Layer Skill
+
+The **x402-layer** skill enables [OpenClaw](https://x.com/openclaw) agents to interact with x402 Singularity Layer for autonomous API monetization and consumption.
+
+<Note>
+  This skill is production-ready and has been tested with real payments on **Base (EVM)** and **Solana**, including the current PayAI-backed Solana flow.
+</Note>
+
+<Note>
+  Current release: **v1.9.1**. This release hardens the XMTP helper, adds explicit World AgentKit and XMTP support runbooks, and keeps optional Singularity MCP guidance in the same install surface.
+</Note>
+
+## Script Source Code
+
+The full Python source code for all scripts is available in this repository: [View Scripts Folder](./scripts/)
+
+<Tabs>
+  <Tab title="Consumer Mode">
+    Scripts for **buying** services from the marketplace:
+
+    | Script | Purpose | Source |
+    |--------|---------|--------|
+    | `pay_base.py` | Pay for endpoints on Base (recommended default) | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/pay_base.py) |
+    | `pay_solana.py` | Pay for endpoints on Solana with the sponsored PayAI flow | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/pay_solana.py) |
+    | `consume_credits.py` | Use pre-purchased credits (fastest) | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/consume_credits.py) |
+    | `consume_product.py` | Purchase digital products (files) | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/consume_product.py) |
+    | `check_credits.py` | Check your credit balance | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/check_credits.py) |
+    | `recharge_credits.py` | Buy credit packs for an endpoint | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/recharge_credits.py) |
+    | `discover_marketplace.py` | Browse available services | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/discover_marketplace.py) |
+  </Tab>
+  <Tab title="Provider Mode">
+    Scripts for **selling** services and managing endpoints:
+
+    | Script | Purpose | Source |
+    |--------|---------|--------|
+    | `create_endpoint.py` | Deploy new monetized endpoint ($1 fee) | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/create_endpoint.py) |
+    | `manage_endpoint.py` | View/update your endpoints | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/manage_endpoint.py) |
+    | `topup_endpoint.py` | Add credits to YOUR endpoint | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/topup_endpoint.py) |
+    | `list_on_marketplace.py` | Publish endpoint publicly | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/list_on_marketplace.py) |
+  </Tab>
+  <Tab title="Agent Registry">
+    Scripts for **wallet-first ERC-8004 / Solana-8004** registration, discovery, management, and reputation:
+
+    | Script | Purpose | Source |
+    |--------|---------|--------|
+    | `register_agent.py` | Register an agent with image/version/tags and endpoint bindings | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/register_agent.py) |
+    | `list_my_endpoints.py` | List platform endpoints the wallet can bind to an agent | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/list_my_endpoints.py) |
+    | `list_agents.py` | List ERC-8004 agents owned by the wallet or linked dashboard user | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/list_agents.py) |
+    | `update_agent.py` | Update metadata, visibility, and endpoint bindings for an existing agent | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/update_agent.py) |
+    | `submit_feedback.py` | Submit on-chain reputation feedback | [View Code](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill/blob/main/scripts/submit_feedback.py) |
+  </Tab>
+</Tabs>
+
+## Quick Start
+
+### Installation
+
+Install directly via our self-hosted endpoint:
+
+```bash
+# One-line installer (recommended)
+curl -fsSL https://api.x402layer.cc/skill/x402-layer/install | bash
+
+# Or specify a custom directory
+curl -fsSL https://api.x402layer.cc/skill/x402-layer/install | bash -s ./my-skills/x402-layer
+```
+
+Alternatively, clone from GitHub:
+
+```bash
+git clone https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill.git
+cd x402-Layer-Clawhub-Skill/scripts
+pip install -r ../requirements.txt
+```
+
+### Environment Setup
+
+```bash
+# Read-only discovery needs no secrets
+python scripts/discover_marketplace.py
+
+# For Base (EVM) - Recommended
+export PRIVATE_KEY="0x..."
+export WALLET_ADDRESS="0x..."
+
+# For Solana (Optional)
+export SOLANA_SECRET_KEY="base58-or-[1,2,3,...]"  # base58 secret or JSON array
+```
+
+For Base payment flows without exposing a private key, AWAL is still supported:
+
+```bash
+npx skills add coinbase/agentic-wallet-skills
+export X402_USE_AWAL=1
+```
+
+Use private-key mode for wallet-first ERC-8004 registration.
+
+Optional owner-scoped MCP management:
+
+```bash
+export SINGULARITY_PAT="sgl_pat_..."
+```
+
+Use that only when the agent needs dashboard-level endpoint, product, or webhook management through Singularity MCP.
+
+### World AgentKit Benefits
+
+```bash
+# Inspect whether an endpoint advertises a verified human-backed agent wallet benefit
+python scripts/discover_marketplace.py details weather-data
+
+# Attempt Base payment with AgentKit if the endpoint offers it
+python scripts/pay_base.py https://api.x402layer.cc/e/weather-data --agentkit auto
+
+# Require AgentKit qualification instead of silently falling back
+python scripts/pay_base.py https://api.x402layer.cc/e/weather-data --agentkit required
+```
+
+### XMTP Support Threads
+
+```bash
+# Authenticate your wallet for support APIs
+python scripts/support_auth.py login
+
+# Check support eligibility and open or reuse a support thread
+python scripts/support_threads.py eligibility endpoint weather-data
+python scripts/support_threads.py open endpoint weather-data
+
+# Read and send XMTP support messages
+node scripts/xmtp_support.mjs messages <thread_id>
+node scripts/xmtp_support.mjs send <thread_id> "Need help with this endpoint"
+```
+
+## Usage Examples
+
+### Integrate Payments Into Your App
+
+```bash
+# 1. Create or reuse a paid endpoint
+python scripts/create_endpoint.py my-api "My AI Service" https://api.example.com 0.01
+
+# 2. Add webhook-based fulfillment
+python scripts/manage_webhook.py set my-api https://my-server.com/webhook
+
+# 3. Verify the webhook signature + receipt server-side
+python scripts/verify_webhook_payment.py \
+  --body-file ./webhook.json \
+  --signature 't=1700000000,v1=<hex>' \
+  --secret '<YOUR_SIGNING_SECRET>' \
+  --required-source-slug my-api \
+  --require-receipt
+```
+
+### Pay for an Endpoint (Consumer)
+
+```bash
+# Pay with Base (recommended default)
+python scripts/pay_base.py https://api.x402layer.cc/e/weather-data
+
+# Pay with Solana (PayAI-backed sponsored flow)
+python scripts/pay_solana.py https://api.x402layer.cc/e/weather-data
+```
+
+### Use Credits (Fastest)
+
+```bash
+# Check balance
+python scripts/check_credits.py weather-data
+
+# Buy credits
+python scripts/recharge_credits.py weather-data pack_100
+
+# Consume with credits (zero blockchain latency)
+python scripts/consume_credits.py https://api.x402layer.cc/e/weather-data
+```
+
+### Create Your Own Endpoint (Provider)
+
+```bash
+# Deploy a monetized endpoint ($1 one-time fee, includes 4,000 starting credits)
+python scripts/create_endpoint.py my-api "My AI Service" https://api.example.com 0.01
+```
+
+This now costs **$1 one-time** and includes **4,000 starting credits**.
+
+> **Note**: Save the `API Key` from the output and use it to secure your origin server.
+
+---
+
+### Security: API Key Verification
+
+> [!IMPORTANT]
+> When you create an endpoint, x402 acts as a proxy to your origin server. You MUST verify requests are coming from x402.
+
+1. **Get your API Key**: Returned when you run `create_endpoint.py`.
+2. **Verify Headers**: Your origin server MUST check for this header in every request:
+   ```http
+   x-api-key: <YOUR_API_KEY>
+   ```
+   If the header is missing or incorrect, reject the request (401 Unauthorized).
+
+---
+
+```bash
+# Top up YOUR endpoint with credits
+python scripts/topup_endpoint.py my-api 10  # Add $10 worth
+
+# List on marketplace
+python scripts/list_on_marketplace.py my-api --category ai --description "AI-powered analysis"
+```
+
+### Browse Marketplace
+
+```bash
+# List all services
+python scripts/discover_marketplace.py
+
+# Search by keyword
+python scripts/discover_marketplace.py search weather
+
+# Get featured endpoints
+python scripts/discover_marketplace.py featured
+```
+
+### Register an Agent (Wallet-First)
+
+```bash
+# Discover bindable endpoints first
+python scripts/list_my_endpoints.py
+
+# Default wallet-first registration with rich metadata
+python scripts/register_agent.py \
+  "My Agent" \
+  "Autonomous service agent" \
+  --network baseSepolia \
+  --image https://example.com/agent.png \
+  --version 1.9.1 \
+  --tag finance \
+  --tag automation \
+  --endpoint-id <ENDPOINT_UUID> \
+  --custom-endpoint https://api.example.com/agent
+
+# List owned agents
+python scripts/list_agents.py --network baseSepolia
+
+# Update an existing agent
+python scripts/update_agent.py \
+  --network baseSepolia \
+  --agent-id 123 \
+  --version 1.4.1 \
+  --tag finance \
+  --endpoint-id <ENDPOINT_UUID> \
+  --public
+
+# The same EVM flow also supports:
+#   --network ethereum
+#   --network polygon
+#   --network bsc
+#   --network monad
+```
+
+Wallet-first registration flow:
+
+1. `register_agent.py` requests a one-time challenge from `POST /agent/auth/challenge`
+2. Your wallet signs the challenge locally
+3. The script exchanges that signature at `POST /agent/auth/verify`
+4. The worker returns a short-lived session token
+5. `list_my_endpoints.py` and `list_agents.py` use wallet-authenticated `GET /agent/erc8004/endpoints/mine` and `GET /agent/erc8004/mine`
+6. The same wallet sends the real on-chain transaction via prepare/finalize routes
+7. `update_agent.py` uses `update/prepare` plus `update/finalize`, and automatically sends the on-chain URI update transaction when metadata changes
+
+## Technical Details
+
+### Base (EVM) Payments
+
+Uses EIP-712 `TransferWithAuthorization` signatures:
+- Gasless for the payer
+- Facilitator settles on-chain
+- Simplest production default
+
+### Solana Payments
+
+Uses `VersionedTransaction` with `MessageV0`:
+- Facilitator pays gas fees
+- SPL Token `TransferChecked` instruction
+- Must include the live `feePayer` from the challenge
+- Exact-payment payload must stay within facilitator compute limits
+- The bundled signer handles the current live flow
+
+<Warning>
+  Base remains the simplest default for production. Solana is supported, but the signer must respect the challenge fee payer and exact-payment compute constraints.
+</Warning>
+
+## Skill Metadata
+
+| Field | Value |
+|-------|-------|
+| **Slug** | `x402-layer` |
+| **Version** | 1.9.1 |
+| **Networks** | Base, Ethereum, Polygon, BSC, Monad, Solana |
+| **Currency** | USDC |
+
+## Resources
+
+- [OpenClaw on X](https://x.com/openclaw)
+- [x402 Studio Dashboard](https://studio.x402layer.cc)
+- [Marketplace](https://studio.x402layer.cc/marketplace)
+- [GitHub Repository](https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill)
+
+## Changelog
+
+### v1.9.1
+- hardened `xmtp_support.mjs` by removing the environment-driven Studio base override from the helper itself
+- added explicit runbooks for World AgentKit benefits and XMTP support thread operations
+- refreshed stale example versions and kept MCP guidance in the same install surface
+
+### v1.8.2
+- removed globally-required secret env declarations from skill metadata
+- documented capability-specific environment requirements so users expose only the vars needed for the current task
+- synced the safer environment guidance across the hosted skill and public docs
+
+### v1.8.1
+- fixed direct Base endpoint payments for skill usage by rejecting self-payment early
+- aligned `pay_base.py` with the hosted purchase-path shape using `?action=purchase`
+
+### v1.8.0
+- Added seller-side endpoint configuration parity for best-fit audience and verified human-backed AgentKit benefit fields
+- Added real `manage_endpoint.py update` support against worker PATCH routes
+
+### v1.7.0
+- Added wallet-signed support APIs for agent wallets
+- Added support thread commands and XMTP helper flows for agent-side support operations
+- Preserved AgentKit-aware discovery and optional Base payment flow for verified human-backed agent wallets
+
+### v1.5.0
+- Added a first-class payments integration path for agents using direct endpoints, credits, products, webhooks, and receipt verification
+- Added `payments-integration.md` as the decision guide for payment shape and fulfillment strategy
+- Fixed the bundled Solana signer to match the live PayAI-backed compute limit requirement
+
+### v1.4.0
+- Wallet-first ERC-8004 / Solana-8004 registration is now the default for `register_agent.py`
+- Added signed challenge + short-lived agent session flow for API-only wallet auth
+- Added `list_my_endpoints.py`, `list_agents.py`, and `update_agent.py` for full post-registration lifecycle management
+- Registration now supports version, tags, platform endpoint bindings, and custom endpoint URLs
+- Removed the legacy x402-paid worker registration path; wallet-first registration is now the only supported agent flow
+
+### v1.0.1
+- **New Script:** `consume_product.py` - Purchase and download digital products
+
+### v1.0.0
+
+Initial release with full x402 Agentic Access API integration:
+
+**Provider Mode:**
+- Deploy monetized endpoints with automatic wallet-to-wallet profit routing
+- Top up credits programmatically
+- List endpoints on public marketplace
+
+**Consumer Mode:**
+- Marketplace discovery with filtering
+- Pay-per-request with EIP-712 permits (Base) and VersionedTransaction (Solana)
+- Credit-based access for zero-latency consumption

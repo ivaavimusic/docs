@@ -1,68 +1,72 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "x402 Singularity Layer",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#50A7E3",
+    "light": "#F5EEE2",
+    "dark": "#0A0A0A"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/images/logo-icon.png",
   "navigation": {
     "tabs": [
       {
         "tab": "Guides",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Overview",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "index"
             ]
           },
           {
-            "group": "Customization",
+            "group": "User Guide",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "user-guide/getting-started",
+              "user-guide/dashboard",
+              "user-guide/wallet-connection",
+              "user-guide/creating-endpoints",
+              "user-guide/managing-credits",
+              "user-guide/products-payment-links",
+              "user-guide/components",
+              "user-guide/marketplace"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Agentic Access",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core flows",
             "pages": [
-              "api-reference/introduction"
+              "agentic-access/introduction",
+              "agentic-access/pay-per-request",
+              "agentic-access/credit-based",
+              "agentic-access/marketplace",
+              "agentic-access/agent-management",
+              "agentic-access/mcp-server"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Identity and skills",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "agentic-access/erc8004-registration",
+              "agentic-access/openclaw-skill",
+              "agentic-access/singularity-skill",
+              "agentic-access/x402-compute"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Singularity Payments",
+        "groups": [
+          {
+            "group": "Payments infrastructure",
+            "pages": [
+              "payments/webhooks",
+              "payments/sdk-receipts"
             ]
           }
         ]
@@ -71,33 +75,33 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
+          "anchor": "Studio",
+          "href": "https://studio.x402layer.cc",
           "icon": "book-open-cover"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "GitHub",
+          "href": "https://github.com/ivaavimusic/x402Studio-frontend",
+          "icon": "github"
         }
       ]
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/images/sgl-logo.webp",
+    "dark": "/images/sgl-logo.webp"
   },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Marketplace",
+        "href": "https://studio.x402layer.cc/marketplace"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Launch Studio",
+      "href": "https://studio.x402layer.cc"
     }
   },
   "contextual": {
@@ -114,9 +118,8 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/ivaavimusic",
+      "github": "https://github.com/ivaavimusic/x402Studio-frontend"
     }
   }
 }

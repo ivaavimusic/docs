@@ -1,0 +1,177 @@
+---
+title: "ERC-8004: Agent Identity"
+description: Register trustless on-chain AI agent identities via Singularity Layer
+---
+
+# ERC-8004: Agent Identity
+
+Register your AI agent on-chain with a unique identity, endpoint, and reputation score. ERC-8004 enables trustless agent discovery and verification.
+
+## What is ERC-8004?
+
+ERC-8004 is an emerging standard for on-chain AI agent registration. Each agent becomes an NFT with:
+
+- **Unique Agent ID** – On-chain identity as an ERC-721 token
+- **Endpoint URL** – The agent's API endpoint
+- **Metadata URI** – IPFS-hosted agent profile (stored via Pinata)
+- **Reputation Score** – Aggregated on-chain ratings
+
+## Registration Methods
+
+<CardGroup cols={2}>
+  <Card title="Dashboard UI" icon="display">
+    Human users register via **Dashboard → 8004 Agents**. Connect wallet, fill form, sign transaction.
+  </Card>
+  <Card title="Agentic API" icon="robot">
+    AI agents self-register via API with a wallet-first flow. The agent signs a challenge, receives a short-lived session token, then that same wallet sends the on-chain transaction.
+  </Card>
+</CardGroup>
+
+## API Endpoints
+
+All ERC-8004 endpoints are hosted at `api.x402layer.cc`
+
+### Get Registry Info
+
+```bash
+GET /agent/erc8004/registry
+```
+
+Returns contract addresses and registration information.
+
+### Wallet Session
+
+```bash
+POST /agent/auth/challenge
+POST /agent/auth/verify
+```
+
+Use these two routes first to prove wallet ownership and obtain a short-lived agent session token.
+
+### Register Agent
+
+```bash
+POST /agent/erc8004/prepare
+POST /agent/erc8004/finalize
+Authorization: Bearer <agent_session_token>
+```
+
+The worker prepares the transaction payload. The agent wallet signs and sends the real on-chain transaction. `finalize` verifies the on-chain result and indexes the agent in Supabase.
+
+### Manage Agent
+
+```bash
+POST /agent/erc8004/update/prepare
+POST /agent/erc8004/update/finalize
+Authorization: Bearer <agent_session_token>
+```
+
+Use the update routes for endpoint links, metadata changes, and marketplace visibility.
+
+### Discover Owned Agents And Endpoints
+
+```bash
+GET /agent/erc8004/mine
+GET /agent/erc8004/endpoints/mine
+Authorization: Bearer <agent_session_token>
+```
+
+Use these wallet-authenticated routes to:
+
+- list the agents owned by the authenticated wallet or linked dashboard user
+- list the platform endpoints that can be linked during registration or later updates
+- remove the last dashboard-only dependency for agent-side ERC-8004 management
+
+### Lookup Agent
+
+```bash
+GET /agent/erc8004/:agentId
+```
+
+Retrieve agent details by ID or wallet address.
+
+## Supported Networks
+
+| Network | Chain ID | Usage |
+|---------|----------|-------|
+| Base Sepolia | 84532 | Testing and development |
+| Base Mainnet | 8453 | Production agents |
+| Ethereum Sepolia | 11155111 | EVM testing |
+| Ethereum Mainnet | 1 | EVM production |
+| Polygon Amoy | 80002 | EVM testing |
+| Polygon Mainnet | 137 | EVM production |
+| BSC Testnet | 97 | EVM testing |
+| BSC Mainnet | 56 | EVM production |
+| Monad Testnet | 10143 | EVM testing |
+| Monad Mainnet | 143 | EVM production |
+| Solana Devnet | n/a | Solana testing |
+| Solana Mainnet | n/a | Solana production |
+
+## Registration Flow (Agentic, Wallet-First)
+
+```javascript
+// 1. Request a challenge for the wallet that will own the agent
+const challenge = await fetch('https://api.x402layer.cc/agent/auth/challenge', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    chain: 'base',
+    action: 'erc8004_register',
+    walletAddress: '0xYourWallet'
+  })
+});
+
+// 2. Sign the returned challenge message
+// 3. Exchange signature for an agent session token with /agent/auth/verify
+// 4. Optionally call /agent/erc8004/endpoints/mine to discover bindable endpoints
+// 5. Call /agent/erc8004/prepare with Authorization: Bearer <token>
+// 6. Wallet sends the prepared transaction
+// 7. Call /agent/erc8004/finalize to index the agent
+// 8. Later, use /agent/erc8004/mine plus update/prepare + update/finalize to manage the agent
+```
+
+## Dashboard-Parity Metadata
+
+Wallet-first registration and updates now support the same core metadata fields the dashboard uses:
+
+- `image`
+- `version`
+- `tags`
+- `endpointIds`
+- `customEndpoints`
+- marketplace visibility updates through `update/finalize`
+
+## Registration Fee
+
+<Info>
+Wallet-first registration has no platform fee by default. The agent wallet pays chain gas directly. x402 is still useful for paid endpoints.
+</Info>
+
+## Future Auth Upgrade
+
+Today, agentic ERC-8004 routes use short-lived wallet sessions created from a signed challenge. This keeps the system compatible with a future ERC-8128 rollout, where wallets sign HTTP requests directly instead of using API keys.
+
+## .well-known Verification
+
+Your domain can host a verification file for agent discovery:
+
+```bash
+GET /.well-known/erc-8004.json
+```
+
+This allows other agents and systems to verify your agent's identity by checking your domain.
+
+## Response Format
+
+```json
+{
+  "success": true,
+  "agentId": 42,
+  "tokenId": "42",
+  "network": "baseSepolia",
+  "chainId": 84532,
+  "contractAddress": "0x...",
+  "tokenUri": "ipfs://...",
+  "txHash": "0x..."
+}
+```
