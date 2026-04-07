@@ -1,5 +1,5 @@
 ---
-title: OpenClaw x402-Layer Skill
+title: OpenClaw x402-Layer Skill - x402 Studio Docs
 description: Production-ready skill for OpenClaw agents to interact with x402 Singularity Layer
 ---
 
@@ -12,7 +12,7 @@ The **x402-layer** skill enables [OpenClaw](https://x.com/openclaw) agents to in
 </Note>
 
 <Note>
-  Current release: **v1.10.3**. This release extends OWS support to wallet-auth list/support flows while keeping deep ERC-8004 registration and on-chain update transaction paths on direct signing keys.
+  Current release: **v1.10.6**. This release adds explicit Studio seller webhook signing guidance, documents the two-secret-hop settlement model, and keeps secret-bearing actions scoped to the exact runbook that needs them.
 </Note>
 
 ## Script Source Code
@@ -61,18 +61,6 @@ The full Python source code for all scripts is available in this repository: [Vi
 
 ### Installation
 
-#### ClawHub / OpenClaw
-
-```bash
-npx clawhub@latest install x402-layer
-pnpm dlx clawhub@latest install x402-layer
-bunx clawhub@latest install x402-layer
-```
-
-ClawHub listing:
-
-- `https://clawhub.ai/ivaavimusic/x402-layer`
-
 Install directly via our self-hosted endpoint:
 
 ```bash
@@ -90,19 +78,6 @@ git clone https://github.com/ivaavimusic/x402-Layer-Clawhub-Skill.git
 cd x402-Layer-Clawhub-Skill/scripts
 pip install -r ../requirements.txt
 ```
-
-#### Self-hosted installer
-
-```bash
-curl -fsSL https://api.x402layer.cc/skill/x402-layer/install | bash
-```
-
-#### What this package includes
-
-- OpenClaw-native `x402-layer` skill distribution
-- ClawHub install path
-- self-hosted worker install path
-- full script set for payments, endpoints, marketplace, webhooks, support, and agent identity
 
 ### Environment Setup
 
@@ -142,6 +117,8 @@ export SINGULARITY_PAT="sgl_pat_..."
 ```
 
 Use that only when the agent needs dashboard-level endpoint, product, or webhook management through Singularity MCP.
+
+> Studio seller webhooks use `X-X402-Signature`, `X-X402-Timestamp`, `X-X402-Event`, and `X-X402-Event-Id`. Verify `HMAC-SHA256(timestamp + "." + rawBody)` with the webhook `signing_secret`. Keep legacy raw-secret headers only as fallback for older receivers, and do not confuse the Studio signing secret with any app-internal settlement secret such as `x-x402-secret` → `X402_WEBHOOK_SECRET`.
 
 ### World AgentKit Benefits
 
