@@ -599,7 +599,7 @@
       "post": {
         "tags": ["Compute Instances"],
         "summary": "Provision a compute instance",
-        "description": "Returns a 402 challenge when no X-Payment header is supplied, or provisions an instance after payment settlement.",
+        "description": "Returns x402 and MPP 402 payment challenges when no payment credential is supplied, or provisions an instance after x402 or MPP payment settlement.",
         "requestBody": {
           "required": true,
           "content": {
@@ -613,7 +613,7 @@
                   "label": { "type": "string" },
                   "hostname": { "type": "string" },
                   "prepaid_hours": { "type": "integer" },
-                  "network": { "type": "string", "enum": ["base", "solana"] },
+                  "network": { "type": "string", "enum": ["base", "solana"], "description": "x402 payment network. MPP clients use Authorization: Payment and do not need this field." },
                   "ssh_public_key": { "type": "string" }
                 },
                 "required": ["plan", "region", "os_id"]
@@ -626,7 +626,7 @@
             "description": "Provisioning started"
           },
           "402": {
-            "description": "Payment required",
+            "description": "Payment required. x402 clients use the JSON body. MPP clients use the WWW-Authenticate: Payment header.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/X402Challenge" }
@@ -752,7 +752,7 @@
                 "type": "object",
                 "properties": {
                   "extend_hours": { "type": "integer" },
-                  "network": { "type": "string", "enum": ["base", "solana"] }
+                  "network": { "type": "string", "enum": ["base", "solana"], "description": "x402 payment network. MPP clients use Authorization: Payment and do not need this field." }
                 },
                 "required": ["extend_hours"]
               }
@@ -764,7 +764,7 @@
             "description": "Instance extended"
           },
           "402": {
-            "description": "Payment required",
+            "description": "Payment required. x402 clients use the JSON body. MPP clients use the WWW-Authenticate: Payment header.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/X402Challenge" }
