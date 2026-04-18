@@ -599,7 +599,7 @@
       "post": {
         "tags": ["Compute Instances"],
         "summary": "Provision a compute instance",
-        "description": "Returns x402 and MPP 402 payment challenges when no payment credential is supplied, or provisions an instance after x402 or MPP payment settlement.",
+        "description": "Returns x402 and MPP 402 payment challenges when no payment credential is supplied, or provisions a Vultr or DigitalOcean instance after x402 or MPP payment settlement.",
         "requestBody": {
           "required": true,
           "content": {
@@ -613,6 +613,7 @@
                   "label": { "type": "string" },
                   "hostname": { "type": "string" },
                   "prepaid_hours": { "type": "integer" },
+                  "provider": { "type": "string", "enum": ["vultr", "digitalocean"], "description": "Optional provider hint. Plan IDs with do: prefix resolve to DigitalOcean." },
                   "network": { "type": "string", "enum": ["base", "solana"], "description": "x402 payment network. MPP clients use Authorization: Payment and do not need this field." },
                   "ssh_public_key": { "type": "string" }
                 },
