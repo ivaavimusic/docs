@@ -33,6 +33,14 @@
             ]
           },
           {
+            "group": "Slayer Agent",
+            "pages": [
+              "ai-tools/slayer-ai",
+              "ai-tools/slayer-dashboard",
+              "ai-tools/slayer-marketplace"
+            ]
+          },
+          {
             "group": "Core flows",
             "pages": [
               "agentic-access/introduction",
