@@ -71,6 +71,14 @@
               "payments/webhooks",
               "payments/sdk-receipts"
             ]
+          },
+          {
+            "group": "Enterprise",
+            "pages": [
+              "enterprise/introduction",
+              "enterprise/getting-started",
+              "enterprise/revenue-splits"
+            ]
           }
         ]
       },
