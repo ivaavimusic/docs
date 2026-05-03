@@ -177,6 +177,37 @@
               "api-reference/compute-api-keys-create",
               "api-reference/compute-api-keys-delete"
             ]
+          },
+          {
+            "group": "Fundraiser Campaigns",
+            "pages": [
+              "api-reference/fundraiser-campaigns-list",
+              "api-reference/fundraiser-campaigns-create",
+              "api-reference/fundraiser-campaign-get",
+              "api-reference/fundraiser-campaign-edit"
+            ]
+          },
+          {
+            "group": "Fundraiser Contributions",
+            "pages": [
+              "api-reference/fundraiser-contributions-list",
+              "api-reference/fundraiser-contributions-submit",
+              "api-reference/fundraiser-contributions-feed"
+            ]
+          },
+          {
+            "group": "Fundraiser Comments",
+            "pages": [
+              "api-reference/fundraiser-comments-list",
+              "api-reference/fundraiser-comments-post"
+            ]
+          },
+          {
+            "group": "Fundraiser Media",
+            "pages": [
+              "api-reference/fundraiser-upload",
+              "api-reference/fundraiser-og-image"
+            ]
           }
         ]
       }

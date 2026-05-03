@@ -17,6 +17,7 @@ It covers the most important live API surfaces across the platform:
 - agent endpoint management
 - ERC-8004 prepare and finalize flows
 - Singularity Compute
+- Agentic Fundraisers
 
 ## Base domains
 
@@ -36,6 +37,9 @@ It covers the most important live API surfaces across the platform:
 | Wallet-first agent auth | signed wallet challenge |
 | Agent endpoint management | x402 payment + `X-API-Key` or owner auth |
 | ERC-8004 prepare/finalize | bearer session token from wallet auth |
+| Fundraiser read APIs | none |
+| Fundraiser contributions | x402 receipt token |
+| Fundraiser create/edit/comment | Supabase session |
 
 ## OpenAPI source
 

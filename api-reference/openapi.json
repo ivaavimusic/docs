@@ -24,7 +24,11 @@
     { "name": "Marketplace Agents", "description": "Public ERC-8004 marketplace discovery routes" },
     { "name": "Compute Catalog", "description": "Compute plans, regions, and OS catalog" },
     { "name": "Compute Instances", "description": "Provision, inspect, extend, and destroy compute instances" },
-    { "name": "Compute API Keys", "description": "API keys for compute agent access" }
+    { "name": "Compute API Keys", "description": "API keys for compute agent access" },
+    { "name": "Fundraiser Campaigns", "description": "List, view, create, and edit fundraiser campaigns" },
+    { "name": "Fundraiser Contributions", "description": "Record and list campaign contributions" },
+    { "name": "Fundraiser Comments", "description": "Campaign comment threads" },
+    { "name": "Fundraiser Media", "description": "Campaign image uploads and OG images" }
   ],
   "paths": {
     "/api/marketplace": {
@@ -774,6 +778,352 @@
           }
         }
       }
+    },
+    "/api/campaigns": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Fundraiser Campaigns"],
+        "summary": "List campaigns",
+        "description": "Returns all publicly visible fundraiser campaigns with pagination and an agent metadata block for programmatic discovery.",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 200 }, "description": "Page size" },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 }, "description": "Pagination offset" },
+          { "name": "category", "in": "query", "schema": { "type": "string", "enum": ["medical", "emergency", "education", "community", "creative", "tech", "business", "personal", "other"] }, "description": "Filter by category" },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["active", "funded", "launched", "expired"] }, "description": "Filter by status" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign list with pagination and agent metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "campaigns": { "type": "array", "items": { "$ref": "#/components/schemas/CampaignSummary" } },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" },
+                    "agent": { "$ref": "#/components/schemas/CampaignListAgentMeta" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Fundraiser Campaigns"],
+        "summary": "Create campaign",
+        "description": "Creates a new fundraiser campaign. Requires Supabase authentication.",
+        "security": [{ "supabaseAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCampaignRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Campaign created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "campaign": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "slug": { "type": "string" },
+                        "title": { "type": "string" },
+                        "url": { "type": "string", "format": "uri" },
+                        "endpoint_slug": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error" },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/api/campaigns/{slug}": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Fundraiser Campaigns"],
+        "summary": "Get campaign details",
+        "description": "Returns a single campaign with contributions and agent metadata including payment instructions for programmatic contribution.",
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Campaign slug (e.g. `my-campaign-a1b2c3d4`)" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign detail with contributions and agent payment instructions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "campaign": { "$ref": "#/components/schemas/CampaignDetail" },
+                    "contributions": { "type": "array", "items": { "$ref": "#/components/schemas/ContributionPublic" } },
+                    "agent": { "$ref": "#/components/schemas/CampaignDetailAgentMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Campaign not found" }
+        }
+      },
+      "patch": {
+        "tags": ["Fundraiser Campaigns"],
+        "summary": "Edit campaign",
+        "description": "Edit a campaign you own. Only `title`, `description`, `x_handle`, `images`, and `links` can be modified. Blocked once the campaign is `funded`, `launched`, or `expired`.",
+        "security": [{ "supabaseAuth": [] }],
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string", "minLength": 3 },
+                  "description": { "type": "string" },
+                  "x_handle": { "type": "string" },
+                  "images": { "type": "array", "items": { "type": "string", "format": "uri" }, "maxItems": 5 },
+                  "links": { "type": "array", "items": { "type": "object" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Campaign updated" },
+          "400": { "description": "Campaign is no longer editable" },
+          "401": { "description": "Not authenticated" },
+          "403": { "description": "Not the campaign owner" },
+          "404": { "description": "Campaign not found" }
+        }
+      }
+    },
+    "/api/campaigns/{slug}/contributions": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Fundraiser Contributions"],
+        "summary": "List contributions",
+        "description": "Returns up to 200 contributions for a campaign, ordered by amount (highest first). No authentication required.",
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contribution list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contributions": { "type": "array", "items": { "$ref": "#/components/schemas/ContributionPublic" } }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Campaign not found" }
+        }
+      },
+      "post": {
+        "tags": ["Fundraiser Contributions"],
+        "summary": "Submit contribution",
+        "description": "Record a contribution after a successful x402 payment. The server verifies a signed receipt JWT (from the `X-X402-Receipt-Token` response header) bound to the specific fundraiser endpoint before accepting the contribution. No separate authentication required — the receipt token is the proof of payment.",
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["receipt_token"],
+                "properties": {
+                  "receipt_token": { "type": "string", "description": "Signed x402 receipt token from the `X-X402-Receipt-Token` response header after payment" },
+                  "display_name": { "type": "string", "maxLength": 50, "description": "Public name shown in the supporters list" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contribution recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "contribution": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" }
+                      }
+                    },
+                    "campaign_status": { "type": "string", "enum": ["active", "funded"] },
+                    "fee_share_eligible": { "type": "boolean", "description": "Whether this contributor is within the first 100 unique wallets" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid receipt, campaign closed, or minimum not met ($2.50)" },
+          "404": { "description": "Campaign not found" },
+          "409": { "description": "Transaction already recorded (duplicate tx_hash)" }
+        }
+      }
+    },
+    "/api/campaigns/contributions": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Fundraiser Contributions"],
+        "summary": "Recent contributions feed",
+        "description": "Returns the 20 most recent contributions across all campaigns. Used for the live ticker display.",
+        "responses": {
+          "200": {
+            "description": "Recent contributions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contributions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "who": { "type": "string" },
+                          "amount": { "type": "number" },
+                          "campaign": { "type": "string" },
+                          "at": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/campaigns/{slug}/comments": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Fundraiser Comments"],
+        "summary": "List comments",
+        "description": "Returns up to 100 comments on a campaign, ordered newest first. No authentication required.",
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Comment list" }
+        }
+      },
+      "post": {
+        "tags": ["Fundraiser Comments"],
+        "summary": "Post comment",
+        "description": "Post a comment on a campaign. Requires Supabase authentication.",
+        "security": [{ "supabaseAuth": [] }],
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["body"],
+                "properties": {
+                  "body": { "type": "string", "minLength": 1, "maxLength": 2000, "description": "Comment text" },
+                  "display_name": { "type": "string", "maxLength": 50, "description": "Public display name" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Comment posted" },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/api/campaigns/upload": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "post": {
+        "tags": ["Fundraiser Media"],
+        "summary": "Upload campaign image",
+        "description": "Upload a campaign image. Requires authentication. Max 1 MB. Allowed types: JPEG, PNG, WebP, GIF. Validated by magic bytes, not just MIME type.",
+        "security": [{ "supabaseAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": { "type": "string", "format": "uri" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid file type or size" },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/api/og/campaign/{slug}": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Fundraiser Media"],
+        "summary": "Campaign OG image",
+        "description": "Returns a dynamically generated 1200×630 PNG Open Graph image showing campaign status, title, raised amount, progress bar, and backer count. Used for social media previews.",
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "PNG image",
+            "content": {
+              "image/png": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "404": { "description": "Campaign not found" }
+        }
+      }
     }
   },
   "components": {
@@ -832,6 +1182,132 @@
           "error": { "type": "string" },
           "message": { "type": "string" }
         }
+      },
+      "CampaignSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
+          "target_amount": { "type": "number" },
+          "raised_amount": { "type": "number" },
+          "token_ticker": { "type": "string" },
+          "fee_option": { "type": "string", "enum": ["supporters", "creator", "split"] },
+          "status": { "type": "string", "enum": ["active", "funded", "launched", "expired"] },
+          "chain": { "type": "string", "example": "solana" },
+          "deadline": { "type": "string", "format": "date-time" },
+          "contributor_count": { "type": "integer" },
+          "category": { "type": "string" },
+          "subcategory": { "type": "string" },
+          "page_url": { "type": "string", "format": "uri" },
+          "api_url": { "type": "string", "format": "uri" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CampaignDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
+          "target_amount": { "type": "number" },
+          "raised_amount": { "type": "number" },
+          "token_ticker": { "type": "string" },
+          "fee_option": { "type": "string", "enum": ["supporters", "creator", "split"] },
+          "fee_split_pct": { "type": "number" },
+          "status": { "type": "string" },
+          "chain": { "type": "string" },
+          "wallet_address": { "type": "string", "description": "Campaign escrow wallet" },
+          "deadline": { "type": "string", "format": "date-time" },
+          "contributor_count": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ContributionPublic": {
+        "type": "object",
+        "properties": {
+          "wallet_address": { "type": "string" },
+          "display_name": { "type": "string" },
+          "amount": { "type": "number" },
+          "chain": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "has_more": { "type": "boolean" }
+        }
+      },
+      "CampaignListAgentMeta": {
+        "type": "object",
+        "description": "Agent metadata for programmatic campaign discovery",
+        "properties": {
+          "description": { "type": "string" },
+          "protocol": { "type": "string", "example": "x402" },
+          "currency": { "type": "string", "example": "USDC" },
+          "list_url": { "type": "string", "format": "uri" },
+          "detail_url_pattern": { "type": "string", "example": "https://studio.x402layer.cc/api/campaigns/{slug}" },
+          "campaign_page_pattern": { "type": "string", "example": "https://studio.x402layer.cc/fundraisers/{slug}" },
+          "supports_pagination": { "type": "boolean" },
+          "supports_category_filter": { "type": "boolean" },
+          "active_count": { "type": "integer" }
+        }
+      },
+      "CampaignDetailAgentMeta": {
+        "type": "object",
+        "description": "Agent metadata with payment instructions for programmatic contribution",
+        "properties": {
+          "payment_endpoint": { "type": "string", "format": "uri", "description": "x402-compatible payment URL. Send USDC here." },
+          "accepts": { "type": "array", "items": { "type": "string" }, "example": ["solana"] },
+          "currency": { "type": "string", "example": "USDC" },
+          "protocol": { "type": "string", "example": "x402" },
+          "min_amount": { "type": "number" },
+          "status": { "type": "string" },
+          "target_amount": { "type": "number" },
+          "raised_amount": { "type": "number" },
+          "remaining": { "type": "number", "description": "USDC still needed to reach the target" },
+          "fee_share_eligible": { "type": "boolean", "description": "Whether new contributors can still earn fee-sharing" },
+          "fee_share_slots_remaining": { "type": "integer", "description": "How many of the 100 fee-share slots are still open" },
+          "campaign_url": { "type": "string", "format": "uri" },
+          "campaign_api_url": { "type": "string", "format": "uri" },
+          "contribute_api": { "type": "string", "format": "uri", "description": "POST endpoint to register the contribution after payment" },
+          "contribute_api_auth": { "type": "string", "example": "none" },
+          "receipt_header": { "type": "string", "example": "X-X402-Receipt-Token", "description": "Response header containing the signed receipt token after payment" },
+          "instructions": { "type": "string", "description": "Human-readable instructions for making a contribution" }
+        }
+      },
+      "CreateCampaignRequest": {
+        "type": "object",
+        "required": ["title", "wallet_address", "target_amount"],
+        "properties": {
+          "title": { "type": "string", "minLength": 3 },
+          "description": { "type": "string" },
+          "wallet_address": { "type": "string", "description": "Creator's Solana wallet for payouts" },
+          "target_amount": { "type": "number", "minimum": 1000, "description": "Funding target in USDC" },
+          "token_ticker": { "type": "string", "pattern": "^[A-Z0-9]{2,10}$", "description": "2–10 uppercase alphanumeric characters" },
+          "fee_option": { "type": "string", "enum": ["supporters", "creator", "split"], "default": "supporters" },
+          "fee_split_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Creator's percentage when using split" },
+          "images": { "type": "array", "items": { "type": "string", "format": "uri" }, "maxItems": 5, "description": "First image = token logo" },
+          "x_handle": { "type": "string", "description": "X/Twitter handle without @" },
+          "deadline": { "type": "string", "format": "date-time" },
+          "category": { "type": "string", "enum": ["medical", "emergency", "education", "community", "creative", "tech", "business", "personal", "other"] },
+          "bags_config_type": { "type": "string", "format": "uuid", "description": "Fee tier UUID" }
+        }
+      }
+    },
+    "securitySchemes": {
+      "supabaseAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Supabase session JWT"
       }
     }
   }
