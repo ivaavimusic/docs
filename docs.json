@@ -73,6 +73,15 @@
             ]
           },
           {
+            "group": "Agentic Fundraisers",
+            "pages": [
+              "fundraisers/introduction",
+              "fundraisers/token-launch",
+              "fundraisers/fee-distribution",
+              "fundraisers/api-reference"
+            ]
+          },
+          {
             "group": "Enterprise",
             "pages": [
               "enterprise/introduction",
