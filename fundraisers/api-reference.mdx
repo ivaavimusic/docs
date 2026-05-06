@@ -255,7 +255,7 @@ The server performs receipt-based verification:
   Requires authentication. Creates a new fundraiser campaign.
 </ParamField>
 
-For agentic creation, prefer Singularity MCP with a scoped dashboard PAT. The owner-scoped MCP tools are `list_my_campaigns`, `create_campaign`, and `update_campaign`. Endpoint API keys are intentionally not accepted for campaign creation.
+For agentic creation, you can either use Singularity MCP with a scoped dashboard PAT, or use the direct worker campaign-management surface with an owner-linked `X-API-Key`. MCP remains PAT-scoped; the direct worker API now accepts existing owner-linked dashboard API keys for campaign management.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
