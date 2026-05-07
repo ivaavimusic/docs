@@ -28,7 +28,8 @@
     { "name": "Fundraiser Campaigns", "description": "List, view, create, and edit fundraiser campaigns" },
     { "name": "Fundraiser Contributions", "description": "Record and list campaign contributions" },
     { "name": "Fundraiser Comments", "description": "Campaign comment threads" },
-    { "name": "Fundraiser Media", "description": "Campaign image uploads and OG images" }
+    { "name": "Fundraiser Media", "description": "Campaign image uploads and OG images" },
+    { "name": "Enterprise", "description": "Enterprise partner configuration, endpoint listing, revenue stats, and transaction ledger" }
   ],
   "paths": {
     "/api/marketplace": {
@@ -444,7 +445,8 @@
                   "origin_url": { "type": "string", "format": "uri" },
                   "chain": { "type": "string" },
                   "wallet_address": { "type": "string" },
-                  "price": { "type": "number" }
+                  "price": { "type": "number" },
+                  "api_schema": { "$ref": "#/components/schemas/ApiSchema", "description": "Optional API schema defining routes and parameters. Displayed to consumers on the payment page and in marketplace listings." }
                 },
                 "required": ["slug", "name", "origin_url", "chain", "wallet_address", "price"]
               }
@@ -1124,6 +1126,118 @@
           "404": { "description": "Campaign not found" }
         }
       }
+    },
+    "/api/v1/enterprise": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Enterprise"],
+        "summary": "Get partner config",
+        "description": "Returns your enterprise partner configuration including pricing overrides and revenue split percentages.",
+        "security": [{ "enterpriseApiKey": [] }],
+        "responses": {
+          "200": {
+            "description": "Partner configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "partner": { "$ref": "#/components/schemas/EnterprisePartner" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/enterprise/endpoints": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Enterprise"],
+        "summary": "List partner endpoints",
+        "description": "Returns all endpoints deployed through your enterprise program with pagination.",
+        "security": [{ "enterpriseApiKey": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "Page number" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 }, "description": "Results per page" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated endpoint list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "endpoints": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/EnterpriseEndpoint" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/EnterprisePagination" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid API key" }
+        }
+      }
+    },
+    "/api/v1/enterprise/stats": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Enterprise"],
+        "summary": "Get revenue stats",
+        "description": "Returns an aggregated revenue summary for your enterprise program including three-way split totals.",
+        "security": [{ "enterpriseApiKey": [] }],
+        "responses": {
+          "200": {
+            "description": "Revenue statistics",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EnterpriseStats" }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid API key" }
+        }
+      }
+    },
+    "/api/v1/enterprise/transactions": {
+      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "get": {
+        "tags": ["Enterprise"],
+        "summary": "List transactions",
+        "description": "Returns the full revenue ledger showing every payment and the three-way split between enterprise partner, Singularity, and infrastructure.",
+        "security": [{ "enterpriseApiKey": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "Page number" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 }, "description": "Results per page" },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["endpoint_creation", "topup", "recharge"] }, "description": "Filter by transaction type" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated transaction ledger",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transactions": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/EnterpriseTransaction" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/EnterprisePagination" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid API key" }
+        }
+      }
     }
   },
   "components": {
@@ -1139,7 +1253,8 @@
           "mode": { "type": "string" },
           "price": { "type": "number" },
           "currency": { "type": "string" },
-          "chain": { "type": "string" }
+          "chain": { "type": "string" },
+          "api_schema": { "$ref": "#/components/schemas/ApiSchema", "description": "Optional API schema describing available routes, parameters, and request bodies" }
         }
       },
       "PublicEndpoint": {
@@ -1152,7 +1267,8 @@
           "price": { "type": "number" },
           "currency": { "type": "string" },
           "wallet_address": { "type": "string" },
-          "chain": { "type": "string" }
+          "chain": { "type": "string" },
+          "api_schema": { "$ref": "#/components/schemas/ApiSchema", "description": "API schema describing available routes and parameters for this endpoint" }
         }
       },
       "X402Challenge": {
@@ -1173,7 +1289,8 @@
                 "asset": { "type": "string" }
               }
             }
-          }
+          },
+          "api_schema": { "$ref": "#/components/schemas/ApiSchema", "description": "When present, describes the API routes, parameters, and request bodies the endpoint accepts. Agents can use this to self-discover how to call the API after payment." }
         }
       },
       "ErrorResponse": {
@@ -1301,6 +1418,125 @@
           "category": { "type": "string", "enum": ["medical", "emergency", "education", "community", "creative", "tech", "business", "personal", "other"] },
           "bags_config_type": { "type": "string", "format": "uuid", "description": "Fee tier UUID" }
         }
+      },
+      "ApiSchema": {
+        "type": "object",
+        "description": "Describes the routes, parameters, and request bodies an endpoint accepts. Attached to endpoints during creation and returned in 402 challenges, marketplace listings, and public endpoint metadata.",
+        "properties": {
+          "version": { "type": "integer", "enum": [1] },
+          "baseUrl": { "type": "string", "format": "uri", "description": "Optional base URL override for the API" },
+          "routes": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ApiSchemaRoute" }
+          }
+        }
+      },
+      "ApiSchemaRoute": {
+        "type": "object",
+        "description": "A single API route with its method, path, parameters, and optional request body",
+        "properties": {
+          "path": { "type": "string", "example": "/users/{id}", "description": "Route path with optional path parameters in curly braces" },
+          "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+          "summary": { "type": "string", "description": "Human-readable name shown to consumers on the payment page" },
+          "parameters": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ApiSchemaParam" }
+          },
+          "requestBody": { "$ref": "#/components/schemas/ApiSchemaBody" },
+          "responseExample": { "type": "string", "description": "Example response JSON string" }
+        }
+      },
+      "ApiSchemaParam": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Parameter identifier" },
+          "in": { "type": "string", "enum": ["query", "path", "header"] },
+          "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
+          "required": { "type": "boolean" },
+          "description": { "type": "string", "description": "Human-readable label shown to consumers" },
+          "example": { "type": "string", "description": "Placeholder text shown in the input field" }
+        }
+      },
+      "ApiSchemaBody": {
+        "type": "object",
+        "properties": {
+          "contentType": { "type": "string", "enum": ["application/json", "multipart/form-data", "text/plain"] },
+          "fields": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ApiSchemaParam" }
+          },
+          "example": { "type": "string", "description": "Default body content shown as placeholder" }
+        }
+      },
+      "EnterprisePartner": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "endpoint_creation_fee": { "type": "number", "description": "Fee charged when agents deploy endpoints through this partner" },
+          "min_topup_amount": { "type": "number" },
+          "initial_credits": { "type": "integer", "description": "Credits granted on endpoint creation" },
+          "credits_per_dollar": { "type": "integer" },
+          "revenue_share_enterprise": { "type": "number", "description": "Partner's share (0–1)" },
+          "revenue_share_singularity": { "type": "number", "description": "Singularity's share (0–1)" },
+          "revenue_share_infra": { "type": "number", "description": "Infrastructure share (0–1)" }
+        }
+      },
+      "EnterpriseEndpoint": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "url": { "type": "string", "format": "uri", "description": "Origin URL" },
+          "chain": { "type": "string" },
+          "pricing_model": { "type": "string", "enum": ["credit", "direct"] },
+          "price_per_request": { "type": "number" },
+          "owner_credits": { "type": "integer" },
+          "is_active": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EnterpriseStats": {
+        "type": "object",
+        "properties": {
+          "total_revenue": { "type": "number" },
+          "enterprise_earned": { "type": "number" },
+          "singularity_earned": { "type": "number" },
+          "infra_reserved": { "type": "number" },
+          "pending_payout": { "type": "number" },
+          "distributed": { "type": "number" },
+          "transaction_count": { "type": "integer" },
+          "endpoint_count": { "type": "integer" }
+        }
+      },
+      "EnterpriseTransaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "payment_type": { "type": "string", "enum": ["endpoint_creation", "topup", "recharge"] },
+          "total_amount": { "type": "number" },
+          "enterprise_amount": { "type": "number" },
+          "singularity_amount": { "type": "number" },
+          "infra_amount": { "type": "number" },
+          "currency": { "type": "string" },
+          "chain": { "type": "string" },
+          "tx_hash": { "type": "string" },
+          "payer_wallet": { "type": "string" },
+          "enterprise_distributed": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EnterprisePagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "pages": { "type": "integer" }
+        }
       }
     },
     "securitySchemes": {
@@ -1308,6 +1544,12 @@
         "type": "http",
         "scheme": "bearer",
         "description": "Supabase session JWT"
+      },
+      "enterpriseApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Enterprise-Key",
+        "description": "Enterprise partner API key with `sgl_ent_` prefix. Create keys in the Enterprise Dashboard under API Keys."
       }
     }
   }

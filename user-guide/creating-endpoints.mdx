@@ -97,6 +97,37 @@ def check_api_key():
 
 > **Public Endpoints:** If you don't want to require API key validation (e.g., your API is already public), you can disable the "Require API Key" toggle when creating the endpoint. However, this means anyone who discovers your origin URL can access it without payment.
 
+## Payment Page Inputs (API Schema)
+
+You can define custom input forms that appear on your endpoint's payment page. This lets customers provide data (like a prompt, email, or configuration) when they pay for your API.
+
+### Auto-Detect from OpenAPI
+
+If your origin server has an OpenAPI or Swagger spec, x402 Studio will automatically detect it when you enter your origin URL. Detected routes are pre-populated in the form builder — you can edit or remove them.
+
+### Manual Builder
+
+Use the form builder to define routes and input fields manually:
+
+1. Click **Add Route** to add an API route (GET, POST, PUT, etc.)
+2. Give it a **Service Name** — this is what customers see
+3. Add **Input Fields** — each field becomes a form input on the payment page
+4. Set labels, placeholders, and whether the field is required
+5. Use the **Preview** toggle to see exactly what customers will see
+
+### Where the Schema Appears
+
+| Surface | What's Shown |
+| :--- | :--- |
+| **Payment page** | Interactive form with your defined inputs |
+| **Marketplace listing** | API documentation with routes and parameters |
+| **402 challenge response** | Machine-readable `api_schema` field for agents |
+| **Agentic endpoints API** | Returned in GET/list responses |
+
+<Tip>
+The schema is optional. Endpoints without a schema work exactly the same — the proxy forwards everything as-is. The schema just helps consumers understand what to send.
+</Tip>
+
 ## Testing Your Endpoint
 
 After creation, test that everything works:

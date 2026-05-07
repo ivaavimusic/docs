@@ -42,9 +42,30 @@ The server negotiates by returning `402 Payment Required` and a JSON body detail
       "maxAmountRequired": "1000000",   // Amount in lowest unit (e.g. Wei/Lamports)
       "purchaseUrl": "..."              // Human page fallback
     }
-  ]
+  ],
+  "api_schema": {                        // Optional — present when the endpoint defines routes
+    "version": 1,
+    "routes": [
+      {
+        "path": "/analyze",
+        "method": "POST",
+        "summary": "Analyze text with AI",
+        "parameters": [],
+        "requestBody": {
+          "contentType": "application/json",
+          "fields": [
+            { "name": "text", "in": "query", "type": "string", "required": true, "description": "Text to analyze" }
+          ]
+        }
+      }
+    ]
+  }
 }
 ```
+
+<Note>
+The `api_schema` field is only present when the endpoint creator has defined routes. Agents can use it to self-discover what parameters, paths, and request bodies the API accepts — no separate documentation lookup required.
+</Note>
 
 ### 3. The Authorized Request
 

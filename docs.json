@@ -208,6 +208,15 @@
               "api-reference/fundraiser-upload",
               "api-reference/fundraiser-og-image"
             ]
+          },
+          {
+            "group": "Enterprise",
+            "pages": [
+              "api-reference/enterprise-config",
+              "api-reference/enterprise-endpoints",
+              "api-reference/enterprise-stats",
+              "api-reference/enterprise-transactions"
+            ]
           }
         ]
       }

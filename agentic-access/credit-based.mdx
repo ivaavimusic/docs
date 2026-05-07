@@ -93,6 +93,7 @@ async function callCreditEndpoint(url, agentWallet) {
     if (response.status === 402) {
         // Handle Insufficient Credits
         // The body will contain the standard 402 payment challenge
+        // It may also include an api_schema field describing available routes
         const challenge = await response.json();
         console.log("Need to top up!", challenge);
         return;
