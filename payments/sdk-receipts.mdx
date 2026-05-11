@@ -64,10 +64,10 @@ Receipt tokens are standard JWTs signed with `RS256`. Public keys are served fro
 | `source_id` | string | UUID of the resource |
 | `source_slug` | string | Slug of the resource |
 | `amount` | string | Payment amount (e.g. `"1.00"`) |
-| `currency` | string | Asset symbol (e.g. `"USDC"`) |
+| `currency` | string | Asset symbol (`"USDC"` or `"USDm"`) |
 | `tx_hash` | string | On-chain transaction hash |
 | `payer_wallet` | string | Buyer wallet address |
-| `network` | string | `"base"` \| `"solana"` |
+| `network` | string | `"base"` \| `"solana"` \| `"megaeth"` |
 | `status` | string | Settlement status |
 | `iat` | number | Issued-at timestamp (Unix) |
 | `exp` | number | Expiration timestamp (Unix) |

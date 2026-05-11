@@ -5,7 +5,7 @@ description: How to connect Base and Solana wallets
 
 # Wallet Connection
 
-x402 Studio uses crypto wallets for authentication and receiving payments. Connect wallets on both Base (EVM) and Solana networks.
+x402 Studio uses crypto wallets for authentication and receiving payments. Connect wallets on Base (EVM), MegaETH (EVM), and Solana networks.
 
 ## Supported Wallets
 
@@ -15,6 +15,11 @@ x402 Studio uses crypto wallets for authentication and receiving payments. Conne
     *   MetaMask - RainbowKit modal
     *   WalletConnect - RainbowKit modal
     *   Rainbow - RainbowKit modal
+  </Card>
+  <Card title="MegaETH (EVM)">
+    *   MetaMask - RainbowKit modal (auto chain-switch to MegaETH 4326)
+    *   Coinbase Wallet - RainbowKit modal
+    *   WalletConnect - RainbowKit modal
   </Card>
   <Card title="Solana">
     *   Phantom - Native adapter
@@ -29,7 +34,7 @@ x402 Studio uses crypto wallets for authentication and receiving payments. Conne
 On any page, click the **Connect Wallet** button in the top navigation bar.
 
 ### Step 2: Choose Your Network
-Select **Base** to open the wallet selector or **Solana** to see available wallets.
+Select **Base**, **MegaETH**, or **Solana** to see available wallets. For MegaETH, the wallet auto-switches to chain ID 4326.
 
 ### Step 3: Approve the Connection
 Your wallet will ask you to connect and sign a message to prove ownership. No transaction, no gas fees!
@@ -60,4 +65,4 @@ Make sure your wallet extension is installed and unlocked. Try refreshing the pa
 Look for a popup in your wallet that may be hidden. Some wallets require manual approval.
 
 ### Wrong network?
-Open your wallet, switch to Base Mainnet or Solana Mainnet, then reconnect.
+Open your wallet, switch to Base Mainnet, MegaETH Mainnet, or Solana Mainnet, then reconnect.
