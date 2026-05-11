@@ -11,40 +11,157 @@
     }
   ],
   "tags": [
-    { "name": "Marketplace", "description": "Public discovery and listing lookup" },
-    { "name": "Public Endpoints", "description": "Public endpoint metadata and hosted checkout context" },
-    { "name": "Public Payment Links", "description": "Hosted public payment-link lookup" },
-    { "name": "Payments", "description": "Hosted x402 payment challenge routes" },
-    { "name": "Receipts", "description": "Signed receipt lookup and verification helpers" },
-    { "name": "Ratings", "description": "Public listing ratings and authenticated rating actions" },
-    { "name": "Webhooks", "description": "Seller webhook management API" },
-    { "name": "Agent Auth", "description": "Wallet-first challenge and verification routes" },
-    { "name": "Agent Endpoints", "description": "Create, read, top up, and delete agent endpoints" },
-    { "name": "ERC-8004", "description": "Agent registry and registration lifecycle routes" },
-    { "name": "Marketplace Agents", "description": "Public ERC-8004 marketplace discovery routes" },
-    { "name": "Compute Catalog", "description": "Compute plans, regions, and OS catalog" },
-    { "name": "Compute Instances", "description": "Provision, inspect, extend, and destroy compute instances" },
-    { "name": "Compute API Keys", "description": "API keys for compute agent access" },
-    { "name": "Fundraiser Campaigns", "description": "List, view, create, and edit fundraiser campaigns" },
-    { "name": "Fundraiser Contributions", "description": "Record and list campaign contributions" },
-    { "name": "Fundraiser Comments", "description": "Campaign comment threads" },
-    { "name": "Fundraiser Media", "description": "Campaign image uploads and OG images" },
-    { "name": "Enterprise", "description": "Enterprise partner configuration, endpoint listing, revenue stats, and transaction ledger" }
+    {
+      "name": "Marketplace",
+      "description": "Public discovery and listing lookup"
+    },
+    {
+      "name": "Public Endpoints",
+      "description": "Public endpoint metadata and hosted checkout context"
+    },
+    {
+      "name": "Public Payment Links",
+      "description": "Hosted public payment-link lookup"
+    },
+    {
+      "name": "Payments",
+      "description": "Hosted x402 payment challenge routes"
+    },
+    {
+      "name": "Receipts",
+      "description": "Signed receipt lookup and verification helpers"
+    },
+    {
+      "name": "Ratings",
+      "description": "Public listing ratings and authenticated rating actions"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Seller webhook management API"
+    },
+    {
+      "name": "Agent Auth",
+      "description": "Wallet-first challenge and verification routes"
+    },
+    {
+      "name": "Agent Endpoints",
+      "description": "Create, read, top up, and delete agent endpoints"
+    },
+    {
+      "name": "ERC-8004",
+      "description": "Agent registry and registration lifecycle routes"
+    },
+    {
+      "name": "Marketplace Agents",
+      "description": "Public ERC-8004 marketplace discovery routes"
+    },
+    {
+      "name": "Compute Catalog",
+      "description": "Compute plans, regions, and OS catalog"
+    },
+    {
+      "name": "Compute Instances",
+      "description": "Provision, inspect, extend, and destroy compute instances"
+    },
+    {
+      "name": "Compute API Keys",
+      "description": "API keys for compute agent access"
+    },
+    {
+      "name": "Fundraiser Campaigns",
+      "description": "List, view, create, and edit fundraiser campaigns"
+    },
+    {
+      "name": "Fundraiser Contributions",
+      "description": "Record and list campaign contributions"
+    },
+    {
+      "name": "Fundraiser Comments",
+      "description": "Campaign comment threads"
+    },
+    {
+      "name": "Fundraiser Media",
+      "description": "Campaign image uploads and OG images"
+    },
+    {
+      "name": "Enterprise",
+      "description": "Enterprise partner configuration, endpoint listing, revenue stats, and transaction ledger"
+    }
   ],
   "paths": {
     "/api/marketplace": {
       "get": {
-        "tags": ["Marketplace"],
+        "tags": [
+          "Marketplace"
+        ],
         "summary": "Browse marketplace listings",
         "description": "Lists public endpoints, products, and agentic listings with optional filters.",
         "parameters": [
-          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["endpoint", "agentic", "product", "all"] } },
-          { "name": "chain", "in": "query", "schema": { "type": "string", "enum": ["base", "solana"] } },
-          { "name": "mode", "in": "query", "schema": { "type": "string", "enum": ["direct", "credits"] } },
-          { "name": "category", "in": "query", "schema": { "type": "string" } },
-          { "name": "search", "in": "query", "schema": { "type": "string" } },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "endpoint",
+                "agentic",
+                "product",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "base",
+                "solana"
+              ]
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "credits"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -56,12 +173,22 @@
                   "properties": {
                     "listings": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/Listing" }
+                      "items": {
+                        "$ref": "#/components/schemas/Listing"
+                      }
                     },
-                    "total": { "type": "integer" },
-                    "limit": { "type": "integer" },
-                    "offset": { "type": "integer" },
-                    "hasMore": { "type": "boolean" }
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    }
                   }
                 }
               }
@@ -72,14 +199,18 @@
     },
     "/api/public/endpoints/{slug}": {
       "get": {
-        "tags": ["Public Endpoints"],
+        "tags": [
+          "Public Endpoints"
+        ],
         "summary": "Get public endpoint payment metadata",
         "parameters": [
           {
             "name": "slug",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -87,7 +218,9 @@
             "description": "Endpoint metadata",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/PublicEndpoint" }
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEndpoint"
+                }
               }
             }
           },
@@ -95,7 +228,9 @@
             "description": "Endpoint not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -104,14 +239,18 @@
     },
     "/api/public/endpoints/{slug}/credits": {
       "get": {
-        "tags": ["Public Endpoints"],
+        "tags": [
+          "Public Endpoints"
+        ],
         "summary": "Get public credit packs for an endpoint",
         "parameters": [
           {
             "name": "slug",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -123,14 +262,19 @@
     },
     "/api/public/payment-links/{id}": {
       "get": {
-        "tags": ["Public Payment Links"],
+        "tags": [
+          "Public Payment Links"
+        ],
         "summary": "Get public payment link details",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -145,19 +289,28 @@
     },
     "/e/{slug}": {
       "get": {
-        "tags": ["Payments"],
+        "tags": [
+          "Payments"
+        ],
         "summary": "Access a paid endpoint or return an x402 challenge",
         "parameters": [
           {
             "name": "slug",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "action",
             "in": "query",
-            "schema": { "type": "string", "enum": ["purchase"] }
+            "schema": {
+              "type": "string",
+              "enum": [
+                "purchase"
+              ]
+            }
           }
         ],
         "responses": {
@@ -168,7 +321,9 @@
             "description": "Payment required",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+                "schema": {
+                  "$ref": "#/components/schemas/X402Challenge"
+                }
               }
             }
           }
@@ -177,14 +332,18 @@
     },
     "/p/{slug}": {
       "get": {
-        "tags": ["Payments"],
+        "tags": [
+          "Payments"
+        ],
         "summary": "Access a paid product or return an x402 challenge",
         "parameters": [
           {
             "name": "slug",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -195,7 +354,9 @@
             "description": "Payment required",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+                "schema": {
+                  "$ref": "#/components/schemas/X402Challenge"
+                }
               }
             }
           }
@@ -204,14 +365,18 @@
     },
     "/api/receipts/{token}": {
       "get": {
-        "tags": ["Receipts"],
+        "tags": [
+          "Receipts"
+        ],
         "summary": "Resolve a signed payment receipt token",
         "parameters": [
           {
             "name": "token",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -229,11 +394,27 @@
     },
     "/api/ratings": {
       "get": {
-        "tags": ["Ratings"],
+        "tags": [
+          "Ratings"
+        ],
         "summary": "List ratings for an endpoint or product",
         "parameters": [
-          { "name": "endpoint_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
-          { "name": "product_id", "in": "query", "schema": { "type": "string", "format": "uuid" } }
+          {
+            "name": "endpoint_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -242,7 +423,9 @@
         }
       },
       "post": {
-        "tags": ["Ratings"],
+        "tags": [
+          "Ratings"
+        ],
         "summary": "Create or update a rating",
         "requestBody": {
           "required": true,
@@ -251,12 +434,26 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "endpoint_id": { "type": "string", "format": "uuid" },
-                  "product_id": { "type": "string", "format": "uuid" },
-                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
-                  "review": { "type": "string" }
+                  "endpoint_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "review": {
+                    "type": "string"
+                  }
                 },
-                "required": ["rating"]
+                "required": [
+                  "rating"
+                ]
               }
             }
           }
@@ -271,10 +468,20 @@
         }
       },
       "delete": {
-        "tags": ["Ratings"],
+        "tags": [
+          "Ratings"
+        ],
         "summary": "Delete a rating",
         "parameters": [
-          { "name": "id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -285,7 +492,9 @@
     },
     "/api/webhooks": {
       "get": {
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "summary": "List seller webhooks",
         "responses": {
           "200": {
@@ -294,7 +503,9 @@
         }
       },
       "post": {
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "summary": "Create seller webhook",
         "requestBody": {
           "required": true,
@@ -303,13 +514,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "url": { "type": "string", "format": "uri" },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
                   "events": {
                     "type": "array",
-                    "items": { "type": "string" }
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 },
-                "required": ["url"]
+                "required": [
+                  "url"
+                ]
               }
             }
           }
@@ -323,14 +541,19 @@
     },
     "/api/webhooks/{id}": {
       "patch": {
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "summary": "Update seller webhook",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -340,14 +563,19 @@
         }
       },
       "delete": {
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "summary": "Delete seller webhook",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -359,7 +587,9 @@
     },
     "/agent/auth/challenge": {
       "post": {
-        "tags": ["Agent Auth"],
+        "tags": [
+          "Agent Auth"
+        ],
         "summary": "Request a wallet-auth challenge",
         "requestBody": {
           "required": true,
@@ -368,11 +598,21 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "chain": { "type": "string" },
-                  "walletAddress": { "type": "string" },
-                  "action": { "type": "string" }
+                  "chain": {
+                    "type": "string"
+                  },
+                  "walletAddress": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
                 },
-                "required": ["chain", "walletAddress", "action"]
+                "required": [
+                  "chain",
+                  "walletAddress",
+                  "action"
+                ]
               }
             }
           }
@@ -386,7 +626,9 @@
     },
     "/agent/auth/verify": {
       "post": {
-        "tags": ["Agent Auth"],
+        "tags": [
+          "Agent Auth"
+        ],
         "summary": "Verify a wallet-auth challenge",
         "requestBody": {
           "required": true,
@@ -395,12 +637,25 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "chain": { "type": "string" },
-                  "walletAddress": { "type": "string" },
-                  "nonce": { "type": "string" },
-                  "signature": { "type": "string" }
+                  "chain": {
+                    "type": "string"
+                  },
+                  "walletAddress": {
+                    "type": "string"
+                  },
+                  "nonce": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "type": "string"
+                  }
                 },
-                "required": ["chain", "walletAddress", "nonce", "signature"]
+                "required": [
+                  "chain",
+                  "walletAddress",
+                  "nonce",
+                  "signature"
+                ]
               }
             }
           }
@@ -414,14 +669,18 @@
     },
     "/agent/endpoints": {
       "get": {
-        "tags": ["Agent Endpoints"],
+        "tags": [
+          "Agent Endpoints"
+        ],
         "summary": "Get agent endpoint status",
         "parameters": [
           {
             "name": "slug",
             "in": "query",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -431,7 +690,9 @@
         }
       },
       "post": {
-        "tags": ["Agent Endpoints"],
+        "tags": [
+          "Agent Endpoints"
+        ],
         "summary": "Create agent endpoint",
         "requestBody": {
           "required": true,
@@ -440,15 +701,38 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "slug": { "type": "string" },
-                  "name": { "type": "string" },
-                  "origin_url": { "type": "string", "format": "uri" },
-                  "chain": { "type": "string" },
-                  "wallet_address": { "type": "string" },
-                  "price": { "type": "number" },
-                  "api_schema": { "$ref": "#/components/schemas/ApiSchema", "description": "Optional API schema defining routes and parameters. Displayed to consumers on the payment page and in marketplace listings." }
+                  "slug": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "origin_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "chain": {
+                    "type": "string"
+                  },
+                  "wallet_address": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  },
+                  "api_schema": {
+                    "$ref": "#/components/schemas/ApiSchema",
+                    "description": "Optional API schema defining routes and parameters. Displayed to consumers on the payment page and in marketplace listings."
+                  }
                 },
-                "required": ["slug", "name", "origin_url", "chain", "wallet_address", "price"]
+                "required": [
+                  "slug",
+                  "name",
+                  "origin_url",
+                  "chain",
+                  "wallet_address",
+                  "price"
+                ]
               }
             }
           }
@@ -463,14 +747,18 @@
         }
       },
       "put": {
-        "tags": ["Agent Endpoints"],
+        "tags": [
+          "Agent Endpoints"
+        ],
         "summary": "Top up an agent endpoint",
         "parameters": [
           {
             "name": "slug",
             "in": "query",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -480,14 +768,18 @@
         }
       },
       "delete": {
-        "tags": ["Agent Endpoints"],
+        "tags": [
+          "Agent Endpoints"
+        ],
         "summary": "Delete an agent endpoint",
         "parameters": [
           {
             "name": "slug",
             "in": "query",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -499,7 +791,9 @@
     },
     "/agent/erc8004/registry": {
       "get": {
-        "tags": ["ERC-8004"],
+        "tags": [
+          "ERC-8004"
+        ],
         "summary": "Get ERC-8004 registry information",
         "responses": {
           "200": {
@@ -510,7 +804,9 @@
     },
     "/agent/erc8004/prepare": {
       "post": {
-        "tags": ["ERC-8004"],
+        "tags": [
+          "ERC-8004"
+        ],
         "summary": "Prepare ERC-8004 registration",
         "responses": {
           "200": {
@@ -521,7 +817,9 @@
     },
     "/agent/erc8004/finalize": {
       "post": {
-        "tags": ["ERC-8004"],
+        "tags": [
+          "ERC-8004"
+        ],
         "summary": "Finalize ERC-8004 registration",
         "responses": {
           "200": {
@@ -532,12 +830,34 @@
     },
     "/api/marketplace/agents": {
       "get": {
-        "tags": ["Marketplace Agents"],
+        "tags": [
+          "Marketplace Agents"
+        ],
         "summary": "List public ERC-8004 marketplace agents",
         "parameters": [
-          { "name": "network", "in": "query", "schema": { "type": "string" } },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+          {
+            "name": "network",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -548,12 +868,33 @@
     },
     "/api/marketplace/agents/{id}": {
       "get": {
-        "tags": ["Marketplace Agents"],
+        "tags": [
+          "Marketplace Agents"
+        ],
         "summary": "Get a single public marketplace agent",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "network", "in": "query", "schema": { "type": "string" } },
-          { "name": "contract", "in": "query", "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "network",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contract",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -567,43 +908,78 @@
     },
     "/compute/plans": {
       "get": {
-        "tags": ["Compute Catalog"],
+        "tags": [
+          "Compute Catalog"
+        ],
         "summary": "List compute plans",
         "parameters": [
-          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["vps", "vhp", "vdc", "vcg"] } }
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "vps",
+                "vhp",
+                "vdc",
+                "vcg"
+              ]
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Compute plans"
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/regions": {
       "get": {
-        "tags": ["Compute Catalog"],
+        "tags": [
+          "Compute Catalog"
+        ],
         "summary": "List compute regions",
         "responses": {
           "200": {
             "description": "Available compute regions"
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/os": {
       "get": {
-        "tags": ["Compute Catalog"],
+        "tags": [
+          "Compute Catalog"
+        ],
         "summary": "List compute operating systems",
         "responses": {
           "200": {
             "description": "Available OS options"
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/provision": {
       "post": {
-        "tags": ["Compute Instances"],
+        "tags": [
+          "Compute Instances"
+        ],
         "summary": "Provision a compute instance",
         "description": "Returns x402 and MPP 402 payment challenges when no payment credential is supplied, or provisions a Vultr or DigitalOcean instance after x402 or MPP payment settlement.",
         "requestBody": {
@@ -613,17 +989,49 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "plan": { "type": "string" },
-                  "region": { "type": "string" },
-                  "os_id": { "type": "integer" },
-                  "label": { "type": "string" },
-                  "hostname": { "type": "string" },
-                  "prepaid_hours": { "type": "integer" },
-                  "provider": { "type": "string", "enum": ["vultr", "digitalocean"], "description": "Optional provider hint. Plan IDs with do: prefix resolve to DigitalOcean." },
-                  "network": { "type": "string", "enum": ["base", "solana"], "description": "x402 payment network. MPP clients use Authorization: Payment and do not need this field." },
-                  "ssh_public_key": { "type": "string" }
+                  "plan": {
+                    "type": "string"
+                  },
+                  "region": {
+                    "type": "string"
+                  },
+                  "os_id": {
+                    "type": "integer"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "hostname": {
+                    "type": "string"
+                  },
+                  "prepaid_hours": {
+                    "type": "integer"
+                  },
+                  "provider": {
+                    "type": "string",
+                    "enum": [
+                      "vultr",
+                      "digitalocean"
+                    ],
+                    "description": "Optional provider hint. Plan IDs with do: prefix resolve to DigitalOcean."
+                  },
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "base",
+                      "solana"
+                    ],
+                    "description": "x402 payment network. MPP clients use Authorization: Payment and do not need this field."
+                  },
+                  "ssh_public_key": {
+                    "type": "string"
+                  }
                 },
-                "required": ["plan", "region", "os_id"]
+                "required": [
+                  "plan",
+                  "region",
+                  "os_id"
+                ]
               }
             }
           }
@@ -636,16 +1044,25 @@
             "description": "Payment required. x402 clients use the JSON body. MPP clients use the WWW-Authenticate: Payment header.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+                "schema": {
+                  "$ref": "#/components/schemas/X402Challenge"
+                }
               }
             }
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/api-keys": {
       "get": {
-        "tags": ["Compute API Keys"],
+        "tags": [
+          "Compute API Keys"
+        ],
         "summary": "List compute API keys",
         "responses": {
           "200": {
@@ -654,7 +1071,9 @@
         }
       },
       "post": {
-        "tags": ["Compute API Keys"],
+        "tags": [
+          "Compute API Keys"
+        ],
         "summary": "Create compute API key",
         "requestBody": {
           "required": false,
@@ -663,7 +1082,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "label": { "type": "string" }
+                  "label": {
+                    "type": "string"
+                  }
                 }
               }
             }
@@ -674,42 +1095,85 @@
             "description": "API key created"
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/api-keys/{id}": {
       "delete": {
-        "tags": ["Compute API Keys"],
+        "tags": [
+          "Compute API Keys"
+        ],
         "summary": "Revoke compute API key",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "API key revoked"
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/instances": {
       "get": {
-        "tags": ["Compute Instances"],
+        "tags": [
+          "Compute Instances"
+        ],
         "summary": "List compute instances",
         "parameters": [
-          { "name": "wallet", "in": "query", "schema": { "type": "string" } }
+          {
+            "name": "wallet",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Compute instances"
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/instances/{id}": {
       "get": {
-        "tags": ["Compute Instances"],
+        "tags": [
+          "Compute Instances"
+        ],
         "summary": "Get compute instance",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -718,38 +1182,78 @@
         }
       },
       "delete": {
-        "tags": ["Compute Instances"],
+        "tags": [
+          "Compute Instances"
+        ],
         "summary": "Destroy compute instance",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Instance destroyed"
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/instances/{id}/password": {
       "post": {
-        "tags": ["Compute Instances"],
+        "tags": [
+          "Compute Instances"
+        ],
         "summary": "Retrieve one-time instance password",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "One-time password access"
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/compute/instances/{id}/extend": {
       "post": {
-        "tags": ["Compute Instances"],
+        "tags": [
+          "Compute Instances"
+        ],
         "summary": "Extend compute instance expiry",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -758,10 +1262,21 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "extend_hours": { "type": "integer" },
-                  "network": { "type": "string", "enum": ["base", "solana"], "description": "x402 payment network. MPP clients use Authorization: Payment and do not need this field." }
+                  "extend_hours": {
+                    "type": "integer"
+                  },
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "base",
+                      "solana"
+                    ],
+                    "description": "x402 payment network. MPP clients use Authorization: Payment and do not need this field."
+                  }
                 },
-                "required": ["extend_hours"]
+                "required": [
+                  "extend_hours"
+                ]
               }
             }
           }
@@ -774,24 +1289,85 @@
             "description": "Payment required. x402 clients use the JSON body. MPP clients use the WWW-Authenticate: Payment header.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+                "schema": {
+                  "$ref": "#/components/schemas/X402Challenge"
+                }
               }
             }
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
     },
     "/api/campaigns": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Fundraiser Campaigns"],
+        "tags": [
+          "Fundraiser Campaigns"
+        ],
         "summary": "List campaigns",
         "description": "Returns all publicly visible fundraiser campaigns with pagination and an agent metadata block for programmatic discovery.",
         "parameters": [
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 200 }, "description": "Page size" },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 }, "description": "Pagination offset" },
-          { "name": "category", "in": "query", "schema": { "type": "string", "enum": ["medical", "emergency", "education", "community", "creative", "tech", "business", "personal", "other"] }, "description": "Filter by category" },
-          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["active", "funded", "launched", "expired"] }, "description": "Filter by status" }
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            },
+            "description": "Page size"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Pagination offset"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "medical",
+                "emergency",
+                "education",
+                "community",
+                "creative",
+                "tech",
+                "business",
+                "personal",
+                "other"
+              ]
+            },
+            "description": "Filter by category"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "funded",
+                "launched",
+                "expired"
+              ]
+            },
+            "description": "Filter by status"
+          }
         ],
         "responses": {
           "200": {
@@ -801,9 +1377,18 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "campaigns": { "type": "array", "items": { "$ref": "#/components/schemas/CampaignSummary" } },
-                    "pagination": { "$ref": "#/components/schemas/Pagination" },
-                    "agent": { "$ref": "#/components/schemas/CampaignListAgentMeta" }
+                    "campaigns": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CampaignSummary"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    },
+                    "agent": {
+                      "$ref": "#/components/schemas/CampaignListAgentMeta"
+                    }
                   }
                 }
               }
@@ -812,15 +1397,23 @@
         }
       },
       "post": {
-        "tags": ["Fundraiser Campaigns"],
+        "tags": [
+          "Fundraiser Campaigns"
+        ],
         "summary": "Create campaign",
         "description": "Creates a new fundraiser campaign. Requires Supabase authentication.",
-        "security": [{ "supabaseAuth": [] }],
+        "security": [
+          {
+            "supabaseAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCampaignRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateCampaignRequest"
+              }
             }
           }
         },
@@ -832,15 +1425,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "campaign": {
                       "type": "object",
                       "properties": {
-                        "id": { "type": "string", "format": "uuid" },
-                        "slug": { "type": "string" },
-                        "title": { "type": "string" },
-                        "url": { "type": "string", "format": "uri" },
-                        "endpoint_slug": { "type": "string" }
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "endpoint_slug": {
+                          "type": "string"
+                        }
                       }
                     }
                   }
@@ -848,19 +1455,37 @@
               }
             }
           },
-          "400": { "description": "Validation error" },
-          "401": { "description": "Not authenticated" }
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
         }
       }
     },
     "/api/campaigns/{slug}": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Fundraiser Campaigns"],
+        "tags": [
+          "Fundraiser Campaigns"
+        ],
         "summary": "Get campaign details",
         "description": "Returns a single campaign with contributions and agent metadata including payment instructions for programmatic contribution.",
         "parameters": [
-          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Campaign slug (e.g. `my-campaign-a1b2c3d4`)" }
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Campaign slug (e.g. `my-campaign-a1b2c3d4`)"
+          }
         ],
         "responses": {
           "200": {
@@ -870,24 +1495,48 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "campaign": { "$ref": "#/components/schemas/CampaignDetail" },
-                    "contributions": { "type": "array", "items": { "$ref": "#/components/schemas/ContributionPublic" } },
-                    "agent": { "$ref": "#/components/schemas/CampaignDetailAgentMeta" }
+                    "campaign": {
+                      "$ref": "#/components/schemas/CampaignDetail"
+                    },
+                    "contributions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ContributionPublic"
+                      }
+                    },
+                    "agent": {
+                      "$ref": "#/components/schemas/CampaignDetailAgentMeta"
+                    }
                   }
                 }
               }
             }
           },
-          "404": { "description": "Campaign not found" }
+          "404": {
+            "description": "Campaign not found"
+          }
         }
       },
       "patch": {
-        "tags": ["Fundraiser Campaigns"],
+        "tags": [
+          "Fundraiser Campaigns"
+        ],
         "summary": "Edit campaign",
         "description": "Edit a campaign you own. Only `title`, `description`, `x_handle`, `images`, and `links` can be modified. Blocked once the campaign is `funded`, `launched`, or `expired`.",
-        "security": [{ "supabaseAuth": [] }],
+        "security": [
+          {
+            "supabaseAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "content": {
@@ -895,33 +1544,75 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "title": { "type": "string", "minLength": 3 },
-                  "description": { "type": "string" },
-                  "x_handle": { "type": "string" },
-                  "images": { "type": "array", "items": { "type": "string", "format": "uri" }, "maxItems": 5 },
-                  "links": { "type": "array", "items": { "type": "object" } }
+                  "title": {
+                    "type": "string",
+                    "minLength": 3
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "x_handle": {
+                    "type": "string"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "maxItems": 5
+                  },
+                  "links": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Campaign updated" },
-          "400": { "description": "Campaign is no longer editable" },
-          "401": { "description": "Not authenticated" },
-          "403": { "description": "Not the campaign owner" },
-          "404": { "description": "Campaign not found" }
+          "200": {
+            "description": "Campaign updated"
+          },
+          "400": {
+            "description": "Campaign is no longer editable"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not the campaign owner"
+          },
+          "404": {
+            "description": "Campaign not found"
+          }
         }
       }
     },
     "/api/campaigns/{slug}/contributions": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Fundraiser Contributions"],
+        "tags": [
+          "Fundraiser Contributions"
+        ],
         "summary": "List contributions",
         "description": "Returns up to 200 contributions for a campaign, ordered by amount (highest first). No authentication required.",
         "parameters": [
-          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -931,21 +1622,37 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "contributions": { "type": "array", "items": { "$ref": "#/components/schemas/ContributionPublic" } }
+                    "contributions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ContributionPublic"
+                      }
+                    }
                   }
                 }
               }
             }
           },
-          "404": { "description": "Campaign not found" }
+          "404": {
+            "description": "Campaign not found"
+          }
         }
       },
       "post": {
-        "tags": ["Fundraiser Contributions"],
+        "tags": [
+          "Fundraiser Contributions"
+        ],
         "summary": "Submit contribution",
-        "description": "Record a contribution after a successful x402 payment. The server verifies a signed receipt JWT (from the `X-X402-Receipt-Token` response header) bound to the specific fundraiser endpoint before accepting the contribution. No separate authentication required — the receipt token is the proof of payment.",
+        "description": "Record a contribution after a successful x402 payment. The server verifies a signed receipt JWT (from the `X-X402-Receipt-Token` response header) bound to the specific fundraiser endpoint before accepting the contribution. No separate authentication required \u2014 the receipt token is the proof of payment.",
         "parameters": [
-          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -953,10 +1660,19 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["receipt_token"],
+                "required": [
+                  "receipt_token"
+                ],
                 "properties": {
-                  "receipt_token": { "type": "string", "description": "Signed x402 receipt token from the `X-X402-Receipt-Token` response header after payment" },
-                  "display_name": { "type": "string", "maxLength": 50, "description": "Public name shown in the supporters list" }
+                  "receipt_token": {
+                    "type": "string",
+                    "description": "Signed x402 receipt token from the `X-X402-Receipt-Token` response header after payment"
+                  },
+                  "display_name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Public name shown in the supporters list"
+                  }
                 }
               }
             }
@@ -970,30 +1686,56 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "contribution": {
                       "type": "object",
                       "properties": {
-                        "id": { "type": "string", "format": "uuid" }
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
                       }
                     },
-                    "campaign_status": { "type": "string", "enum": ["active", "funded"] },
-                    "fee_share_eligible": { "type": "boolean", "description": "Whether this contributor is within the first 100 unique wallets" }
+                    "campaign_status": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "funded"
+                      ]
+                    },
+                    "fee_share_eligible": {
+                      "type": "boolean",
+                      "description": "Whether this contributor is within the first 100 unique wallets"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "description": "Invalid receipt, campaign closed, or minimum not met ($2.50)" },
-          "404": { "description": "Campaign not found" },
-          "409": { "description": "Transaction already recorded (duplicate tx_hash)" }
+          "400": {
+            "description": "Invalid receipt, campaign closed, or minimum not met ($2.50)"
+          },
+          "404": {
+            "description": "Campaign not found"
+          },
+          "409": {
+            "description": "Transaction already recorded (duplicate tx_hash)"
+          }
         }
       }
     },
     "/api/campaigns/contributions": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Fundraiser Contributions"],
+        "tags": [
+          "Fundraiser Contributions"
+        ],
         "summary": "Recent contributions feed",
         "description": "Returns the 20 most recent contributions across all campaigns. Used for the live ticker display.",
         "responses": {
@@ -1009,10 +1751,19 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "who": { "type": "string" },
-                          "amount": { "type": "number" },
-                          "campaign": { "type": "string" },
-                          "at": { "type": "string", "format": "date-time" }
+                          "who": {
+                            "type": "string"
+                          },
+                          "amount": {
+                            "type": "number"
+                          },
+                          "campaign": {
+                            "type": "string"
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
                         }
                       }
                     }
@@ -1025,25 +1776,53 @@
       }
     },
     "/api/campaigns/{slug}/comments": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Fundraiser Comments"],
+        "tags": [
+          "Fundraiser Comments"
+        ],
         "summary": "List comments",
         "description": "Returns up to 100 comments on a campaign, ordered newest first. No authentication required.",
         "parameters": [
-          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Comment list" }
+          "200": {
+            "description": "Comment list"
+          }
         }
       },
       "post": {
-        "tags": ["Fundraiser Comments"],
+        "tags": [
+          "Fundraiser Comments"
+        ],
         "summary": "Post comment",
         "description": "Post a comment on a campaign. Requires Supabase authentication.",
-        "security": [{ "supabaseAuth": [] }],
+        "security": [
+          {
+            "supabaseAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -1051,28 +1830,53 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["body"],
+                "required": [
+                  "body"
+                ],
                 "properties": {
-                  "body": { "type": "string", "minLength": 1, "maxLength": 2000, "description": "Comment text" },
-                  "display_name": { "type": "string", "maxLength": 50, "description": "Public display name" }
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "description": "Comment text"
+                  },
+                  "display_name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Public display name"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Comment posted" },
-          "401": { "description": "Not authenticated" }
+          "200": {
+            "description": "Comment posted"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
         }
       }
     },
     "/api/campaigns/upload": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "post": {
-        "tags": ["Fundraiser Media"],
+        "tags": [
+          "Fundraiser Media"
+        ],
         "summary": "Upload campaign image",
         "description": "Upload a campaign image. Requires authentication. Max 1 MB. Allowed types: JPEG, PNG, WebP, GIF. Validated by magic bytes, not just MIME type.",
-        "security": [{ "supabaseAuth": [] }],
+        "security": [
+          {
+            "supabaseAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1080,7 +1884,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "file": { "type": "string", "format": "binary" }
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
                 }
               }
             }
@@ -1094,46 +1901,81 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "url": { "type": "string", "format": "uri" }
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "description": "Invalid file type or size" },
-          "401": { "description": "Not authenticated" }
+          "400": {
+            "description": "Invalid file type or size"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
         }
       }
     },
     "/api/og/campaign/{slug}": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Fundraiser Media"],
+        "tags": [
+          "Fundraiser Media"
+        ],
         "summary": "Campaign OG image",
-        "description": "Returns a dynamically generated 1200×630 PNG Open Graph image showing campaign status, title, raised amount, progress bar, and backer count. Used for social media previews.",
+        "description": "Returns a dynamically generated 1200\u00d7630 PNG Open Graph image showing campaign status, title, raised amount, progress bar, and backer count. Used for social media previews.",
         "parameters": [
-          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "PNG image",
             "content": {
               "image/png": {
-                "schema": { "type": "string", "format": "binary" }
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
-          "404": { "description": "Campaign not found" }
+          "404": {
+            "description": "Campaign not found"
+          }
         }
       }
     },
     "/api/v1/enterprise": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Enterprise"],
+        "tags": [
+          "Enterprise"
+        ],
         "summary": "Get partner config",
         "description": "Returns your enterprise partner configuration including pricing overrides and revenue split percentages.",
-        "security": [{ "enterpriseApiKey": [] }],
+        "security": [
+          {
+            "enterpriseApiKey": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Partner configuration",
@@ -1142,26 +1984,64 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "partner": { "$ref": "#/components/schemas/EnterprisePartner" }
+                    "partner": {
+                      "$ref": "#/components/schemas/EnterprisePartner"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Missing or invalid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       }
     },
     "/api/v1/enterprise/endpoints": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Enterprise"],
+        "tags": [
+          "Enterprise"
+        ],
         "summary": "List partner endpoints",
         "description": "Returns all endpoints deployed through your enterprise program with pagination.",
-        "security": [{ "enterpriseApiKey": [] }],
+        "security": [
+          {
+            "enterpriseApiKey": []
+          }
+        ],
         "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "Page number" },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 }, "description": "Results per page" }
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            },
+            "description": "Results per page"
+          }
         ],
         "responses": {
           "200": {
@@ -1173,49 +2053,108 @@
                   "properties": {
                     "endpoints": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/EnterpriseEndpoint" }
+                      "items": {
+                        "$ref": "#/components/schemas/EnterpriseEndpoint"
+                      }
                     },
-                    "pagination": { "$ref": "#/components/schemas/EnterprisePagination" }
+                    "pagination": {
+                      "$ref": "#/components/schemas/EnterprisePagination"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Missing or invalid API key" }
+          "401": {
+            "description": "Missing or invalid API key"
+          }
         }
       }
     },
     "/api/v1/enterprise/stats": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Enterprise"],
+        "tags": [
+          "Enterprise"
+        ],
         "summary": "Get revenue stats",
         "description": "Returns an aggregated revenue summary for your enterprise program including three-way split totals.",
-        "security": [{ "enterpriseApiKey": [] }],
+        "security": [
+          {
+            "enterpriseApiKey": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Revenue statistics",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/EnterpriseStats" }
+                "schema": {
+                  "$ref": "#/components/schemas/EnterpriseStats"
+                }
               }
             }
           },
-          "401": { "description": "Missing or invalid API key" }
+          "401": {
+            "description": "Missing or invalid API key"
+          }
         }
       }
     },
     "/api/v1/enterprise/transactions": {
-      "servers": [{ "url": "https://studio.x402layer.cc" }],
+      "servers": [
+        {
+          "url": "https://studio.x402layer.cc"
+        }
+      ],
       "get": {
-        "tags": ["Enterprise"],
+        "tags": [
+          "Enterprise"
+        ],
         "summary": "List transactions",
         "description": "Returns the full revenue ledger showing every payment and the three-way split between enterprise partner, Singularity, and infrastructure.",
-        "security": [{ "enterpriseApiKey": [] }],
+        "security": [
+          {
+            "enterpriseApiKey": []
+          }
+        ],
         "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "Page number" },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 }, "description": "Results per page" },
-          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["endpoint_creation", "topup", "recharge"] }, "description": "Filter by transaction type" }
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            },
+            "description": "Results per page"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "endpoint_creation",
+                "topup",
+                "recharge"
+              ]
+            },
+            "description": "Filter by transaction type"
+          }
         ],
         "responses": {
           "200": {
@@ -1227,15 +2166,21 @@
                   "properties": {
                     "transactions": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/EnterpriseTransaction" }
+                      "items": {
+                        "$ref": "#/components/schemas/EnterpriseTransaction"
+                      }
                     },
-                    "pagination": { "$ref": "#/components/schemas/EnterprisePagination" }
+                    "pagination": {
+                      "$ref": "#/components/schemas/EnterprisePagination"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Missing or invalid API key" }
+          "401": {
+            "description": "Missing or invalid API key"
+          }
         }
       }
     }
@@ -1245,189 +2190,528 @@
       "Listing": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "description": { "type": "string" },
-          "type": { "type": "string" },
-          "mode": { "type": "string" },
-          "price": { "type": "number" },
-          "currency": { "type": "string" },
-          "chain": { "type": "string" },
-          "api_schema": { "$ref": "#/components/schemas/ApiSchema", "description": "Optional API schema describing available routes, parameters, and request bodies" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "api_schema": {
+            "$ref": "#/components/schemas/ApiSchema",
+            "description": "Optional API schema describing available routes, parameters, and request bodies"
+          }
         }
       },
       "PublicEndpoint": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "mode": { "type": "string" },
-          "price": { "type": "number" },
-          "currency": { "type": "string" },
-          "wallet_address": { "type": "string" },
-          "chain": { "type": "string" },
-          "api_schema": { "$ref": "#/components/schemas/ApiSchema", "description": "API schema describing available routes and parameters for this endpoint" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "wallet_address": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "api_schema": {
+            "$ref": "#/components/schemas/ApiSchema",
+            "description": "API schema describing available routes and parameters for this endpoint"
+          }
         }
       },
       "X402Challenge": {
         "type": "object",
         "properties": {
-          "x402Version": { "type": "integer" },
+          "x402Version": {
+            "type": "integer"
+          },
           "accepts": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "scheme": { "type": "string" },
-                "network": { "type": "string" },
-                "maxAmountRequired": { "type": "string" },
-                "resource": { "type": "string" },
-                "description": { "type": "string" },
-                "payTo": { "type": "string" },
-                "asset": { "type": "string" }
+                "scheme": {
+                  "type": "string"
+                },
+                "network": {
+                  "type": "string"
+                },
+                "maxAmountRequired": {
+                  "type": "string"
+                },
+                "resource": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "payTo": {
+                  "type": "string"
+                },
+                "asset": {
+                  "type": "string"
+                }
               }
             }
           },
-          "api_schema": { "$ref": "#/components/schemas/ApiSchema", "description": "When present, describes the API routes, parameters, and request bodies the endpoint accepts. Agents can use this to self-discover how to call the API after payment." }
+          "api_schema": {
+            "$ref": "#/components/schemas/ApiSchema",
+            "description": "When present, describes the API routes, parameters, and request bodies the endpoint accepts. Agents can use this to self-discover how to call the API after payment."
+          }
         }
       },
       "ErrorResponse": {
         "type": "object",
         "properties": {
-          "error": { "type": "string" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       },
       "CampaignSummary": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "slug": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
-          "target_amount": { "type": "number" },
-          "raised_amount": { "type": "number" },
-          "token_ticker": { "type": "string" },
-          "fee_option": { "type": "string", "enum": ["supporters", "creator", "split"] },
-          "status": { "type": "string", "enum": ["active", "funded", "launched", "expired"] },
-          "chain": { "type": "string", "example": "solana" },
-          "deadline": { "type": "string", "format": "date-time" },
-          "contributor_count": { "type": "integer" },
-          "category": { "type": "string" },
-          "subcategory": { "type": "string" },
-          "page_url": { "type": "string", "format": "uri" },
-          "api_url": { "type": "string", "format": "uri" },
-          "created_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "target_amount": {
+            "type": "number"
+          },
+          "raised_amount": {
+            "type": "number"
+          },
+          "token_ticker": {
+            "type": "string"
+          },
+          "fee_option": {
+            "type": "string",
+            "enum": [
+              "supporters",
+              "creator",
+              "split"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "funded",
+              "launched",
+              "expired"
+            ]
+          },
+          "chain": {
+            "type": "string",
+            "example": "solana"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contributor_count": {
+            "type": "integer"
+          },
+          "category": {
+            "type": "string"
+          },
+          "subcategory": {
+            "type": "string"
+          },
+          "page_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "api_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CampaignDetail": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "slug": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
-          "target_amount": { "type": "number" },
-          "raised_amount": { "type": "number" },
-          "token_ticker": { "type": "string" },
-          "fee_option": { "type": "string", "enum": ["supporters", "creator", "split"] },
-          "fee_split_pct": { "type": "number" },
-          "status": { "type": "string" },
-          "chain": { "type": "string" },
-          "wallet_address": { "type": "string", "description": "Campaign escrow wallet" },
-          "deadline": { "type": "string", "format": "date-time" },
-          "contributor_count": { "type": "integer" },
-          "created_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "target_amount": {
+            "type": "number"
+          },
+          "raised_amount": {
+            "type": "number"
+          },
+          "token_ticker": {
+            "type": "string"
+          },
+          "fee_option": {
+            "type": "string",
+            "enum": [
+              "supporters",
+              "creator",
+              "split"
+            ]
+          },
+          "fee_split_pct": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "wallet_address": {
+            "type": "string",
+            "description": "Campaign escrow wallet"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contributor_count": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "ContributionPublic": {
         "type": "object",
         "properties": {
-          "wallet_address": { "type": "string" },
-          "display_name": { "type": "string" },
-          "amount": { "type": "number" },
-          "chain": { "type": "string" },
-          "created_at": { "type": "string", "format": "date-time" }
+          "wallet_address": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "Pagination": {
         "type": "object",
         "properties": {
-          "total": { "type": "integer" },
-          "limit": { "type": "integer" },
-          "offset": { "type": "integer" },
-          "has_more": { "type": "boolean" }
+          "total": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "has_more": {
+            "type": "boolean"
+          }
         }
       },
       "CampaignListAgentMeta": {
         "type": "object",
         "description": "Agent metadata for programmatic campaign discovery",
         "properties": {
-          "description": { "type": "string" },
-          "protocol": { "type": "string", "example": "x402" },
-          "currency": { "type": "string", "example": "USDC" },
-          "list_url": { "type": "string", "format": "uri" },
-          "detail_url_pattern": { "type": "string", "example": "https://studio.x402layer.cc/api/campaigns/{slug}" },
-          "campaign_page_pattern": { "type": "string", "example": "https://studio.x402layer.cc/fundraisers/{slug}" },
-          "supports_pagination": { "type": "boolean" },
-          "supports_category_filter": { "type": "boolean" },
-          "active_count": { "type": "integer" }
+          "description": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string",
+            "example": "x402"
+          },
+          "currency": {
+            "type": "string",
+            "example": "USDC"
+          },
+          "list_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "detail_url_pattern": {
+            "type": "string",
+            "example": "https://studio.x402layer.cc/api/campaigns/{slug}"
+          },
+          "campaign_page_pattern": {
+            "type": "string",
+            "example": "https://studio.x402layer.cc/fundraisers/{slug}"
+          },
+          "supports_pagination": {
+            "type": "boolean"
+          },
+          "supports_category_filter": {
+            "type": "boolean"
+          },
+          "active_count": {
+            "type": "integer"
+          }
         }
       },
       "CampaignDetailAgentMeta": {
         "type": "object",
         "description": "Agent metadata with payment instructions for programmatic contribution",
         "properties": {
-          "payment_endpoint": { "type": "string", "format": "uri", "description": "x402-compatible payment URL. Send USDC here." },
-          "accepts": { "type": "array", "items": { "type": "string" }, "example": ["solana"] },
-          "currency": { "type": "string", "example": "USDC" },
-          "protocol": { "type": "string", "example": "x402" },
-          "min_amount": { "type": "number" },
-          "status": { "type": "string" },
-          "target_amount": { "type": "number" },
-          "raised_amount": { "type": "number" },
-          "remaining": { "type": "number", "description": "USDC still needed to reach the target" },
-          "fee_share_eligible": { "type": "boolean", "description": "Whether new contributors can still earn fee-sharing" },
-          "fee_share_slots_remaining": { "type": "integer", "description": "How many of the 100 fee-share slots are still open" },
-          "campaign_url": { "type": "string", "format": "uri" },
-          "campaign_api_url": { "type": "string", "format": "uri" },
-          "contribute_api": { "type": "string", "format": "uri", "description": "POST endpoint to register the contribution after payment" },
-          "contribute_api_auth": { "type": "string", "example": "none" },
-          "receipt_header": { "type": "string", "example": "X-X402-Receipt-Token", "description": "Response header containing the signed receipt token after payment" },
-          "instructions": { "type": "string", "description": "Human-readable instructions for making a contribution" }
+          "payment_endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "x402-compatible payment URL. Send USDC here."
+          },
+          "accepts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "solana"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "example": "USDC"
+          },
+          "protocol": {
+            "type": "string",
+            "example": "x402"
+          },
+          "min_amount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "target_amount": {
+            "type": "number"
+          },
+          "raised_amount": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number",
+            "description": "USDC still needed to reach the target"
+          },
+          "fee_share_eligible": {
+            "type": "boolean",
+            "description": "Whether new contributors can still earn fee-sharing"
+          },
+          "fee_share_slots_remaining": {
+            "type": "integer",
+            "description": "How many of the 100 fee-share slots are still open"
+          },
+          "campaign_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "campaign_api_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "contribute_api": {
+            "type": "string",
+            "format": "uri",
+            "description": "POST endpoint to register the contribution after payment"
+          },
+          "contribute_api_auth": {
+            "type": "string",
+            "example": "none"
+          },
+          "receipt_header": {
+            "type": "string",
+            "example": "X-X402-Receipt-Token",
+            "description": "Response header containing the signed receipt token after payment"
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Human-readable instructions for making a contribution"
+          }
         }
       },
       "CreateCampaignRequest": {
         "type": "object",
-        "required": ["title", "wallet_address", "target_amount"],
+        "required": [
+          "title",
+          "wallet_address",
+          "target_amount"
+        ],
         "properties": {
-          "title": { "type": "string", "minLength": 3 },
-          "description": { "type": "string" },
-          "wallet_address": { "type": "string", "description": "Creator's Solana wallet for payouts" },
-          "target_amount": { "type": "number", "minimum": 1000, "description": "Funding target in USDC" },
-          "token_ticker": { "type": "string", "pattern": "^[A-Z0-9]{2,10}$", "description": "2–10 uppercase alphanumeric characters" },
-          "fee_option": { "type": "string", "enum": ["supporters", "creator", "split"], "default": "supporters" },
-          "fee_split_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Creator's percentage when using split" },
-          "images": { "type": "array", "items": { "type": "string", "format": "uri" }, "maxItems": 5, "description": "First image = token logo" },
-          "x_handle": { "type": "string", "description": "X/Twitter handle without @" },
-          "deadline": { "type": "string", "format": "date-time" },
-          "category": { "type": "string", "enum": ["medical", "emergency", "education", "community", "creative", "tech", "business", "personal", "other"] },
-          "bags_config_type": { "type": "string", "format": "uuid", "description": "Fee tier UUID" }
+          "title": {
+            "type": "string",
+            "minLength": 3
+          },
+          "description": {
+            "type": "string"
+          },
+          "wallet_address": {
+            "type": "string",
+            "description": "Creator's Solana wallet for payouts"
+          },
+          "target_amount": {
+            "type": "number",
+            "minimum": 1000,
+            "description": "Funding target in USDC"
+          },
+          "token_ticker": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2,10}$",
+            "description": "2\u201310 uppercase alphanumeric characters"
+          },
+          "fee_option": {
+            "type": "string",
+            "enum": [
+              "supporters",
+              "creator",
+              "split"
+            ],
+            "default": "supporters"
+          },
+          "fee_split_pct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Creator's percentage when using split"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "maxItems": 5,
+            "description": "First image = token logo"
+          },
+          "x_handle": {
+            "type": "string",
+            "description": "X/Twitter handle without @"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "medical",
+              "emergency",
+              "education",
+              "community",
+              "creative",
+              "tech",
+              "business",
+              "personal",
+              "other"
+            ]
+          },
+          "bags_config_type": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Fee tier UUID"
+          }
         }
       },
       "ApiSchema": {
         "type": "object",
         "description": "Describes the routes, parameters, and request bodies an endpoint accepts. Attached to endpoints during creation and returned in 402 challenges, marketplace listings, and public endpoint metadata.",
         "properties": {
-          "version": { "type": "integer", "enum": [1] },
-          "baseUrl": { "type": "string", "format": "uri", "description": "Optional base URL override for the API" },
+          "version": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Optional base URL override for the API"
+          },
           "routes": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ApiSchemaRoute" }
+            "items": {
+              "$ref": "#/components/schemas/ApiSchemaRoute"
+            }
           }
         }
       },
@@ -1435,107 +2719,280 @@
         "type": "object",
         "description": "A single API route with its method, path, parameters, and optional request body",
         "properties": {
-          "path": { "type": "string", "example": "/users/{id}", "description": "Route path with optional path parameters in curly braces" },
-          "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
-          "summary": { "type": "string", "description": "Human-readable name shown to consumers on the payment page" },
+          "path": {
+            "type": "string",
+            "example": "/users/{id}",
+            "description": "Route path with optional path parameters in curly braces"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "description": "Human-readable name shown to consumers on the payment page"
+          },
           "parameters": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ApiSchemaParam" }
+            "items": {
+              "$ref": "#/components/schemas/ApiSchemaParam"
+            }
           },
-          "requestBody": { "$ref": "#/components/schemas/ApiSchemaBody" },
-          "responseExample": { "type": "string", "description": "Example response JSON string" }
+          "requestBody": {
+            "$ref": "#/components/schemas/ApiSchemaBody"
+          },
+          "responseExample": {
+            "type": "string",
+            "description": "Example response JSON string"
+          }
         }
       },
       "ApiSchemaParam": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "description": "Parameter identifier" },
-          "in": { "type": "string", "enum": ["query", "path", "header"] },
-          "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
-          "required": { "type": "boolean" },
-          "description": { "type": "string", "description": "Human-readable label shown to consumers" },
-          "example": { "type": "string", "description": "Placeholder text shown in the input field" }
+          "name": {
+            "type": "string",
+            "description": "Parameter identifier"
+          },
+          "in": {
+            "type": "string",
+            "enum": [
+              "query",
+              "path",
+              "header"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "array",
+              "object"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable label shown to consumers"
+          },
+          "example": {
+            "type": "string",
+            "description": "Placeholder text shown in the input field"
+          }
         }
       },
       "ApiSchemaBody": {
         "type": "object",
         "properties": {
-          "contentType": { "type": "string", "enum": ["application/json", "multipart/form-data", "text/plain"] },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "application/json",
+              "multipart/form-data",
+              "text/plain"
+            ]
+          },
           "fields": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ApiSchemaParam" }
+            "items": {
+              "$ref": "#/components/schemas/ApiSchemaParam"
+            }
           },
-          "example": { "type": "string", "description": "Default body content shown as placeholder" }
+          "example": {
+            "type": "string",
+            "description": "Default body content shown as placeholder"
+          }
         }
       },
       "EnterprisePartner": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "endpoint_creation_fee": { "type": "number", "description": "Fee charged when agents deploy endpoints through this partner" },
-          "min_topup_amount": { "type": "number" },
-          "initial_credits": { "type": "integer", "description": "Credits granted on endpoint creation" },
-          "credits_per_dollar": { "type": "integer" },
-          "revenue_share_enterprise": { "type": "number", "description": "Partner's share (0–1)" },
-          "revenue_share_singularity": { "type": "number", "description": "Singularity's share (0–1)" },
-          "revenue_share_infra": { "type": "number", "description": "Infrastructure share (0–1)" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "endpoint_creation_fee": {
+            "type": "number",
+            "description": "Fee charged when agents deploy endpoints through this partner"
+          },
+          "min_topup_amount": {
+            "type": "number"
+          },
+          "initial_credits": {
+            "type": "integer",
+            "description": "Credits granted on endpoint creation"
+          },
+          "credits_per_dollar": {
+            "type": "integer"
+          },
+          "revenue_share_enterprise": {
+            "type": "number",
+            "description": "Partner's share (0\u20131)"
+          },
+          "revenue_share_singularity": {
+            "type": "number",
+            "description": "Singularity's share (0\u20131)"
+          },
+          "revenue_share_infra": {
+            "type": "number",
+            "description": "Infrastructure share (0\u20131)"
+          }
         }
       },
       "EnterpriseEndpoint": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "slug": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "url": { "type": "string", "format": "uri", "description": "Origin URL" },
-          "chain": { "type": "string" },
-          "pricing_model": { "type": "string", "enum": ["credit", "direct"] },
-          "price_per_request": { "type": "number" },
-          "owner_credits": { "type": "integer" },
-          "is_active": { "type": "boolean" },
-          "created_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Origin URL"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "pricing_model": {
+            "type": "string",
+            "enum": [
+              "credit",
+              "direct"
+            ]
+          },
+          "price_per_request": {
+            "type": "number"
+          },
+          "owner_credits": {
+            "type": "integer"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "EnterpriseStats": {
         "type": "object",
         "properties": {
-          "total_revenue": { "type": "number" },
-          "enterprise_earned": { "type": "number" },
-          "singularity_earned": { "type": "number" },
-          "infra_reserved": { "type": "number" },
-          "pending_payout": { "type": "number" },
-          "distributed": { "type": "number" },
-          "transaction_count": { "type": "integer" },
-          "endpoint_count": { "type": "integer" }
+          "total_revenue": {
+            "type": "number"
+          },
+          "enterprise_earned": {
+            "type": "number"
+          },
+          "singularity_earned": {
+            "type": "number"
+          },
+          "infra_reserved": {
+            "type": "number"
+          },
+          "pending_payout": {
+            "type": "number"
+          },
+          "distributed": {
+            "type": "number"
+          },
+          "transaction_count": {
+            "type": "integer"
+          },
+          "endpoint_count": {
+            "type": "integer"
+          }
         }
       },
       "EnterpriseTransaction": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "payment_type": { "type": "string", "enum": ["endpoint_creation", "topup", "recharge"] },
-          "total_amount": { "type": "number" },
-          "enterprise_amount": { "type": "number" },
-          "singularity_amount": { "type": "number" },
-          "infra_amount": { "type": "number" },
-          "currency": { "type": "string" },
-          "chain": { "type": "string" },
-          "tx_hash": { "type": "string" },
-          "payer_wallet": { "type": "string" },
-          "enterprise_distributed": { "type": "boolean" },
-          "created_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "endpoint_creation",
+              "topup",
+              "recharge"
+            ]
+          },
+          "total_amount": {
+            "type": "number"
+          },
+          "enterprise_amount": {
+            "type": "number"
+          },
+          "singularity_amount": {
+            "type": "number"
+          },
+          "infra_amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "tx_hash": {
+            "type": "string"
+          },
+          "payer_wallet": {
+            "type": "string"
+          },
+          "enterprise_distributed": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "EnterprisePagination": {
         "type": "object",
         "properties": {
-          "page": { "type": "integer" },
-          "limit": { "type": "integer" },
-          "total": { "type": "integer" },
-          "pages": { "type": "integer" }
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "pages": {
+            "type": "integer"
+          }
         }
       }
     },
