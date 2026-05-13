@@ -173,6 +173,7 @@
               "api-reference/compute-instance-get",
               "api-reference/compute-instance-password",
               "api-reference/compute-instance-extend",
+              "api-reference/compute-instance-resize",
               "api-reference/compute-instance-delete",
               "api-reference/compute-api-keys-list",
               "api-reference/compute-api-keys-create",

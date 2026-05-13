@@ -1303,6 +1303,65 @@
         }
       ]
     },
+    "/compute/instances/{id}/resize": {
+      "post": {
+        "tags": [
+          "Compute Instances"
+        ],
+        "summary": "Resize compute instance in place",
+        "description": "Resizes an active instance on its current provider. The route preserves the remaining prepaid dollar credit and recalculates expiry for the target hourly rate.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan": {
+                    "type": "string",
+                    "description": "Target plan id from GET /compute/plans. DigitalOcean plans use the do: prefix."
+                  },
+                  "confirm_disk_resize": {
+                    "type": "boolean",
+                    "description": "Required when the target resize grows disk capacity, especially for DigitalOcean where disk growth is irreversible."
+                  }
+                },
+                "required": [
+                  "plan"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resize started"
+          },
+          "400": {
+            "description": "Unsupported resize target or missing confirmation"
+          },
+          "409": {
+            "description": "Instance is not active or already has a resize in progress"
+          }
+        }
+      },
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ]
+    },
     "/api/campaigns": {
       "servers": [
         {
