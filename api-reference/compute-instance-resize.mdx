@@ -2,3 +2,26 @@
 title: Resize compute instance
 openapi: 'POST /compute/instances/{id}/resize'
 ---
+
+Resize an active Singularity Compute instance in place on its current provider.
+
+Use this route when you want to move an instance to a larger compatible plan without provisioning a second machine.
+
+## Behavior
+
+- Requires compute management auth (`X-Auth-*` or `X-API-Key`)
+- Does not create a new x402 or MPP payment challenge
+- Preserves the remaining prepaid dollar credit and recalculates `expires_at` for the new hourly rate
+- Keeps the instance on the same provider and same region
+
+## Provider rules
+
+- Vultr resizes are upgrade-only
+- DigitalOcean disk growth is irreversible and requires `confirm_disk_resize: true`
+- Expect downtime during the resize window
+
+## Related endpoints
+
+- `GET /compute/plans`
+- `GET /compute/instances/{id}`
+- `POST /compute/instances/{id}/extend`
