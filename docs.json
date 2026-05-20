@@ -168,6 +168,8 @@
               "api-reference/compute-plans",
               "api-reference/compute-regions",
               "api-reference/compute-os",
+              "api-reference/compute-credits-balance",
+              "api-reference/compute-credits-topup",
               "api-reference/compute-provision",
               "api-reference/compute-instances-list",
               "api-reference/compute-instance-get",
