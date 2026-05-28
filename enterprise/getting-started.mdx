@@ -15,7 +15,7 @@ The enterprise dashboard gives you:
 - **Enterprise URL** — your branded landing page link to share with your agent ecosystem
 - **Transactions** — full revenue ledger showing every payment with your share breakdown
 - **Webhooks** — configure HTTPS webhook endpoints for payment and deployment events
-- **MCP Tokens** — generate Personal Access Tokens for programmatic access via the MCP server
+- **API Keys** — generate enterprise API keys for programmatic access to the REST API and worker
 - **Settings** — update branding, pricing, and payout wallets
 
 ## Configure Pricing
@@ -29,9 +29,28 @@ From the Settings tab, you control:
 | **Initial Credits** | Credits included with a new endpoint | 4,000 |
 | **Credits per Dollar** | Credits granted per $1 recharged | 500 |
 
-## Connect Your Agents via MCP
+## Integrate via API
 
-Your agents connect to the Singularity MCP server and pass your enterprise slug to route actions through your program:
+Your platform authenticates with the Singularity Enterprise API using API keys. This lets your backend list endpoints, query revenue, and identify your agents during endpoint creation.
+
+### Generate an API Key
+
+1. Go to **Enterprise Dashboard > API Keys**
+2. Click **Create Key**
+3. Copy the key — it is only shown once
+
+Use this key in the `X-Enterprise-Key` header on all API requests:
+
+```bash
+curl https://studio.x402layer.cc/api/v1/enterprise/endpoints \
+  -H "X-Enterprise-Key: sgl_ent_your_key_here"
+```
+
+See the full [API Reference](/enterprise/api-reference) for all available endpoints.
+
+## Connect Agents via MCP
+
+For agent-native integration, your agents can connect to the Singularity MCP server directly:
 
 **MCP Endpoint:** `https://mcp.x402layer.cc/mcp`
 
@@ -43,26 +62,68 @@ When calling endpoint creation or topup tools, include:
 }
 ```
 
-This ensures the payment goes through your enterprise program and revenue is split accordingly.
-
-### Generate a Personal Access Token
-
-1. Go to **Dashboard > Enterprise > MCP Tokens**
-2. Click **Create Token**
-3. Choose scopes (read-only or full access)
-4. Copy the token — it is only shown once
-
-Use this token as a Bearer token in the `Authorization` header when connecting to the MCP server.
-
 ## Set Up Webhooks
 
-1. Go to **Dashboard > Enterprise > Webhooks > Manage Webhooks**
-2. Click **Create Webhook**
+1. Go to **Dashboard > Enterprise > Webhooks**
+2. Click **Add Webhook**
 3. Enter your HTTPS endpoint URL
 4. Select which events to listen for
-5. Store the signing secret securely
+5. Store the signing secret securely — it is only shown once
 
-Webhook events include `payment.succeeded` for endpoint deployments and credit recharges.
+### Enterprise Webhook Events
+
+| Event | Fires When |
+|-------|------------|
+| `payment.succeeded` | An agent deploys an endpoint or recharges credits through your program |
+| `endpoint.created` | A new x402 endpoint is created through your enterprise |
+
+### Webhook Payload
+
+```json
+{
+  "event": "payment.succeeded",
+  "source": "endpoint",
+  "source_slug": "my-agent-endpoint",
+  "amount": "1.00",
+  "currency": "USDC",
+  "tx_hash": "0xabc123...",
+  "payer_wallet": "0x742d35Cc...",
+  "network": "base",
+  "status": "confirmed"
+}
+```
+
+### Verifying Signatures
+
+Each webhook delivery includes an HMAC-SHA256 signature in the `X-X402-Signature` header. Compute `HMAC(timestamp + "." + rawBody, secret)` and compare.
+
+For full verification details and code examples, see the [Webhooks documentation](/user-guide/webhooks).
+
+## Creating Endpoints via Enterprise
+
+Agents on your platform create x402 endpoints by hitting the worker API with your enterprise key. This routes the payment through your program so revenue is split automatically.
+
+### Via REST API
+
+```bash
+POST https://api.x402layer.cc/agent/endpoints
+X-Enterprise-Key: sgl_ent_your_key_here
+Content-Type: application/json
+
+{
+  "name": "My Agent Endpoint",
+  "base_url": "https://my-agent.com/api",
+  "routes": [...]
+}
+```
+
+The worker returns a 402 payment challenge. The agent signs the EIP-712 payload and resubmits with the `X-Payment` header. The endpoint is created at your configured deployment fee, and the revenue split applies immediately.
+
+### Via MCP
+
+Agents connected to the Singularity MCP server include `enterprise_partner_slug` in the tool call to route through your program.
+
+For full endpoint creation details (pricing, schema format, top-ups), see the [Agentic Endpoints documentation](/agentic-endpoints).
 
 ## Payout Wallets
 
