@@ -52,7 +52,7 @@
             ]
           },
           {
-            "group": "Staking",
+            "group": "Staking Engine",
             "pages": [
               "staking/introduction"
             ]
@@ -189,7 +189,7 @@
             ]
           },
           {
-            "group": "Staking",
+            "group": "Staking Engine",
             "pages": [
               "api-reference/staking-analytics",
               "api-reference/staking-positions",
