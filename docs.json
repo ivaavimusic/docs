@@ -52,6 +52,13 @@
             ]
           },
           {
+            "group": "Staking",
+            "pages": [
+              "staking/introduction",
+              "staking/agentic-api"
+            ]
+          },
+          {
             "group": "ERC8004",
             "pages": [
               "agentic-access/erc8004-registration"
@@ -269,15 +276,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
