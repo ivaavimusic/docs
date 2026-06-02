@@ -86,6 +86,10 @@
     {
       "name": "Enterprise",
       "description": "Enterprise partner configuration, endpoint listing, revenue stats, and transaction ledger"
+    },
+    {
+      "name": "Staking",
+      "description": "Agentic $SGL staking"
     }
   ],
   "paths": {
@@ -1702,7 +1706,7 @@
           "Fundraiser Contributions"
         ],
         "summary": "Submit contribution",
-        "description": "Record a contribution after a successful x402 payment. The server verifies a signed receipt JWT (from the `X-X402-Receipt-Token` response header) bound to the specific fundraiser endpoint before accepting the contribution. No separate authentication required \u2014 the receipt token is the proof of payment.",
+        "description": "Record a contribution after a successful x402 payment. The server verifies a signed receipt JWT (from the `X-X402-Receipt-Token` response header) bound to the specific fundraiser endpoint before accepting the contribution. No separate authentication required — the receipt token is the proof of payment.",
         "parameters": [
           {
             "name": "slug",
@@ -1989,7 +1993,7 @@
           "Fundraiser Media"
         ],
         "summary": "Campaign OG image",
-        "description": "Returns a dynamically generated 1200\u00d7630 PNG Open Graph image showing campaign status, title, raised amount, progress bar, and backer count. Used for social media previews.",
+        "description": "Returns a dynamically generated 1200×630 PNG Open Graph image showing campaign status, title, raised amount, progress bar, and backer count. Used for social media previews.",
         "parameters": [
           {
             "name": "slug",
@@ -2241,6 +2245,357 @@
             "description": "Missing or invalid API key"
           }
         }
+      }
+    },
+    "/api/agent": {
+      "get": {
+        "tags": [
+          "Staking"
+        ],
+        "summary": "API manifest",
+        "description": "Self-describing manifest of the whole agentic staking API and the prepare→sign→submit flow. An agent can fetch this to discover every endpoint.",
+        "operationId": "getManifest",
+        "responses": {
+          "200": {
+            "description": "Manifest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StkManifest"
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "https://staking.x402layer.cc"
+          }
+        ]
+      }
+    },
+    "/api/agent/analytics": {
+      "get": {
+        "tags": [
+          "Staking"
+        ],
+        "summary": "Global staking analytics",
+        "description": "Network-wide stats: total staked, staker count, TVL, and reward-pool totals.",
+        "operationId": "getAnalytics",
+        "responses": {
+          "200": {
+            "description": "Analytics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StkAnalytics"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/StkError"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://staking.x402layer.cc"
+          }
+        ]
+      }
+    },
+    "/api/agent/positions": {
+      "get": {
+        "tags": [
+          "Staking"
+        ],
+        "summary": "A wallet's stake positions",
+        "description": "Stake positions for a wallet across all roles: amount, status, cooldowns, and claimable rewards. Public on-chain data.",
+        "operationId": "getPositions",
+        "parameters": [
+          {
+            "name": "wallet",
+            "in": "query",
+            "required": true,
+            "description": "Solana wallet address (base58).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "8d3o8mLHpBA13m2CtuPSCbu1gujwjotzQvz75xGcHH5U"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Positions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StkPositionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/StkError"
+          },
+          "500": {
+            "$ref": "#/components/responses/StkError"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://staking.x402layer.cc"
+          }
+        ]
+      }
+    },
+    "/api/agent/stake": {
+      "post": {
+        "tags": [
+          "Staking"
+        ],
+        "summary": "Prepare a stake transaction",
+        "operationId": "prepareStake",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "wallet",
+                  "role",
+                  "amount"
+                ],
+                "properties": {
+                  "wallet": {
+                    "type": "string",
+                    "description": "Staker wallet (base58)."
+                  },
+                  "role": {
+                    "$ref": "#/components/schemas/StkStakeRole"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "description": "Amount of $SGL to stake (min 50000).",
+                    "example": 50000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StkPrepare"
+          },
+          "400": {
+            "$ref": "#/components/responses/StkError"
+          },
+          "500": {
+            "$ref": "#/components/responses/StkError"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://staking.x402layer.cc"
+          }
+        ]
+      }
+    },
+    "/api/agent/unstake": {
+      "post": {
+        "tags": [
+          "Staking"
+        ],
+        "summary": "Prepare an unstake transaction (begin cooldown)",
+        "description": "Begins the cooldown. After it elapses, call /api/agent/claim-unstake to withdraw.",
+        "operationId": "prepareUnstake",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "wallet",
+                  "role"
+                ],
+                "properties": {
+                  "wallet": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "$ref": "#/components/schemas/StkStakeRole"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StkPrepare"
+          },
+          "400": {
+            "$ref": "#/components/responses/StkError"
+          },
+          "500": {
+            "$ref": "#/components/responses/StkError"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://staking.x402layer.cc"
+          }
+        ]
+      }
+    },
+    "/api/agent/claim-unstake": {
+      "post": {
+        "tags": [
+          "Staking"
+        ],
+        "summary": "Prepare a withdraw-after-cooldown transaction",
+        "description": "Only succeeds after the cooldown has elapsed (see positions.claimableUnlock).",
+        "operationId": "prepareClaimUnstake",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "wallet",
+                  "role"
+                ],
+                "properties": {
+                  "wallet": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "$ref": "#/components/schemas/StkStakeRole"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StkPrepare"
+          },
+          "400": {
+            "$ref": "#/components/responses/StkError"
+          },
+          "500": {
+            "$ref": "#/components/responses/StkError"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://staking.x402layer.cc"
+          }
+        ]
+      }
+    },
+    "/api/agent/claim": {
+      "post": {
+        "tags": [
+          "Staking"
+        ],
+        "summary": "Prepare claim-rewards transaction(s)",
+        "description": "Claims both USDC and $SGL rewards owed. Provide a role for a single position, or omit role to claim every position with rewards (returns multiple transactions).",
+        "operationId": "prepareClaim",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "wallet"
+                ],
+                "properties": {
+                  "wallet": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "$ref": "#/components/schemas/StkStakeRole"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StkPrepare"
+          },
+          "400": {
+            "$ref": "#/components/responses/StkError"
+          },
+          "500": {
+            "$ref": "#/components/responses/StkError"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://staking.x402layer.cc"
+          }
+        ]
+      }
+    },
+    "/api/agent/submit": {
+      "post": {
+        "tags": [
+          "Staking"
+        ],
+        "summary": "Broadcast a signed transaction",
+        "description": "Submits a base64 signed Solana transaction (from a prepare endpoint, signed with your keypair), confirms it, and returns the signature.",
+        "operationId": "submitTransaction",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "transaction"
+                ],
+                "properties": {
+                  "transaction": {
+                    "type": "string",
+                    "description": "Base64-encoded signed legacy transaction."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Broadcast result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StkSubmitResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/StkError"
+          },
+          "502": {
+            "$ref": "#/components/responses/StkError"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://staking.x402layer.cc"
+          }
+        ]
       }
     }
   },
@@ -2696,7 +3051,7 @@
           "token_ticker": {
             "type": "string",
             "pattern": "^[A-Z0-9]{2,10}$",
-            "description": "2\u201310 uppercase alphanumeric characters"
+            "description": "2–10 uppercase alphanumeric characters"
           },
           "fee_option": {
             "type": "string",
@@ -2902,15 +3257,15 @@
           },
           "revenue_share_enterprise": {
             "type": "number",
-            "description": "Partner's share (0\u20131)"
+            "description": "Partner's share (0–1)"
           },
           "revenue_share_singularity": {
             "type": "number",
-            "description": "Singularity's share (0\u20131)"
+            "description": "Singularity's share (0–1)"
           },
           "revenue_share_infra": {
             "type": "number",
-            "description": "Infrastructure share (0\u20131)"
+            "description": "Infrastructure share (0–1)"
           }
         }
       },
@@ -3053,6 +3408,225 @@
             "type": "integer"
           }
         }
+      },
+      "StkStakeRole": {
+        "type": "string",
+        "enum": [
+          "compute",
+          "validator",
+          "yield"
+        ],
+        "description": "Stake type. compute = compute node operator, validator = marketplace validator, yield = yield enjoyer."
+      },
+      "StkPreparedTx": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "example": "Stake 50000 $SGL as compute"
+          },
+          "transaction": {
+            "type": "string",
+            "description": "Base64-encoded UNSIGNED legacy transaction. Sign with your keypair."
+          },
+          "blockhash": {
+            "type": "string"
+          },
+          "lastValidBlockHeight": {
+            "type": "integer"
+          }
+        }
+      },
+      "StkPrepareResponse": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "example": "stake"
+          },
+          "note": {
+            "type": "string"
+          },
+          "transactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StkPreparedTx"
+            }
+          },
+          "next": {
+            "type": "string",
+            "example": "Sign each transaction with your wallet keypair, then POST /api/agent/submit { transaction }."
+          }
+        }
+      },
+      "StkPosition": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/StkStakeRole"
+          },
+          "stakeType": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "description": "$SGL staked."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "unstaking",
+              "slashed"
+            ]
+          },
+          "stakedAt": {
+            "type": "integer",
+            "description": "Unix ms."
+          },
+          "unlockAt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Unix ms cooldown end, or null."
+          },
+          "cooldownEndsAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "claimableUnlock": {
+            "type": "boolean",
+            "description": "True when unstaking cooldown has elapsed and tokens can be withdrawn."
+          },
+          "rewardsOwedUsdc": {
+            "type": "number"
+          },
+          "rewardsOwedSgl": {
+            "type": "number"
+          },
+          "valueUsd": {
+            "type": "number"
+          }
+        }
+      },
+      "StkPositionsResponse": {
+        "type": "object",
+        "properties": {
+          "wallet": {
+            "type": "string"
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StkPosition"
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "stakedSgl": {
+                "type": "number"
+              },
+              "stakedValueUsd": {
+                "type": "number"
+              },
+              "claimableUsdc": {
+                "type": "number"
+              },
+              "claimableSgl": {
+                "type": "number"
+              },
+              "positionCount": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "StkAnalytics": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "type": "string"
+          },
+          "sglMint": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string",
+            "example": "mainnet"
+          },
+          "totalStaked": {
+            "type": "number"
+          },
+          "totalStakers": {
+            "type": "integer"
+          },
+          "tvlUsd": {
+            "type": "number"
+          },
+          "sglPriceUsd": {
+            "type": "number"
+          },
+          "rewards": {
+            "type": "object",
+            "properties": {
+              "totalUsdcDeposited": {
+                "type": "number"
+              },
+              "totalUsdcClaimed": {
+                "type": "number"
+              },
+              "totalSglDeposited": {
+                "type": "number"
+              },
+              "totalSglClaimed": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "StkSubmitResponse": {
+        "type": "object",
+        "properties": {
+          "signature": {
+            "type": "string"
+          },
+          "confirmed": {
+            "type": "boolean"
+          },
+          "explorer": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "StkManifest": {
+        "type": "object",
+        "description": "Self-describing API manifest (name, program, roles, flow, endpoints).",
+        "additionalProperties": true
+      },
+      "StkError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -3066,6 +3640,28 @@
         "in": "header",
         "name": "X-Enterprise-Key",
         "description": "Enterprise partner API key with `sgl_ent_` prefix. Create keys in the Enterprise Dashboard under API Keys."
+      }
+    },
+    "responses": {
+      "StkError": {
+        "description": "Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/StkError"
+            }
+          }
+        }
+      },
+      "StkPrepare": {
+        "description": "Unsigned transaction(s) to sign and submit.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/StkPrepareResponse"
+            }
+          }
+        }
       }
     }
   }

@@ -54,8 +54,7 @@
           {
             "group": "Staking",
             "pages": [
-              "staking/introduction",
-              "staking/agentic-api"
+              "staking/introduction"
             ]
           },
           {
@@ -187,6 +186,18 @@
               "api-reference/compute-api-keys-list",
               "api-reference/compute-api-keys-create",
               "api-reference/compute-api-keys-delete"
+            ]
+          },
+          {
+            "group": "Staking",
+            "pages": [
+              "api-reference/staking-analytics",
+              "api-reference/staking-positions",
+              "api-reference/staking-stake",
+              "api-reference/staking-unstake",
+              "api-reference/staking-claim-unstake",
+              "api-reference/staking-claim",
+              "api-reference/staking-submit"
             ]
           },
           {
