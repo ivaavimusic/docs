@@ -281,6 +281,14 @@
             ]
           },
           {
+            "group": "SGL Grid",
+            "pages": [
+              "api-reference/grid-models",
+              "api-reference/grid-chat-completions",
+              "api-reference/grid-capacity"
+            ]
+          },
+          {
             "group": "Singularity Compute",
             "pages": [
               "api-reference/compute-plans",

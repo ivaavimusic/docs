@@ -90,6 +90,14 @@
     {
       "name": "Staking",
       "description": "Agentic $SGL staking"
+    },
+    {
+      "name": "SGL Grid",
+      "description": "Decentralized, confidential, OpenAI-compatible inference served by attested TEE nodes."
+    },
+    {
+      "name": "Compute Credits",
+      "description": "Prepaid USDC credit balance shared across Machines and Grid."
     }
   ],
   "paths": {
@@ -1706,7 +1714,7 @@
           "Fundraiser Contributions"
         ],
         "summary": "Submit contribution",
-        "description": "Record a contribution after a successful x402 payment. The server verifies a signed receipt JWT (from the `X-X402-Receipt-Token` response header) bound to the specific fundraiser endpoint before accepting the contribution. No separate authentication required — the receipt token is the proof of payment.",
+        "description": "Record a contribution after a successful x402 payment. The server verifies a signed receipt JWT (from the `X-X402-Receipt-Token` response header) bound to the specific fundraiser endpoint before accepting the contribution. No separate authentication required \u2014 the receipt token is the proof of payment.",
         "parameters": [
           {
             "name": "slug",
@@ -1993,7 +2001,7 @@
           "Fundraiser Media"
         ],
         "summary": "Campaign OG image",
-        "description": "Returns a dynamically generated 1200×630 PNG Open Graph image showing campaign status, title, raised amount, progress bar, and backer count. Used for social media previews.",
+        "description": "Returns a dynamically generated 1200\u00d7630 PNG Open Graph image showing campaign status, title, raised amount, progress bar, and backer count. Used for social media previews.",
         "parameters": [
           {
             "name": "slug",
@@ -2253,7 +2261,7 @@
           "Staking"
         ],
         "summary": "API manifest",
-        "description": "Self-describing manifest of the whole agentic staking API and the prepare→sign→submit flow. An agent can fetch this to discover every endpoint.",
+        "description": "Self-describing manifest of the whole agentic staking API and the prepare\u2192sign\u2192submit flow. An agent can fetch this to discover every endpoint.",
         "operationId": "getManifest",
         "responses": {
           "200": {
@@ -2596,6 +2604,418 @@
             "url": "https://staking.x402layer.cc"
           }
         ]
+      }
+    },
+    "/v1/models": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "List models",
+        "description": "List the models currently served by active attested nodes. OpenAI-compatible shape.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute/Grid API key (billed to prepaid credits). Omit to pay per request via x402 `X-Payment`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Models served right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "example": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "llama-3.2-3b"
+                          },
+                          "object": {
+                            "type": "string",
+                            "example": "model"
+                          },
+                          "owned_by": {
+                            "type": "string",
+                            "example": "singularity-grid"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/chat/completions": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Create chat completion",
+        "description": "OpenAI-compatible chat completion. Set `\"stream\": true` for token streaming (SSE; each chunk is end-to-end encrypted). Works with any OpenAI SDK via `base_url=https://grid.x402compute.cc/v1`. Authenticate with `X-API-Key` (prepaid credits) or pay per request with the x402 `X-Payment` header after a `402` challenge.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute/Grid API key (billed to prepaid credits). Omit to pay per request via x402 `X-Payment`."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model",
+                  "messages"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "example": "llama-3.2-3b"
+                  },
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "system",
+                            "user",
+                            "assistant"
+                          ]
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "example": [
+                      {
+                        "role": "user",
+                        "content": "Hello"
+                      }
+                    ]
+                  },
+                  "temperature": {
+                    "type": "number",
+                    "example": 0.7
+                  },
+                  "max_tokens": {
+                    "type": "integer",
+                    "example": 512
+                  },
+                  "stream": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Completion (or SSE stream when stream=true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "object": {
+                      "type": "string",
+                      "example": "chat.completion"
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "choices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "index": {
+                            "type": "integer"
+                          },
+                          "message": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string"
+                              },
+                              "content": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "finish_reason": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "usage": {
+                      "type": "object",
+                      "properties": {
+                        "prompt_tokens": {
+                          "type": "integer"
+                        },
+                        "completion_tokens": {
+                          "type": "integer"
+                        },
+                        "total_tokens": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or revoked API key"
+          },
+          "402": {
+            "description": "Payment required \u2014 resend with `X-Payment`, or top up credits in Settings \u2192 Credits"
+          }
+        }
+      }
+    },
+    "/grid/capacity": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Grid capacity",
+        "description": "Live grid capacity \u2014 active node count, TEE types, served models, and an `at_capacity` flag. No auth. Check before a large batch and back off if `at_capacity` is true.",
+        "responses": {
+          "200": {
+            "description": "Current capacity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "active_nodes": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "tee_types": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": [
+                        "sev-snp"
+                      ]
+                    },
+                    "models": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": [
+                        "llama-3.2-3b"
+                      ]
+                    },
+                    "at_capacity": {
+                      "type": "boolean",
+                      "example": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compute/credits/balance": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Compute Credits"
+        ],
+        "summary": "Get credit balance",
+        "description": "Prepaid USDC credit balance for the authenticated wallet. Requires signature auth (`X-Auth-*`) or an API key (`X-API-Key`).",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute/Grid API key (billed to prepaid credits). Omit to pay per request via x402 `X-Payment`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "wallet": {
+                      "type": "string"
+                    },
+                    "balance": {
+                      "type": "string",
+                      "example": "150.00"
+                    },
+                    "total_deposited": {
+                      "type": "string",
+                      "example": "200.00"
+                    },
+                    "total_spent": {
+                      "type": "string",
+                      "example": "50.00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compute/credits/topup": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Compute Credits"
+        ],
+        "summary": "Top up credits",
+        "description": "Top up prepaid credits via x402 payment. Returns `402 Payment Required` if no `X-Payment` header is present; resend with the payment payload.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute/Grid API key (billed to prepaid credits). Omit to pay per request via x402 `X-Payment`."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "minimum": 1,
+                    "example": 50,
+                    "description": "USD to deposit (minimum $1)"
+                  },
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "base",
+                      "solana",
+                      "megaeth"
+                    ],
+                    "example": "base"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "402": {
+            "description": "Payment required \u2014 resend with `X-Payment`"
+          },
+          "200": {
+            "description": "Deposited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "deposited": {
+                      "type": "number",
+                      "example": 50
+                    },
+                    "new_balance": {
+                      "type": "string",
+                      "example": "150.00"
+                    },
+                    "tx_hash": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -3051,7 +3471,7 @@
           "token_ticker": {
             "type": "string",
             "pattern": "^[A-Z0-9]{2,10}$",
-            "description": "2–10 uppercase alphanumeric characters"
+            "description": "2\u201310 uppercase alphanumeric characters"
           },
           "fee_option": {
             "type": "string",
@@ -3257,15 +3677,15 @@
           },
           "revenue_share_enterprise": {
             "type": "number",
-            "description": "Partner's share (0–1)"
+            "description": "Partner's share (0\u20131)"
           },
           "revenue_share_singularity": {
             "type": "number",
-            "description": "Singularity's share (0–1)"
+            "description": "Singularity's share (0\u20131)"
           },
           "revenue_share_infra": {
             "type": "number",
-            "description": "Infrastructure share (0–1)"
+            "description": "Infrastructure share (0\u20131)"
           }
         }
       },
