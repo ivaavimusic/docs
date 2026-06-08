@@ -7,6 +7,15 @@ This walks you through bringing a node online end to end. Make sure you meet the
 
 The node software is **open source**: [github.com/Singularity-Layer/sgl-network-node](https://github.com/Singularity-Layer/sgl-network-node). Full command details are in the [CLI reference](/cloud/provide/cli).
 
+<Tip>
+  **Prefer to let an agent do it?** Install the **`x402-compute`** skill and ask your agent to bring the node online — it runs this whole flow (stake → install → register → attest → serve):
+
+  ```bash
+  npx skills add https://github.com/ivaavimusic/singularity-skill --skill x402-compute
+  # or: curl -fsSL https://api.x402layer.cc/skill/x402-compute/install | bash
+  ```
+</Tip>
+
 ## 1. Install the node CLI
 
 Install `sgl` from the official release (see the repo README for per-platform instructions). Verify it's available:
