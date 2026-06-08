@@ -1,18 +1,22 @@
 ---
 title: x402 Compute Skill
-description: Provision, manage, resize, and extend VPS/GPU compute with x402 or MPP payments, signed auth, API keys, and one-time password fallback
+description: The agentic skill for the Singularity Cloud Network — provision Machines, run confidential Grid inference, and operate a grid node, paid in USDC via x402/MPP/credits
 ---
 
 # x402 Compute Skill
 
-The `x402-compute` skill lets agents and developers provision and manage VPS/GPU instances on Vultr or DigitalOcean using x402 payments on Base, Solana, or MegaETH, MPP payments through Tempo-compatible clients such as `mppx`, or pre-loaded USD credits. Optional OWS-backed auth and API keys are available for management flows, including in-place resize.
+The `x402-compute` skill is the agentic interface to the **Singularity Cloud Network**. It covers three jobs:
+
+- **SGL Machines** — provision and manage VPS/GPU instances on Vultr or DigitalOcean (x402 on Base/Solana/MegaETH, MPP via `mppx`, or pre-loaded USD credits; OWS auth, API keys, in-place resize).
+- **SGL Grid — inference** — call decentralized, confidential (TEE), **OpenAI-compatible** inference (`https://grid.x402compute.cc/v1`) with the same `x402c_…` API key/credits or per-request x402; supports token streaming + end-to-end encryption.
+- **Provide Compute (run a node)** — turn a TEE-capable machine into a grid node: stake $SGL, install the `sgl` CLI, register, attest, and serve a model to earn **USDC + SGL**. See [Provide Compute](/cloud/provide/overview) and the skill's `references/node-operator.md`.
 
 <Note>
   Primary access method is SSH public key. If no SSH key was provided during provisioning, a one-time password fallback endpoint is available.
 </Note>
 
 <Note>
-  Current release: **v1.4.0**. x402 Base/Solana/MegaETH payments are live. Pre-loaded USD credits now available for payment-free provisioning and extending. MegaETH uses USDm (ERC-2612 permit) with an embedded facilitator — gasless for users. MPP Tempo USDC.e payments are also live for agent/CLI provisioning.
+  Current release: **v1.6.0** — adds **SGL Grid** (OpenAI-compatible confidential inference) and a **Provide Compute / run-a-node** module on top of Machines. x402 Base/Solana/MegaETH payments are live. Pre-loaded USD credits available for payment-free provisioning, extending, and Grid inference. MegaETH uses USDm (ERC-2612 permit) with an embedded facilitator — gasless for users. MPP Tempo USDC.e payments are also live for agent/CLI provisioning.
 </Note>
 
 <Note>
