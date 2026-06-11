@@ -1,0 +1,59 @@
+---
+title: Contract Addresses
+description: Canonical on-chain addresses for the Singularity network — $SGL token, staking program, treasury, and authorities on Solana mainnet. Verify any address here before interacting.
+---
+
+All Singularity on-chain activity — the **$SGL token**, **staking**, **rewards**,
+**slashing**, **buy-and-burn**, and **compute settlement** — happens on **Solana
+mainnet-beta** and is fully public. Use this page to verify addresses before
+interacting, and as the source list for analytics dashboards (e.g. Dune).
+
+<Warning>
+  Always verify addresses against this page (or the on-chain explorer links
+  below). Singularity will never DM you a different address. Solana addresses are
+  case-sensitive — copy them exactly.
+</Warning>
+
+## Token
+
+| Asset | Address | Details |
+| --- | --- | --- |
+| **$SGL** (SPL) | [`5c4HyD2rSShqnTsf5z3SaoD2H3GE452u2CUuYjviBAGS`](https://solscan.io/token/5c4HyD2rSShqnTsf5z3SaoD2H3GE452u2CUuYjviBAGS) | 9 decimals. The network's stake / pay / earn / burn asset. |
+
+## Programs
+
+| Program | Address | Purpose |
+| --- | --- | --- |
+| **SGL Staking** | [`3zChiHHFxbT3qQJBrwyQgTohfX8jS91bUGT8gpyB7aBC`](https://solscan.io/account/3zChiHHFxbT3qQJBrwyQgTohfX8jS91bUGT8gpyB7aBC) | Anchor program for staking, cooldown unstaking, reward distribution, and slashing. Node operators, validators, and yield stakers all stake here. |
+
+## Wallets & authorities
+
+| Role | Address | What it does |
+| --- | --- | --- |
+| **Treasury / platform wallet** | [`BRPfzDuXe2oeM1jnPkZmWLfdLhm9R2H7SGgHxyCHrd9x`](https://solscan.io/account/BRPfzDuXe2oeM1jnPkZmWLfdLhm9R2H7SGgHxyCHrd9x) | Receives 100% of compute payments, pays operators their share in USDC, deposits staking rewards, and funds buy-and-burn. The hub of all settlement flows. |
+| **Slasher** | [`9pmbxCGBnP1zmfv39YirJu3zSBGnydQPcFtf6U9aNzTR`](https://solscan.io/account/9pmbxCGBnP1zmfv39YirJu3zSBGnydQPcFtf6U9aNzTR) | Submits `slash` instructions for proven tamper events only. It can reduce a node's stake — it **cannot** move or withdraw funds. |
+| **Platform authority** | [`AunvqAg5Zm9yUCPJCeusQwqpF7LhACxmtcmv36PZ47th`](https://solscan.io/account/AunvqAg5Zm9yUCPJCeusQwqpF7LhACxmtcmv36PZ47th) | Program admin / upgrade authority and config owner for the staking program. |
+
+## Reference
+
+| Asset | Address | Notes |
+| --- | --- | --- |
+| **USDC** (Solana) | [`EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`](https://solscan.io/token/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v) | Circle USDC — the settlement currency for compute payments and operator payouts. |
+
+## Building a dashboard
+
+Everything above is public on Solana mainnet, so anyone can build analytics
+(Dune, Flipside, a custom indexer) without permission:
+
+- **Staking TVL, stakes/unstakes, slashes, reward deposits** → index the **SGL
+  Staking program** `3zChiHHFxbT3qQJBrwyQgTohfX8jS91bUGT8gpyB7aBC`.
+- **Compute revenue, operator payouts, reward funding, burns** → track flows in
+  and out of the **treasury wallet** `BRPfzDuXe2oeM1jnPkZmWLfdLhm9R2H7SGgHxyCHrd9x`
+  (USDC in from payers, USDC out to operators, $SGL burns).
+- **Token supply, holders, transfers, burns** → the **$SGL mint**
+  `5c4HyD2rSShqnTsf5z3SaoD2H3GE452u2CUuYjviBAGS`.
+
+<Note>
+  These are mainnet addresses. They are stable, but if the staking program is ever
+  upgraded to a new program ID this page is the canonical place we'll update.
+</Note>

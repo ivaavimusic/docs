@@ -170,6 +170,12 @@
             ]
           },
           {
+            "group": "Contract Addresses",
+            "pages": [
+              "on-chain/contract-addresses"
+            ]
+          },
+          {
             "group": "ERC8004",
             "pages": [
               "agentic-access/erc8004-registration"
