@@ -27,6 +27,19 @@ curl "https://grid.x402compute.cc/v1/providers?model=llama-3.2-3b"
 
 Pass the chosen `node_id` as `node` on your chat request (or the `node=` argument in the SDKs) to use a specific provider; omit it and the grid routes for you.
 
+### Capping price (`max_price`)
+
+Don't want to pick manually? Pass **`max_price`** (blended USD per 1M tokens) on your chat/reserve request — the grid only routes to nodes at or under that rate, and the request is **never billed above it**. Works in every routing mode. It's a typed option in the SDKs (`max_price` / `maxPrice`).
+
+```bash
+# raw API
+curl -X POST https://grid.x402compute.cc/v1/reserve \
+  -H "Content-Type: application/json" \
+  -d '{"model":"llama-3.2-3b","max_price":0.01}'
+```
+
+If no node qualifies under the cap, the request returns `price_cap_unmet` instead of overcharging you.
+
 ## Where the money goes
 
 Each paid inference is split across the people who make the network work:
