@@ -69,6 +69,23 @@ Go off-grid (maintenance): stop receiving **new** jobs without penalty, for plan
 ### `sgl on-grid`
 Come back on-grid: resume receiving jobs.
 
+### `sgl price`
+View or set your **per-token price**. By default your node bills the platform suggested rate (and you keep 80%); you may optionally set your own price within an allowed band — **floor = suggested × 0.5, ceiling = suggested × 5**. Prices are USD per **1M** tokens, split into input (prompt) and output (completion). A model with no custom price simply bills at the suggested rate.
+
+```bash
+sgl price show                                              # your prices + the suggested rate + the band
+sgl price set --model llama-3.2-3b --input 0.004 --output 0.004   # undercut to win more jobs
+sgl price reset --model llama-3.2-3b                        # back to the suggested price
+```
+
+| Subcommand | Flags | Description |
+|---|---|---|
+| `show` | — | Show each served model's price, the suggested rate, and the band |
+| `set` | `--model`, `--input`, `--output` | Set a custom price (USD per 1M tokens; must be in-band and for a model you advertise) |
+| `reset` | `--model` | Revert a model to the platform suggested price |
+
+<Note>The server enforces the band and a short cooldown between changes. You can also manage prices from the operator dashboard, and callers compare nodes at `GET /v1/providers?model=…`.</Note>
+
 ---
 
 ## `sgl service` — background service
@@ -86,6 +103,7 @@ Install and start the background service.
 | `--inference-port` | `8081` | Port for the local llama-server |
 | `--max-jobs` | `1` | Max concurrent jobs |
 | `--heartbeat-interval` | `5` | Heartbeat seconds |
+| `--sandbox` | off | **macOS only.** Run the node under a Seatbelt sandbox that walls off SSH keys, wallets, keychains, and browser data from the inference process. On Linux, equivalent systemd hardening is applied automatically. |
 
 ### `sgl service stop`
 Stop and remove the background service.

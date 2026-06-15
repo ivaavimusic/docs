@@ -17,6 +17,16 @@ The live per-model price is shown in the [Models](/cloud/grid/models) view and t
 curl https://grid.x402compute.cc/grid/models
 ```
 
+## Per-provider pricing
+
+Most nodes serve at the platform suggested rate, but operators may set their **own** per-token price within a band (suggested × 0.5 to × 5). You can compare the nodes serving a model — each with its effective price, cheapest first — and optionally pin one:
+
+```bash
+curl "https://grid.x402compute.cc/v1/providers?model=llama-3.2-3b"
+```
+
+Pass the chosen `node_id` as `node` on your chat request (or the `node=` argument in the SDKs) to use a specific provider; omit it and the grid routes for you.
+
 ## Where the money goes
 
 Each paid inference is split across the people who make the network work:
