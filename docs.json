@@ -130,7 +130,10 @@
                   "cloud/grid/playground",
                   "cloud/grid/api",
                   "cloud/grid/confidential-inference",
-                  "cloud/grid/pricing"
+                  "cloud/grid/pricing",
+                  "api-reference/grid-staking-metrics",
+                  "api-reference/grid-nodes",
+                  "api-reference/grid-rewards-claimable"
                 ]
               },
               {
@@ -291,7 +294,10 @@
             "pages": [
               "api-reference/grid-models",
               "api-reference/grid-chat-completions",
-              "api-reference/grid-capacity"
+              "api-reference/grid-capacity",
+              "api-reference/grid-staking-metrics",
+              "api-reference/grid-nodes",
+              "api-reference/grid-rewards-claimable"
             ]
           },
           {

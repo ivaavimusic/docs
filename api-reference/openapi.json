@@ -2832,11 +2832,11 @@
         "tags": [
           "SGL Grid"
         ],
-        "summary": "Grid capacity",
-        "description": "Live grid capacity \u2014 active node count, TEE types, served models, and an `at_capacity` flag. No auth. Check before a large batch and back off if `at_capacity` is true.",
+        "summary": "Grid capacity & network stats",
+        "description": "Live public network stats \u2014 node counts by hardware, lifetime jobs served/submitted, total $SGL staked, per-model availability. No auth, open CORS.",
         "responses": {
           "200": {
-            "description": "Current capacity",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
@@ -2844,29 +2844,78 @@
                   "properties": {
                     "active_nodes": {
                       "type": "integer",
-                      "example": 1
+                      "example": 3
                     },
-                    "tee_types": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "example": [
-                        "sev-snp"
-                      ]
+                    "total_nodes": {
+                      "type": "integer",
+                      "example": 10
                     },
-                    "models": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "example": [
-                        "llama-3.2-3b"
-                      ]
+                    "apple_nodes": {
+                      "type": "integer",
+                      "example": 3
+                    },
+                    "intel_nodes": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "amd_nodes": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "nvidia_nodes": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "total_jobs": {
+                      "type": "integer",
+                      "example": 330,
+                      "description": "Completed jobs across currently-active nodes."
+                    },
+                    "jobs_completed": {
+                      "type": "integer",
+                      "example": 398,
+                      "description": "Lifetime completed (served) jobs \u2014 never shrinks."
+                    },
+                    "jobs_submitted": {
+                      "type": "integer",
+                      "example": 585,
+                      "description": "Lifetime submitted (total) jobs."
+                    },
+                    "total_sgl_staked": {
+                      "type": "number",
+                      "example": 1200001
                     },
                     "at_capacity": {
                       "type": "boolean",
                       "example": false
+                    },
+                    "models": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "model": {
+                            "type": "string",
+                            "example": "qwen-2.5-14b"
+                          },
+                          "nodes": {
+                            "type": "integer",
+                            "example": 2
+                          },
+                          "busy_nodes": {
+                            "type": "integer",
+                            "example": 0
+                          },
+                          "free_slots": {
+                            "type": "integer",
+                            "example": 2
+                          },
+                          "at_capacity": {
+                            "type": "boolean",
+                            "example": false
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -3009,6 +3058,338 @@
                     },
                     "tx_hash": {
                       "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/grid/models": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Models being served",
+        "description": "Models currently served with node count, average reputation, and per-token pricing. No auth.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model": {
+                        "type": "string",
+                        "example": "qwen-2.5-14b"
+                      },
+                      "node_count": {
+                        "type": "integer",
+                        "example": 2
+                      },
+                      "avg_reputation": {
+                        "type": "number",
+                        "example": 76.5
+                      },
+                      "price_input_per_m": {
+                        "type": "number",
+                        "example": 0.01,
+                        "description": "USD per 1M input tokens."
+                      },
+                      "price_output_per_m": {
+                        "type": "number",
+                        "example": 0.02,
+                        "description": "USD per 1M output tokens."
+                      },
+                      "providers_count": {
+                        "type": "integer",
+                        "example": 2
+                      },
+                      "custom_providers_count": {
+                        "type": "integer",
+                        "example": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/grid/rewards/claimable": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Operator claimable rewards",
+        "description": "Unclaimed on-chain Merkle reward epochs for an operator wallet (their 80% share). Read-only; safe to expose \u2014 claiming still requires the wallet to sign. Base58, never lowercased.",
+        "parameters": [
+          {
+            "name": "wallet",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "8d3o8mLHpBA13m2CtuPSCbu1gujwjotzQvz75xGcHH5U"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "wallet": {
+                      "type": "string",
+                      "example": "8d3o8m\u2026HH5U"
+                    },
+                    "total_usd": {
+                      "type": "number",
+                      "example": 0.0379
+                    },
+                    "epochs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "epoch_id": {
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "distributor": {
+                            "type": "string",
+                            "description": "Merkle distributor PDA."
+                          },
+                          "mint": {
+                            "type": "string",
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "description": "Payout mint (USDC)."
+                          },
+                          "amount_usd": {
+                            "type": "number",
+                            "example": 0.0379
+                          },
+                          "amount_base": {
+                            "type": "integer",
+                            "example": 37919,
+                            "description": "Raw mint units (USDC 6dp)."
+                          },
+                          "leaf_index": {
+                            "type": "integer",
+                            "example": 3
+                          },
+                          "proof": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "expires_at": {
+                            "type": "string",
+                            "example": "2026-09-21T06:21:00Z"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/grid/nodes": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "List nodes for a wallet",
+        "description": "Registered node records for an operator wallet. No auth (public node metadata, no secrets).",
+        "parameters": [
+          {
+            "name": "wallet",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "8d3o8m\u2026HH5U"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "wallet_address": {
+                            "type": "string"
+                          },
+                          "tee_type": {
+                            "type": "string",
+                            "example": "apple_se"
+                          },
+                          "cpu_cores": {
+                            "type": "integer",
+                            "example": 10
+                          },
+                          "ram_gb": {
+                            "type": "integer",
+                            "example": 16
+                          },
+                          "gpu_model": {
+                            "type": "string",
+                            "example": "apple_metal"
+                          },
+                          "available_models": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "reputation_score": {
+                            "type": "number",
+                            "example": 66
+                          },
+                          "total_jobs_completed": {
+                            "type": "integer",
+                            "example": 235
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "active"
+                          },
+                          "sgl_staked": {
+                            "type": "number",
+                            "example": 50000
+                          },
+                          "off_grid": {
+                            "type": "boolean",
+                            "example": false
+                          },
+                          "node_public_key": {
+                            "type": "string",
+                            "description": "Node ed25519 identity key."
+                          },
+                          "anchored": {
+                            "type": "boolean",
+                            "example": true,
+                            "description": "Whether the operator verified (anchored) this node's key on-chain."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/grid/staking/metrics": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Staking metrics (time series)",
+        "description": "Time-series of network staking metrics. No auth.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ts": {
+                        "type": "string",
+                        "example": "2026-06-01T13:35:57Z"
+                      },
+                      "total_staked": {
+                        "type": "number",
+                        "example": 1200001
+                      },
+                      "total_stakers": {
+                        "type": "integer",
+                        "example": 4
+                      },
+                      "tvl_usd": {
+                        "type": "number",
+                        "example": 30
+                      },
+                      "rewards_deposited": {
+                        "type": "number",
+                        "example": 0
+                      },
+                      "rewards_claimed": {
+                        "type": "number",
+                        "example": 0
+                      },
+                      "sgl_rewards_deposited": {
+                        "type": "number",
+                        "example": 0
+                      },
+                      "sgl_rewards_claimed": {
+                        "type": "number",
+                        "example": 0
+                      }
                     }
                   }
                 }
