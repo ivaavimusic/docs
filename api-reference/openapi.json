@@ -3128,6 +3128,214 @@
         }
       }
     },
+    "/grid/rewards/claimable": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Operator claimable rewards",
+        "description": "Unclaimed on-chain Merkle reward epochs for an operator wallet (their 80% share). Read-only; safe to expose \u2014 claiming still requires the wallet to sign. Base58, never lowercased.",
+        "parameters": [
+          {
+            "name": "wallet",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "8d3o8mLHpBA13m2CtuPSCbu1gujwjotzQvz75xGcHH5U"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "wallet": {
+                      "type": "string",
+                      "example": "8d3o8m\u2026HH5U"
+                    },
+                    "total_usd": {
+                      "type": "number",
+                      "example": 0.0379
+                    },
+                    "epochs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "epoch_id": {
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "distributor": {
+                            "type": "string",
+                            "description": "Merkle distributor PDA."
+                          },
+                          "mint": {
+                            "type": "string",
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "description": "Payout mint (USDC)."
+                          },
+                          "amount_usd": {
+                            "type": "number",
+                            "example": 0.0379
+                          },
+                          "amount_base": {
+                            "type": "integer",
+                            "example": 37919,
+                            "description": "Raw mint units (USDC 6dp)."
+                          },
+                          "leaf_index": {
+                            "type": "integer",
+                            "example": 3
+                          },
+                          "proof": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "expires_at": {
+                            "type": "string",
+                            "example": "2026-09-21T06:21:00Z"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/grid/nodes": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "List nodes for a wallet",
+        "description": "Registered node records for an operator wallet. No auth (public node metadata, no secrets).",
+        "parameters": [
+          {
+            "name": "wallet",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "8d3o8m\u2026HH5U"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "wallet_address": {
+                            "type": "string"
+                          },
+                          "tee_type": {
+                            "type": "string",
+                            "example": "apple_se"
+                          },
+                          "cpu_cores": {
+                            "type": "integer",
+                            "example": 10
+                          },
+                          "ram_gb": {
+                            "type": "integer",
+                            "example": 16
+                          },
+                          "gpu_model": {
+                            "type": "string",
+                            "example": "apple_metal"
+                          },
+                          "available_models": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "reputation_score": {
+                            "type": "number",
+                            "example": 66
+                          },
+                          "total_jobs_completed": {
+                            "type": "integer",
+                            "example": 235
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "active"
+                          },
+                          "sgl_staked": {
+                            "type": "number",
+                            "example": 50000
+                          },
+                          "off_grid": {
+                            "type": "boolean",
+                            "example": false
+                          },
+                          "node_public_key": {
+                            "type": "string",
+                            "description": "Node ed25519 identity key."
+                          },
+                          "anchored": {
+                            "type": "boolean",
+                            "example": true,
+                            "description": "Whether the operator verified (anchored) this node's key on-chain."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/grid/staking/metrics": {
       "servers": [
         {
