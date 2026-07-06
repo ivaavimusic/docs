@@ -1017,7 +1017,13 @@
                     "type": "string"
                   },
                   "prepaid_hours": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 24,
+                    "description": "Prepaid runtime in hours (minimum 24). Provision uses prepaid_hours; the extend endpoint uses extend_hours."
+                  },
+                  "use_credits": {
+                    "type": "boolean",
+                    "description": "Pay from prepaid USD credits instead of an x402 wallet payment. Supported for bare and grid machines. NOT supported for ai_machine (private AI Machines require an x402 wallet payment)."
                   },
                   "provider": {
                     "type": "string",
@@ -1037,6 +1043,48 @@
                   },
                   "ssh_public_key": {
                     "type": "string"
+                  },
+                  "user_data": {
+                    "type": "string",
+                    "description": "Optional cloud-init user data run at first boot."
+                  },
+                  "ai_machine": {
+                    "type": "object",
+                    "description": "Private AI Machine (Standard tier). When present, the machine self-installs the pinned LLM behind your own OpenAI-compatible endpoint (URL + API key), running llama-server (llama.cpp) on port 8080 exposing /v1 (/v1/chat/completions and /v1/models). Requires an x402 wallet payment (use_credits is rejected). Mutually exclusive with deploy_node.",
+                    "properties": {
+                      "model_id": {
+                        "type": "string",
+                        "description": "The LLM to serve on the instance."
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "private"
+                        ],
+                        "description": "Must be 'private'."
+                      }
+                    },
+                    "required": [
+                      "model_id",
+                      "mode"
+                    ]
+                  },
+                  "deploy_node": {
+                    "type": "object",
+                    "description": "Join the grid. When present, the machine self-installs as a network node owned by the paying wallet, earning USDC + SGL (requires 50,000 SGL staked). Requires an x402 Solana payment. Mutually exclusive with ai_machine.",
+                    "properties": {
+                      "model_id": {
+                        "type": "string",
+                        "description": "The LLM the node will serve on the grid."
+                      },
+                      "tee_type": {
+                        "type": "string",
+                        "description": "Optional TEE type for the node deploy."
+                      }
+                    },
+                    "required": [
+                      "model_id"
+                    ]
                   }
                 },
                 "required": [
@@ -1275,7 +1323,9 @@
                 "type": "object",
                 "properties": {
                   "extend_hours": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 24,
+                    "description": "Additional prepaid runtime in hours (minimum 24). This endpoint uses extend_hours; provision uses prepaid_hours."
                   },
                   "network": {
                     "type": "string",
