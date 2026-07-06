@@ -1037,6 +1037,22 @@
                   },
                   "ssh_public_key": {
                     "type": "string"
+                  },
+                  "user_data": {
+                    "type": "string",
+                    "description": "Optional cloud-init user data run at first boot."
+                  },
+                  "model_id": {
+                    "type": "string",
+                    "description": "AI Machines only. The LLM to serve on the instance. When set, the machine deploys as an AI Machine (Standard tier) running llama-server (llama.cpp), which exposes an OpenAI-compatible API at /v1 (/v1/chat/completions and /v1/models)."
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "private",
+                      "grid"
+                    ],
+                    "description": "AI Machines only. 'private' returns your own OpenAI-compatible endpoint (URL + API key) just for you. 'grid' joins the machine to the network as a node to earn USDC + SGL (requires 50,000 SGL staked)."
                   }
                 },
                 "required": [
