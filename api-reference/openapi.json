@@ -1050,7 +1050,7 @@
                   },
                   "ai_machine": {
                     "type": "object",
-                    "description": "Private AI Machine (Standard tier). When present, the machine self-installs the pinned LLM behind your own OpenAI-compatible endpoint (URL + API key), running llama-server (llama.cpp) on port 8080 exposing /v1 (/v1/chat/completions and /v1/models). Requires an x402 wallet payment (use_credits is rejected). Mutually exclusive with deploy_node.",
+                    "description": "Private AI Machine (Standard tier). When present, the machine self-installs the pinned LLM behind your own OpenAI-compatible endpoint (URL + API key), running llama-server (llama.cpp) on port 8080 exposing /v1 (/v1/chat/completions and /v1/models). Supports x402, MPP, or prepaid credits. Mutually exclusive with deploy_node.",
                     "properties": {
                       "model_id": {
                         "type": "string",
