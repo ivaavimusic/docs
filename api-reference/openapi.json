@@ -1037,9 +1037,11 @@
                     "type": "string",
                     "enum": [
                       "base",
-                      "solana"
+                      "solana",
+                      "megaeth",
+                      "robinhood"
                     ],
-                    "description": "x402 payment network. MPP clients use Authorization: Payment and do not need this field."
+                    "description": "x402 payment network. Robinhood Chain settles in USDG; Base and MegaETH settle in USDC; Solana settles in USDC. MPP clients use Authorization: Payment and do not need this field."
                   },
                   "ssh_public_key": {
                     "type": "string"
