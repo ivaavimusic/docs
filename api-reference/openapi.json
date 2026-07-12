@@ -2669,7 +2669,7 @@
           "SGL Grid"
         ],
         "summary": "List models",
-        "description": "List the models currently served by active attested nodes. OpenAI-compatible shape.",
+        "description": "List the models currently served by active attested nodes. OpenAI-compatible shape. Each model includes `context_window` — the maximum prompt + output tokens the grid will accept for it right now (the largest live node's context). A request whose `prompt + max_tokens` exceeds this is rejected with a `400 context_length_exceeded` before any charge, and the router only dispatches a request to a node whose context actually fits it.",
         "parameters": [
           {
             "name": "X-API-Key",
@@ -2710,6 +2710,11 @@
                           "owned_by": {
                             "type": "string",
                             "example": "singularity-grid"
+                          },
+                          "context_window": {
+                            "type": "integer",
+                            "example": 16384,
+                            "description": "Maximum prompt + output tokens accepted for this model right now (the largest live node's context window). Size requests against this; exceeding it returns `400 context_length_exceeded` before any charge."
                           }
                         }
                       }
