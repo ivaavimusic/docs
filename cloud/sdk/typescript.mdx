@@ -75,6 +75,25 @@ const res = await grid.chatCompletions({
 });
 ```
 
+## Embeddings
+
+Turn text into vectors for search and RAG via the OpenAI-compatible `/v1/embeddings`
+endpoint. Returns the OpenAI-style response with `data` ordered to match `input`. See the
+[Embeddings guide](/cloud/grid/embeddings) for the model catalog and options.
+
+```typescript
+const grid = new GridClient({ apiKey: "scg_..." });
+
+const res = await grid.embed({
+  model: "nomic-embed-text-v1.5",
+  input: ["hello world", "bonjour"],
+  // dimensions: 256,          // optional: Matryoshka truncation
+  // input_type: "query",      // optional: asymmetric-retrieval hint
+});
+
+console.log(res.data.length, res.data[0].embedding.length); // 2 768
+```
+
 ## Jobs + attestation
 
 ```typescript

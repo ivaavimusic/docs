@@ -1,0 +1,141 @@
+---
+title: Embeddings
+description: Turn text into vectors on SGL Grid — OpenAI-compatible /v1/embeddings for semantic search, RAG, clustering and recommendations.
+---
+
+SGL Grid serves **embedding models** alongside chat, reasoning and coding models. An
+embedding turns a piece of text into a fixed-length vector of floats you can store in a
+vector database and compare with cosine similarity — the backbone of **semantic search**
+and **retrieval-augmented generation (RAG)**.
+
+Embeddings are a distinct modality from chat: they use the OpenAI-compatible
+**`/v1/embeddings`** endpoint (not `/v1/chat/completions`), return a vector rather than
+text, and are billed on **input tokens only** (there is no generation).
+
+## Endpoint
+
+```
+POST https://grid.x402compute.cc/v1/embeddings
+```
+
+Request body (OpenAI-compatible):
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `model` | string | An embedding model id (see the catalog below). |
+| `input` | string \| string[] | One string, or an array to embed a batch in one call. |
+| `dimensions` | number | *Optional.* Truncate a Matryoshka model to fewer dims (e.g. nomic `768→256`). |
+| `input_type` | `"query"` \| `"document"` | *Optional.* Asymmetric-retrieval hint for models that support it. |
+| `tier` | `"standard"` \| `"confidential"` | *Optional.* Route to any node, or attested nodes only. |
+
+The response matches OpenAI's shape:
+
+```json
+{
+  "object": "list",
+  "data": [{ "object": "embedding", "index": 0, "embedding": [0.01, -0.03, ...] }],
+  "model": "nomic-embed-text-v1.5",
+  "usage": { "prompt_tokens": 6, "total_tokens": 6 }
+}
+```
+
+Vectors are returned in the same order as `input` and are **L2-normalized**, so a plain
+dot product equals cosine similarity.
+
+## Model catalog
+
+All models are tiny, CPU-friendly BERT encoders — great even on modest hardware.
+
+| Model id | Dimensions | Notes |
+| --- | --- | --- |
+| `nomic-embed-text-v1.5` | 768 (Matryoshka → 512/256/128/64) | Recommended. 8K input, strong general retrieval. |
+| `bge-small-en-v1.5` | 384 | Smallest/fastest English retriever. |
+| `bge-base-en-v1.5` | 768 | Balanced quality/size. |
+| `bge-large-en-v1.5` | 1024 | Highest-quality BGE English. |
+| `mxbai-embed-large-v1` | 1024 (→ 512/256) | Top MTEB retrieval. |
+| `all-minilm-l6-v2` | 384 | Classic lightweight sentence encoder. |
+
+List what's live right now (embeddings appear once at least one node serves them):
+
+```bash
+curl "https://grid.x402compute.cc/v1/models?type=embedding"
+```
+
+## Quickstart
+
+<CodeGroup>
+
+```bash cURL
+curl https://grid.x402compute.cc/v1/embeddings \
+  -H "Authorization: Bearer x402c_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "nomic-embed-text-v1.5",
+    "input": ["The Singularity grid serves confidential embeddings.", "Hello world"]
+  }'
+```
+
+```python OpenAI SDK
+from openai import OpenAI
+
+client = OpenAI(base_url="https://grid.x402compute.cc/v1", api_key="x402c_your_api_key")
+r = client.embeddings.create(model="nomic-embed-text-v1.5", input=["hello world"])
+print(len(r.data[0].embedding))   # 768
+```
+
+```python Singularity SDK
+from singularity_grid import GridClient
+
+grid = GridClient(api_key="scg_your_api_key")
+vecs = grid.embed("nomic-embed-text-v1.5", ["hello world", "bonjour"])
+print(len(vecs), len(vecs[0]))     # 2 768
+```
+
+```ts Node SDK
+import { GridClient } from "@singularity-layer/grid";
+
+const grid = new GridClient({ apiKey: "scg_your_api_key" });
+const res = await grid.embed({ model: "nomic-embed-text-v1.5", input: ["hello world"] });
+console.log(res.data[0].embedding.length); // 768
+```
+
+</CodeGroup>
+
+## Matryoshka dimensions
+
+`nomic-embed-text-v1.5` and `mxbai-embed-large-v1` are **Matryoshka** models — you can ask
+for a shorter vector to save storage and speed up search, at a small recall cost. The
+server truncates and re-normalizes:
+
+```python
+r = client.embeddings.create(model="nomic-embed-text-v1.5", input="cat", dimensions=256)
+len(r.data[0].embedding)  # 256
+```
+
+## Query vs document
+
+Some models score asymmetric retrieval better when you tell them whether a text is a
+search **query** or a stored **document**. Pass `input_type` (Singularity SDK / raw API):
+
+```python
+grid.embed("nomic-embed-text-v1.5", "a king rules a kingdom", input_type="query")
+grid.embed("nomic-embed-text-v1.5", "a queen rules a kingdom", input_type="document")
+```
+
+## Billing
+
+Embeddings are billed on **input tokens only** at the model's per-token rate — there is no
+output/generation cost. Pay with [credits](/cloud/concepts/billing) (API key) or per-call
+with an x402 wallet, exactly like chat. A timed-out or failed request is never charged.
+
+## A minimal RAG loop
+
+1. **Index**: embed your documents and store `(id, vector, text)` in a vector DB
+   (pgvector, Pinecone, …).
+2. **Retrieve**: embed the user's question, find the nearest vectors (cosine).
+3. **Generate**: pass the top matches as context to a chat model on the grid.
+
+The embedding model is the *search index* step — not the conversation. See the
+[API guide](/cloud/grid/api) for the chat call.
+
+<Note>Run an embedding model yourself and earn from other people's search/RAG apps — see [Provide Compute](/cloud/provide/overview).</Note>

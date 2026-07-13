@@ -80,6 +80,30 @@ resp = client.chat.completions.create(
 print(resp.choices[0].message.content)
 ```
 
+## Embeddings
+
+Turn text into vectors for search and RAG via the OpenAI-compatible `/v1/embeddings`
+endpoint. `embed()` returns the list of vectors (ordered to match `input`); `embeddings()`
+returns the full OpenAI-style response. See the [Embeddings guide](/cloud/grid/embeddings)
+for the model catalog and options.
+
+```python
+from singularity_grid import GridClient
+
+grid = GridClient(api_key="scg_your_api_key")
+
+# Just the vectors
+vecs = grid.embed("nomic-embed-text-v1.5", ["hello world", "bonjour"])
+print(len(vecs), len(vecs[0]))          # 2 768
+
+# Matryoshka: shorter vectors to save storage
+short = grid.embed("nomic-embed-text-v1.5", "cat", dimensions=256)
+
+# Full OpenAI-style response (usage, indices)
+resp = grid.embeddings("bge-small-en-v1.5", ["a", "b"])
+print(resp["usage"])
+```
+
 ## API reference
 
 | Method | Auth | Description |

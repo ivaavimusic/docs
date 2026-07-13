@@ -15,10 +15,23 @@ curl https://grid.x402compute.cc/grid/models
 
 Each entry includes the model id (use it as `model` in your request), how many nodes serve it, and its price.
 
+## Model families
+
+The grid serves several kinds of model, shown as coloured categories in the dashboard:
+
+- **Language** — general chat / instruct models (Llama, Qwen, Gemma, Mistral, Phi …).
+- **Code** — programming-tuned models (Qwen Coder) with OpenAI tool-calling.
+- **Reasoning** — chain-of-thought models (DeepSeek R1) that "think" before answering; their reasoning shows in a collapsible box in chat.
+- **Embeddings** — text-to-vector models for search and RAG. These use a separate endpoint and are **not** for chat — see the [Embeddings guide](/cloud/grid/embeddings).
+
+Language, code and reasoning models are all called through the same
+[chat completions](/cloud/grid/api) endpoint; only the `model` id changes.
+
 ## Choosing a model
 
 - **Smaller models** (e.g. 3B-class) are cheapest and fastest — great for classification, extraction, drafting, and agent steps.
 - **Larger models** trade cost/latency for capability.
+- **Reasoning models** are best for math, logic and multi-step planning.
 - **Availability matters** — a model with more serving nodes is more resilient. Prefer models with redundancy for production.
 
 ## OpenAI compatibility
