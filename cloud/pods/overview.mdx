@@ -1,0 +1,73 @@
+---
+title: Agent Pods — Overview
+description: Deploy an always-on hosted AI agent on the Singularity network — its own machine, wallet, memory, and channels. Pay in credits or crypto.
+---
+
+**Agent Pods** are always-on hosted AI agents. Deploy one in a couple of minutes and it stays online 24/7 — you chat with it from the dashboard **and** on Telegram, Discord, or Slack. Each pod runs [OpenClaw](https://openclaw.ai) (a "ClawPod") on its own dedicated CPU machine, comes with its **own crypto wallet** and **memory**, and ships with the `x402-compute` and `x402-layer` skills preinstalled so the agent can buy compute and pay x402 endpoints itself.
+
+## What you get
+
+- **An always-on agent** — hosted on a dedicated machine, reachable from the dashboard and your chat apps.
+- **Managed or BYOK AI** — we run the model (metered from credits), or bring your own OpenAI-compatible key.
+- **Its own wallet** — a Coinbase CDP wallet (EVM + Solana) with keys in a secure enclave. Fund it and the agent can pay for things; withdraw anytime.
+- **Memory** — persistent per-pod memory so the agent remembers across conversations.
+- **Preinstalled skills** — `x402-compute` + `x402-layer`, so the agent is economically active out of the box.
+
+## Deploy
+
+<Steps>
+  <Step title="Pick an agent + AI mode">
+    **Managed** — we run the LLM. Choose a tier: **Starter** (chat), **Pro** / **Max** (add computer-use + memory). Each tier bundles a matched machine and a menu of models the agent can switch between with `/model`.
+
+    **BYOK** — bring your own OpenAI-compatible key and pick any machine. You pay CPU + a small service fee; your AI runs on your key.
+  </Step>
+  <Step title="Add channels (optional)">
+    Paste a Telegram / Discord / Slack bot token to reach your agent there. You can add or change channels anytime after deploy.
+  </Step>
+  <Step title="Pay">
+    From your **platform credits** or **per-month USDC (x402)**. Managed AI usage is metered from credits.
+  </Step>
+</Steps>
+
+## Models
+
+Managed tiers include a curated set of models — **all included**. Your agent starts on the tier default and can switch to any of them anytime with `/model <name>` in chat, no redeploy. The proxy meters real usage per call, so switching is cost-safe.
+
+## Memory
+
+- **Managed Pro / Max** — bundled memory: **mem0** cross-session semantic recall + **Lossless Context** (never drops earlier turns in long conversations). Zero setup.
+- **BYOK** — keep on-pod raw files (private, default), or bring your own **mem0** key, with an optional Lossless Context toggle.
+- **Starter** — on-pod raw Markdown memory.
+
+## Wallet
+
+Every pod gets its own wallet (EVM on Base + Solana). Private keys live in Coinbase's secure enclave — never on the pod, never with us. Fund it so the agent can pay for APIs, x402 endpoints, and on-chain actions. Agent spending is capped and off by default (you arm it and set a per-transaction limit in **Wallet → Spending controls**); **your own withdrawals are uncapped**. Funds are never lost on destroy.
+
+## Channels & pairing
+
+When you add a channel, message your bot once — it replies with a **pairing code**. Paste that code in the pod's **Channels** tab to let yourself in. Your agent stays private until you pair.
+
+## Billing & lifecycle
+
+A pod is prepaid for a runtime window (e.g. 1 month). It **auto-renews** from credits at expiry with a short grace period, and you can **extend** early. Destroying a pod refunds remaining prepaid time and releases its machine — the agent wallet's funds are never lost (withdraw from the Wallet tab; the wallet stays reachable under Archived).
+
+## Deploy programmatically (agentic)
+
+Pods are fully API-driven, so an agent can deploy and manage other pods. Auth with an `X-API-Key`, a signed compute session, or x402; pay with credits (`use_credits: true`) or x402.
+
+```bash
+# Deploy a managed Pro pod from credits
+curl -s -X POST https://compute.x402layer.cc/pods \
+  -H "X-API-Key: $COMPUTE_API_KEY" -H "Content-Type: application/json" \
+  -d '{"agent_id":"openclaw","ai_mode":"managed","tier":"pro",
+       "plan":"<plan_id>","prepaid_hours":720,
+       "channels":{"telegram":"<bot_token>"},"use_credits":true}'
+
+# List + manage
+curl -s https://compute.x402layer.cc/pods           -H "X-API-Key: $COMPUTE_API_KEY"
+curl -s https://compute.x402layer.cc/pods/<id>      -H "X-API-Key: $COMPUTE_API_KEY"
+curl -s -X POST https://compute.x402layer.cc/pods/<id>/actions \
+  -H "X-API-Key: $COMPUTE_API_KEY" -H "Content-Type: application/json" -d '{"action":"restart"}'
+```
+
+See the public catalog for agents, tiers, models, and plans: `GET https://compute.x402layer.cc/pods/catalog`. The `x402-compute` skill documents the full flow for agents.

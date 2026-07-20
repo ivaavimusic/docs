@@ -148,6 +148,12 @@
                 ]
               },
               {
+                "group": "Agent Pods",
+                "pages": [
+                  "cloud/pods/overview"
+                ]
+              },
+              {
                 "group": "SGL Processors",
                 "pages": [
                   "cloud/processors/overview"
