@@ -1,55 +1,131 @@
 ---
 title: Agent Pods — Overview
-description: Deploy an always-on hosted AI agent on the Singularity network — its own machine, wallet, memory, and channels. Pay in credits or crypto.
+description: Deploy an always-on hosted AI agent on the Singularity network — its own machine, wallet, memory, skills, and chat channels. Pay in credits or crypto.
 ---
 
-**Agent Pods** are always-on hosted AI agents. Deploy one in a couple of minutes and it stays online 24/7 — you chat with it from the dashboard **and** on Telegram, Discord, or Slack. Each pod runs [OpenClaw](https://openclaw.ai) (a "ClawPod") on its own dedicated CPU machine, comes with its **own crypto wallet** and **memory**, and ships with the `x402-compute` and `x402-layer` skills preinstalled so the agent can buy compute and pay x402 endpoints itself.
+**Agent Pods** are always-on hosted AI agents. Deploy one in a couple of minutes and it stays online 24/7 — you chat with it from the dashboard **and** on Telegram or Discord. Today you deploy a **ClawPod** (the [OpenClaw](https://openclaw.ai) agent) on its own dedicated CPU machine. A **HermPod** (the Hermes self-improving agent) is **coming soon**.
+
+Each pod comes with its **own crypto wallet**, **memory**, the `x402-compute` + `x402-layer` skills, and the native **Singularity MCP** preinstalled — so the agent is economically active out of the box: it can buy confidential compute, use the marketplace, and pay any x402 endpoint itself, all under caps you control.
 
 ## What you get
 
 - **An always-on agent** — hosted on a dedicated machine, reachable from the dashboard and your chat apps.
-- **Managed or BYOK AI** — we run the model (metered from credits), or bring your own OpenAI-compatible key.
-- **Its own wallet** — a Coinbase CDP wallet (EVM + Solana) with keys in a secure enclave. Fund it and the agent can pay for things; withdraw anytime.
+- **Managed or BYOK AI** — we run a model from your tier (billed from your credits), or bring your own OpenAI-compatible key + model.
+- **Its own wallet** — a Coinbase-secured wallet (Base + Solana) with keys in a secure enclave. Fund it and the agent can pay for things; withdraw anytime.
+- **Preinstalled skills + MCP** — `x402-compute`, `x402-layer`, and the Singularity MCP (marketplace / Slayer tools), auto-wired to your account under revocable, capped credentials.
 - **Memory** — persistent per-pod memory so the agent remembers across conversations.
-- **Preinstalled skills** — `x402-compute` + `x402-layer`, so the agent is economically active out of the box.
+
+## Agents
+
+| Agent | Framework | Status |
+| --- | --- | --- |
+| **ClawPod** | OpenClaw | Available now |
+| **HermPod** | Hermes (self-improving, grows its own skills) | Coming soon |
 
 ## Deploy
 
 <Steps>
   <Step title="Pick an agent + AI mode">
-    **Managed** — we run the LLM. Choose a tier: **Starter** (chat), **Pro** / **Max** (add computer-use + memory). Each tier bundles a matched machine and a menu of models the agent can switch between with `/model`.
+    **Managed** — we run the LLM. Choose a tier: **Starter** (chat), **Pro** or **Max** (add computer-use + memory). Each tier bundles a matched machine and a curated menu of models the agent can switch between with `/model`.
 
-    **BYOK** — bring your own OpenAI-compatible key and pick any machine. You pay CPU + a small service fee; your AI runs on your key.
+    **BYOK** — bring your own OpenAI-compatible key and model, and pick any machine. You pay for the machine + a small service fee; your AI runs on your key.
   </Step>
   <Step title="Add channels (optional)">
-    Paste a Telegram / Discord / Slack bot token to reach your agent there. You can add or change channels anytime after deploy.
+    Paste a **Telegram** or **Discord** bot token to reach your agent there. (Slack, WhatsApp and Signal are coming soon.) You can add or change channels anytime after deploy — or just use the in-dashboard **Chat**.
   </Step>
   <Step title="Pay">
-    From your **platform credits** or **per-month USDC (x402)**. Managed AI usage is metered from credits.
+    From your **platform credits** or **per-month USDC (x402)**. Or start on the **free 24h trial** (Starter/Pro) — no upfront payment.
   </Step>
 </Steps>
 
-## Models
+## Tiers & models (managed)
 
-Managed tiers include a curated set of models — **all included**. Your agent starts on the tier default and can switch to any of them anytime with `/model <name>` in chat, no redeploy. The proxy meters real usage per call, so switching is cost-safe.
+Each managed tier bundles a matched machine floor with a curated list of models — **all included**. Your agent starts on the tier default and can switch to any model in its tier anytime with `/model <name>` in chat, no redeploy. The managed proxy meters real usage per call, so switching is cost-safe, and a pod can never reach an off-tier (pricier) model.
 
-## Memory
+<Tabs>
+  <Tab title="Starter">
+    Chat agent on Telegram or Discord. Fast, cheap, **text-only** (no computer use). Runs on a 2 GB machine.
 
-- **Managed Pro / Max** — bundled memory: **mem0** cross-session semantic recall + **Lossless Context** (never drops earlier turns in long conversations). Zero setup.
-- **BYOK** — keep on-pod raw files (private, default), or bring your own **mem0** key, with an optional Lossless Context toggle.
-- **Starter** — on-pod raw Markdown memory.
+    - `deepseek/deepseek-chat-v3.1` **(default)**
+    - `qwen/qwen3-235b-a22b-2507`
+    - `z-ai/glm-4.5-air`
+    - `openai/gpt-5-mini`
+  </Tab>
+  <Tab title="Pro">
+    Adds **computer use** — the agent can see screenshots and drive a real browser. Runs on a 4 GB machine.
+
+    - `google/gemini-2.5-flash` **(default)**
+    - `google/gemini-2.5-flash-lite`
+    - `z-ai/glm-4.6`
+    - `openai/gpt-4.1-mini`
+  </Tab>
+  <Tab title="Max">
+    Top reasoning + reliable computer use for heavy multi-step agents. Runs on an 8 GB machine.
+
+    - `google/gemini-2.5-pro` **(default)**
+    - `anthropic/claude-sonnet-4.5`
+    - `openai/gpt-5.1`
+    - `google/gemini-2.5-flash`
+  </Tab>
+</Tabs>
+
+<Info>
+  **BYOK ignores tiers entirely** — you bring any OpenAI-compatible model and pick any machine size.
+</Info>
+
+## Free 24h trial
+
+Starter and Pro can deploy on a **free 24-hour trial** — a grant-funded pod with **no upfront payment**. It runs exactly like a paid pod, then is **auto-destroyed at expiry** (trials never auto-renew). Keep it by converting to a paid plan before the countdown ends. The AI allowance on a trial is capped, and the total giveaway is hard-capped by the trial campaign budget.
+
+## Billing — three separate rails
+
+A pod's spending flows through **three independent, individually-capped rails**. Keeping them separate is what makes an always-on agent safe to leave running.
+
+<CardGroup cols={1}>
+  <Card title="1. Managed inference (the LLM)" icon="brain">
+    Every managed pod ships with a **free included AI allowance** bundled into the plan. Once that's used up, inference **overage bills from the owner's Singularity credits**, bounded by a **~$20/day per-pod AI cap**. At zero balance or over the daily cap, managed inference fails closed (the agent pauses thinking rather than overspending). BYOK pods skip this rail — their AI runs on your own key.
+  </Card>
+  <Card title="2. Delegated grid-compute budget" icon="server">
+    So the agent can use **Singularity Compute + the x402 marketplace** out of the box, each pod gets a **pod-scoped, daily-capped Compute key** (default-deny route allow-list). The budget defaults to **$2/day** and you can raise it up to a **$100/day ceiling** from the pod's settings — or swap in your own key for no ceiling. This key is scoped to your account and **revocable** anytime.
+  </Card>
+  <Card title="3. The pod's crypto wallet" icon="wallet">
+    The agent's **own wallet** (Base + Solana) funds x402 purchases and on-chain sends. Agent spending is **off by default** — you arm it and set a **per-transaction cap** and a **rolling-24h cap** (bounded by a platform ceiling). Your **own withdrawals are uncapped**.
+  </Card>
+</CardGroup>
 
 ## Wallet
 
-Every pod gets its own wallet (EVM on Base + Solana). Private keys live in Coinbase's secure enclave — never on the pod, never with us. Fund it so the agent can pay for APIs, x402 endpoints, and on-chain actions. Agent spending is capped and off by default (you arm it and set a per-transaction limit in **Wallet → Spending controls**); **your own withdrawals are uncapped**. Funds are never lost on destroy.
+Every pod gets its own wallet (EVM on Base + Solana). Private keys live in Coinbase's secure enclave — never on the pod, never with us. Fund it (deposit) so the agent can **buy any x402 endpoint**, pay for APIs, and take on-chain actions. You can **withdraw** or **send** anytime from the Wallet tab. Agent spend is capped and off by default (arm it and set a per-transaction limit in **Wallet → Spending controls**); your own withdrawals are uncapped. Funds are never lost on destroy — the wallet stays reachable under Archived.
+
+## Skills & MCP
+
+Every pod ships economically active:
+
+- **`x402-compute`** — buy confidential compute on the Singularity grid.
+- **`x402-layer`** — pay x402 endpoints and manage Layer operations.
+- **Singularity MCP** — native marketplace / Slayer tools via tool-calling.
+
+These are auto-wired to **your account** using the pod's delegated Compute key + a scoped Studio PAT — **capped and revocable**. The agent also ships 50+ built-in OpenClaw skills, installable from ClawHub.
+
+## Memory
+
+Every pod keeps persistent per-pod memory so the agent remembers across conversations.
+
+- **Starter** — on-pod memory files (private to the pod).
+- **Managed Pro / Max** — enhanced cross-session recall; **Max** adds **mem0** semantic memory, brokered so the key never touches the VM. (Advanced semantic recall is rolling out — some higher-tier memory features may activate progressively.)
+- **BYOK** — on-pod memory files by default, or bring your own **mem0** key.
 
 ## Channels & pairing
 
 When you add a channel, message your bot once — it replies with a **pairing code**. Paste that code in the pod's **Channels** tab to let yourself in. Your agent stays private until you pair.
 
-## Billing & lifecycle
+## Lifecycle
 
-A pod is prepaid for a runtime window (e.g. 1 month). It **auto-renews** from credits at expiry with a short grace period, and you can **extend** early. Destroying a pod refunds remaining prepaid time and releases its machine — the agent wallet's funds are never lost (withdraw from the Wallet tab; the wallet stays reachable under Archived).
+- **Auto-renew** — a paid pod is prepaid for a runtime window (e.g. 1 month) and **auto-renews from your credits** at expiry, holding in a short **grace window** if you're briefly short before destroying. Trials never renew.
+- **Extend** — top up the runtime window early.
+- **Manage** — **restart**, **redeploy**, **stop**, or **destroy** from the pod detail page. Destroying refunds remaining prepaid time and releases the machine (wallet funds are preserved).
+- **Update agent** — pull the latest agent features/skills onto a running pod.
+- **Heartbeat, diagnostics & logs** — the pod heartbeats its status; run **Diagnose** or pull **Logs** from the dashboard when you need to see what it's doing.
 
 ## Deploy programmatically (agentic)
 
