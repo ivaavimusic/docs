@@ -150,7 +150,14 @@
               {
                 "group": "Agent Pods",
                 "pages": [
-                  "cloud/pods/overview"
+                  "cloud/pods/overview",
+                  "cloud/pods/deploy",
+                  "cloud/pods/manage",
+                  "cloud/pods/models",
+                  "cloud/pods/wallet",
+                  "cloud/pods/memory",
+                  "cloud/pods/scheduler",
+                  "cloud/pods/openai-adapter"
                 ]
               },
               {
@@ -326,6 +333,22 @@
               "api-reference/compute-api-keys-list",
               "api-reference/compute-api-keys-create",
               "api-reference/compute-api-keys-delete"
+            ]
+          },
+          {
+            "group": "Agent Pods",
+            "pages": [
+              "api-reference/pods-catalog",
+              "api-reference/pods-deploy",
+              "api-reference/pods-list",
+              "api-reference/pods-get",
+              "api-reference/pods-settings",
+              "api-reference/pods-usage",
+              "api-reference/pods-api-keys-list",
+              "api-reference/pods-api-keys-create",
+              "api-reference/pods-api-keys-revoke",
+              "api-reference/pods-adapter-models",
+              "api-reference/pods-adapter-chat"
             ]
           },
           {

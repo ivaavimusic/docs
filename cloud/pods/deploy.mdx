@@ -1,0 +1,121 @@
+---
+title: Deploy a Pod
+description: Deploy an always-on AI agent in a couple of minutes — pick an agent, choose Managed or BYOK AI, size the machine, add chat channels, and pay in credits or USDC. Or start on a free 24h trial.
+---
+
+Deploying a pod takes a couple of minutes. Do it from the dashboard under **Agent Pods → Deploy a Pod**. You pick an agent, decide how it gets its AI, size its machine, optionally wire chat channels, and pay. It provisions and comes online 24/7.
+
+## Steps
+
+<Steps>
+  <Step title="Pick an agent">
+    Choose an agent from the catalog. Today that's the **ClawPod** ([OpenClaw](https://openclaw.ai)); the **HermPod** (Hermes) is coming soon. Each card shows the agent's supported channels and its minimum machine size.
+  </Step>
+  <Step title="Choose how it gets its AI">
+    **Managed** — we run the LLM and bill usage from your platform credits. **BYOK** — bring your own OpenAI-compatible key and model. See [AI mode](#ai-mode-managed-vs-byok) below.
+  </Step>
+  <Step title="Size the machine">
+    **Managed** tiers each bundle a matched machine automatically. **BYOK** lets you pick any machine that clears the agent's RAM floor.
+  </Step>
+  <Step title="Add channels (optional)">
+    Paste a **Telegram** or **Discord** bot token to reach your agent there. Every channel is optional — you can also just use the in-dashboard **Chat**, and add or change channels anytime after deploy.
+  </Step>
+  <Step title="Pay">
+    From your **platform credits** or **per-month USDC (x402)**. Or start on the **free 24h trial** (Starter/Pro) — no upfront payment.
+  </Step>
+</Steps>
+
+## AI mode: Managed vs BYOK
+
+<CardGroup cols={2}>
+  <Card title="Managed — we provide the AI" icon="brain">
+    Pick a **tier** (Starter, Pro, Max). Each tier bundles a matched machine and a curated menu of models the agent can switch between anytime. Inference is metered per call and billed from your platform credits (1 credit = $1). Nothing else to set up — a **free included AI allowance** lets you chat right away.
+  </Card>
+  <Card title="BYOK — bring your own key" icon="key">
+    Use your own **OpenAI-compatible / OpenRouter key** and any model slug, and pick any machine. You pay for the machine plus a small pod service fee; your AI runs on your key and bills to your provider. BYOK ignores tiers entirely.
+  </Card>
+</CardGroup>
+
+### Managed tiers
+
+Each managed tier bundles a machine floor with a curated, **all-included** model list. Higher tiers add **computer use** (the agent sees screenshots and drives a real browser, which needs a bigger box) and stronger models. Every tier includes everything below it.
+
+<Tabs>
+  <Tab title="Starter">
+    Chat agent on Telegram, Discord & Slack. Fast, cheap, **text-only** (no computer use). Runs on a ~2 GB machine.
+  </Tab>
+  <Tab title="Pro">
+    Adds **computer use** — the agent sees screenshots and drives a browser. Runs on a ~4 GB machine.
+  </Tab>
+  <Tab title="Max">
+    Top reasoning + reliable computer use for heavy multi-step agents, plus cross-session **semantic memory**. Runs on a ~8 GB machine.
+  </Tab>
+</Tabs>
+
+On the tier step you also pick a **starting model** from that tier's included menu — hover any model for its price and context window. Your agent can switch models later with `/model` in chat or from **Settings**. See [Models](/cloud/pods/models) for the full picture.
+
+<Info>
+  The exact tiers, machines, and per-tier model menus are served live from the pod catalog (`GET https://compute.x402layer.cc/pods/catalog`) and change over time — the wizard always shows what's current.
+</Info>
+
+### BYOK provider + model
+
+Pick a provider (OpenRouter, OpenAI, Google, the Singularity Grid, and more) to pre-fill its base URL and API dialect, then choose a model or type any slug. For a fully custom endpoint, choose **Custom**, paste your **base URL**, and select the **API format**. Finally paste your **API key** (stored for the pod, used to call your model).
+
+<Note>
+  Choosing the **Singularity Grid** as your BYOK provider runs on confidential compute — use a Grid API key (**Settings → API keys**, `grid:inference` scope); requests draw from your Grid credit balance.
+</Note>
+
+## Uncensored models
+
+Some managed tiers include **uncensored** models (badged **uncensored** in the picker). They run through our upstream inference provider and are billed like any other managed model. Illegal content is never permitted — your prompts and outputs must comply with the provider's and each model's terms. See [Models](/cloud/pods/models).
+
+## Channels
+
+Add **Telegram** or **Discord** by pasting a bot token (the wizard links to each platform's "create a bot token" guide). Slack, WhatsApp and Signal are shown as **coming soon**. After you add a channel, message your bot once and it replies with a **pairing code** — paste that in the pod's **Channels** tab to let yourself in. Your agent stays private until you pair. See [Manage a Pod](/cloud/pods/manage).
+
+## Pay
+
+On the review step, confirm the summary and choose a payment method:
+
+<CardGroup cols={2}>
+  <Card title="Credits" icon="wallet">
+    Billed to your unified **platform credits** (1 credit = $1). Covers the pod fee and, for managed pods, the AI allowance/overage. If your balance looks low, the wizard nudges you to pay with USDC instead.
+  </Card>
+  <Card title="USDC (x402)" icon="dollar-sign">
+    Pay the first month directly in **USDC** on your chosen chain (Base, Solana, and more) via x402. For managed pods, ongoing AI usage still draws from credits.
+  </Card>
+</CardGroup>
+
+A pod is prepaid for a runtime window (~1 month floor for an always-on agent). Provisioning shows a live progress panel (machine → agent runtime → starting the agent), then hands you straight into the pod — pairing-first if you added Telegram.
+
+## Free 24h trial
+
+Starter and Pro can deploy on a **free 24-hour trial** — a grant-funded pod with **no upfront payment**. It runs exactly like a paid pod, then is **auto-destroyed at expiry** (trials never auto-renew). Keep it by converting to a paid plan before the countdown ends. The AI allowance on a trial is capped, and the total giveaway is hard-capped by the trial campaign budget. The trial is limited to one per device + wallet.
+
+<Note>
+  The **Deploy free for 24h** button only appears when trials are live and the selected tier is Starter or Pro. Otherwise you'll just see **Deploy pod** / **Pay & deploy**.
+</Note>
+
+## Deploy programmatically
+
+Pods are fully API-driven — an agent can deploy and manage other pods. Authenticate with an `X-API-Key`, a signed compute session, or x402, and pay with credits (`use_credits: true`) or x402.
+
+```bash
+# Deploy a managed Pro pod from credits
+curl -s -X POST https://compute.x402layer.cc/pods \
+  -H "X-API-Key: $COMPUTE_API_KEY" -H "Content-Type: application/json" \
+  -d '{"agent_id":"openclaw","ai_mode":"managed","tier":"pro",
+       "prepaid_hours":720,"channels":{"telegram":"<bot_token>"},
+       "use_credits":true}'
+```
+
+See the public catalog at `GET https://compute.x402layer.cc/pods/catalog` for agents, tiers, models and plans, and the [API reference](/api-reference/pods-deploy) for every endpoint and field.
+
+## Related
+
+<CardGroup cols={3}>
+  <Card title="Manage a Pod" icon="sliders" href="/cloud/pods/manage">Tabs, lifecycle, auto-renew.</Card>
+  <Card title="Models" icon="brain" href="/cloud/pods/models">Tiers, uncensored, switching.</Card>
+  <Card title="Overview" icon="circle-info" href="/cloud/pods/overview">What Agent Pods are.</Card>
+</CardGroup>

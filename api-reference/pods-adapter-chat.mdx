@@ -1,0 +1,59 @@
+---
+title: Create chat completion (pod adapter)
+openapi: 'POST /pods/{id}/v1/chat/completions'
+---
+
+## Drop-in with the OpenAI SDK
+
+The pod adapter is OpenAI-compatible. Point any OpenAI SDK at your pod's `/v1`
+base URL, use the pod integration key (`sk-sglpod-int-...`) as the API key, and
+call the model `agent-pod`. Each request runs one agent turn on your pod.
+
+<Note>
+Non-streaming only. Setting `stream: true` returns `400 stream_unsupported`.
+The response `usage` field is always `null` in v1.
+</Note>
+
+**Base URL:** `https://compute.x402layer.cc/pods/{id}/v1`
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://compute.x402layer.cc/pods/POD_ID/v1",
+    api_key="sk-sglpod-int-...",   # a pod integration key (POST /pods/{id}/api-keys)
+)
+
+resp = client.chat.completions.create(
+    model="agent-pod",
+    messages=[{"role": "user", "content": "What can you do?"}],
+)
+print(resp.choices[0].message.content)
+```
+
+```ts
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://compute.x402layer.cc/pods/POD_ID/v1",
+  apiKey: process.env.POD_INTEGRATION_KEY, // sk-sglpod-int-...
+});
+
+const r = await client.chat.completions.create({
+  model: "agent-pod",
+  messages: [{ role: "user", content: "What can you do?" }],
+});
+console.log(r.choices[0].message.content);
+```
+
+## Quickstart (cURL)
+
+```bash
+curl https://compute.x402layer.cc/pods/POD_ID/v1/chat/completions \
+  -H "Authorization: Bearer sk-sglpod-int-..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "agent-pod",
+    "messages": [{"role": "user", "content": "What can you do?"}]
+  }'
+```

@@ -1,0 +1,67 @@
+---
+title: Models
+description: Managed tiers and their curated model menus, uncensored models, switching models with /model or the chat dropdown, and the Model setting that applies any OpenRouter slug across chat, Telegram and the API.
+---
+
+Your pod's brain is its **model**. Managed pods start on a curated menu you can switch between; BYOK pods run whatever slug you point them at. Either way you can change the model anytime — from chat or from **Settings**.
+
+## Managed tiers & their models
+
+Each managed tier bundles a machine floor with a curated, **all-included** model list. Your agent starts on the tier's default and can switch to any model in the tier — the managed proxy meters real usage per call, so switching is cost-safe, and a pod can never reach an off-tier (pricier) model.
+
+<Tabs>
+  <Tab title="Starter">
+    Fast, cheap, **text-only** chat (no computer use). Example menu: `deepseek/deepseek-chat-v3.1` (default), `qwen/qwen3-235b-a22b-2507`, `z-ai/glm-4.5-air`, `openai/gpt-5-mini`.
+  </Tab>
+  <Tab title="Pro">
+    Adds **computer use** (screenshots + browser). Example menu: `google/gemini-2.5-flash` (default), `google/gemini-2.5-flash-lite`, `z-ai/glm-4.6`, `openai/gpt-4.1-mini`.
+  </Tab>
+  <Tab title="Max">
+    Top reasoning + reliable computer use. Example menu: `google/gemini-2.5-pro` (default), `anthropic/claude-sonnet-4.5`, `openai/gpt-5.1`, `google/gemini-2.5-flash`.
+  </Tab>
+</Tabs>
+
+<Info>
+  These lists are illustrative — the live per-tier menus are served from the pod catalog (`GET https://compute.x402layer.cc/pods/catalog`) and evolve over time. Each model in the picker shows its **input/output price per 1M tokens**, **context window**, and **vision** support.
+</Info>
+
+## Uncensored models
+
+Some tiers include **uncensored** models, marked with an **uncensored** badge in the model picker (and on the tier card). They pick a managed model with fewer content refusals for creative or open-ended work.
+
+<Warning>
+  Uncensored managed models still run through our upstream inference provider. Your prompts and outputs must comply with that provider's and each model's terms — **illegal content is never permitted**, and violations can get a pod suspended.
+</Warning>
+
+## Switching models
+
+You can change the active model without a redeploy in three ways:
+
+<CardGroup cols={2}>
+  <Card title="/model in chat" icon="terminal">
+    Type `/model <name>` in the pod's **Chat** (or on Telegram/Discord) to switch on the fly. Managed pods can switch to any model in their tier.
+  </Card>
+  <Card title="Chat model dropdown" icon="chevron-down">
+    Pick from the model menu in the chat UI — the same curated list, with per-model price and context on hover.
+  </Card>
+</CardGroup>
+
+## The Model setting (any OpenRouter slug)
+
+For a durable change that applies **everywhere**, use **Settings → Model**. Enter any **OpenRouter slug** (`provider/model`, e.g. `anthropic/claude-sonnet-4.5`) and save.
+
+- Applies across **chat, Telegram, and the OpenAI-compatible API** — one model for every surface.
+- On **managed** pods it's **billed at real per-token cost**; on **BYOK** pods it **runs on your own key**.
+- Saving restarts the agent (~40s) to apply it.
+
+<Note>
+  The Model setting accepts any valid `provider/model` slug — not just the tier menu — so you can pin an exact model. A **Redeploy** resets the active model back to the tier default; re-apply the Model setting if you want to keep a custom slug.
+</Note>
+
+## Related
+
+<CardGroup cols={3}>
+  <Card title="Deploy" icon="rocket" href="/cloud/pods/deploy">Pick a tier + starting model.</Card>
+  <Card title="OpenAI adapter" icon="plug" href="/cloud/pods/openai-adapter">Call the agent's model via the API.</Card>
+  <Card title="Manage" icon="sliders" href="/cloud/pods/manage">Where the Model setting lives.</Card>
+</CardGroup>

@@ -98,6 +98,10 @@
     {
       "name": "Compute Credits",
       "description": "Prepaid USDC credit balance shared across Machines and Grid."
+    },
+    {
+      "name": "Agent Pods",
+      "description": "Deploy and manage hosted agents (Agent Pods), plus the pod's OpenAI-compatible adapter for external clients."
     }
   ],
   "paths": {
@@ -3124,6 +3128,704 @@
         }
       }
     },
+    "/pods/catalog": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Get the Agent Pod catalog",
+        "description": "Public, no auth. Returns the deployable agents, AI modes, managed tiers with their model lists, per-model metadata (live price/context/vision + best-for), memory backends, pricing margins, and runtime feature flags (trial, uncensored, memory). Read this before `POST /pods` to pick a valid `agent_id`, `ai_mode`, `tier`, and `model`.",
+        "responses": {
+          "200": {
+            "description": "Catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "example": "openclaw" },
+                          "display_name": { "type": "string" },
+                          "runtime": { "type": "string", "example": "node" },
+                          "pinned_version": { "type": "string" },
+                          "min_ram_mb": { "type": "integer" },
+                          "supported_channels": { "type": "array", "items": { "type": "string" } },
+                          "available": { "type": "boolean" },
+                          "beta": { "type": "boolean" },
+                          "blurb": { "type": "string" },
+                          "features": { "type": "array", "items": { "type": "string" } }
+                        }
+                      }
+                    },
+                    "ai_modes": {
+                      "type": "array",
+                      "items": { "type": "string", "enum": ["managed", "byok"] }
+                    },
+                    "coming_soon_channels": { "type": "array", "items": { "type": "string" } },
+                    "tiers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "example": "starter" },
+                          "display_name": { "type": "string" },
+                          "model": { "type": "string", "description": "The tier default model slug." },
+                          "models": { "type": "array", "items": { "type": "string" }, "description": "Curated model slugs this tier may switch among at runtime." },
+                          "vision": { "type": "boolean" },
+                          "min_ram_mb": { "type": "integer" },
+                          "blurb": { "type": "string" }
+                        }
+                      }
+                    },
+                    "model_meta": {
+                      "type": "object",
+                      "description": "Map of model slug -> metadata (id, name, price_in, price_out, context, vision, best_for, uncensored). Prices are USD per 1M tokens.",
+                      "additionalProperties": { "type": "object" }
+                    },
+                    "memory_backends": { "type": "array", "items": { "type": "object" } },
+                    "memory_enabled": { "type": "boolean" },
+                    "trial_enabled": { "type": "boolean", "description": "Whether the free 24h trial is currently offered." },
+                    "uncensored_enabled": { "type": "boolean" },
+                    "pod_margin_usd": { "type": "number" },
+                    "pod_byok_margin_pct": { "type": "number", "description": "BYOK service premium as a fraction of the CPU cost (e.g. 0.10 = 10%)." },
+                    "pod_managed_margin_pct": { "type": "number", "description": "Managed service fee as a fraction of the machine cost (e.g. 0.20 = 20%)." },
+                    "note": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pods": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "List your Agent Pods",
+        "description": "Returns every Agent Pod owned by the authenticated wallet. Authenticate with the same compute auth as `/compute/*`: an API key (`X-API-Key: x402c_...`), a session bearer (`Authorization: Bearer sgl_sess.<token>`), or a wallet signature (`X-Auth-Address`, `X-Auth-Chain`, `X-Auth-Signature`, `X-Auth-Nonce`, `X-Auth-Timestamp`).",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string", "example": "x402c_..." },
+            "description": "Compute API key. Alternatively use a session bearer or wallet-signature headers."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Your pods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pods": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/PodView" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication failed" }
+        }
+      },
+      "post": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Deploy an Agent Pod",
+        "description": "Deploys a hosted agent. The paid deploy rides the audited `/compute/provision` money path, so payment works exactly like provisioning a machine: pay from prepaid credits (`use_credits: true`) or complete an x402/MPP payment (a `402` challenge is returned when no payment credential is supplied). All `/compute/provision` fields (`plan`, `region`, `prepaid_hours`, `network`, `ssh_public_key`, ...) are accepted alongside the pod-specific fields below; `os_id` is ignored (pods always run Ubuntu 24.04). Authenticate with the same compute auth as `/compute/*` (API key, session bearer, or wallet signature).",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string", "example": "x402c_..." },
+            "description": "Compute API key. Alternatively use a session bearer or wallet-signature headers."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["agent_id", "ai_mode", "plan", "region"],
+                "properties": {
+                  "agent_id": { "type": "string", "example": "openclaw", "description": "Agent to deploy (see `GET /pods/catalog`)." },
+                  "ai_mode": { "type": "string", "enum": ["managed", "byok"], "description": "`managed` = we run the LLM (metered, tier-driven). `byok` = the agent uses your own OpenAI-compatible endpoint." },
+                  "tier": { "type": "string", "example": "starter", "description": "Required when `ai_mode` is `managed`. A tier id from `GET /pods/catalog` (drives the model + machine floor)." },
+                  "model": { "type": "string", "description": "Optional model slug. Managed: honored only if it is in the chosen tier's list, else the tier default. BYOK: any slug." },
+                  "plan": { "type": "string", "description": "Compute plan id from `GET /compute/plans`. DigitalOcean plans use the `do:` prefix." },
+                  "region": { "type": "string", "description": "Region id from `GET /compute/regions`." },
+                  "plan_ram_mb": { "type": "integer", "description": "Optional. Validated against the agent's (and tier's) RAM floor." },
+                  "use_credits": { "type": "boolean", "description": "Pay from prepaid USD credits instead of an x402 wallet payment." },
+                  "network": { "type": "string", "enum": ["base", "solana", "megaeth", "robinhood"], "description": "x402 payment network. MPP clients use `Authorization: Payment` and omit this." },
+                  "prepaid_hours": { "type": "integer", "minimum": 24, "description": "Prepaid runtime in hours (minimum 24)." },
+                  "llm_api_key": { "type": "string", "description": "Required when `ai_mode` is `byok`. Your provider API key (stored encrypted)." },
+                  "llm_base_url": { "type": "string", "description": "BYOK only. Your OpenAI-compatible base URL. Defaults to `https://openrouter.ai/api/v1`." },
+                  "llm_api": { "type": "string", "description": "BYOK only. Provider API type (e.g. `openai-completions`)." },
+                  "channels": {
+                    "type": "object",
+                    "description": "Optional channel tokens, keyed by channel id (e.g. `{ \"telegram\": \"<bot-token>\" }`). Must be supported by the agent.",
+                    "additionalProperties": { "type": "string" }
+                  },
+                  "memory": {
+                    "type": "object",
+                    "description": "BYOK memory options.",
+                    "properties": {
+                      "backend": { "type": "string", "enum": ["raw", "mem0"] },
+                      "api_key": { "type": "string", "description": "Your mem0 key when `backend` is `mem0`." },
+                      "lcm": { "type": "boolean" }
+                    }
+                  },
+                  "ssh_public_key": { "type": "string", "description": "Optional. Rarely needed — pods are headless." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pod deployed. Returns the provision result (including `order`) merged with a `pod` object. For managed pods, `pod.managed_ai_key` is shown ONCE.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "order": { "type": "object", "description": "The underlying compute order (from `/compute/provision`)." },
+                    "pod": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid", "description": "Pod id (equals the compute order id)." },
+                        "agent_id": { "type": "string" },
+                        "display_name": { "type": "string" },
+                        "ai_mode": { "type": "string", "enum": ["managed", "byok"] },
+                        "tier": { "type": "string", "nullable": true },
+                        "model": { "type": "string", "nullable": true },
+                        "channels": { "type": "array", "items": { "type": "string" } },
+                        "managed_ai_key": { "type": "string", "description": "Managed pods only. The pod's key for our managed LLM proxy. Shown once." },
+                        "managed_ai_key_note": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid body (unknown agent, bad `ai_mode`, missing `tier`, machine too small, ...)" },
+          "402": {
+            "description": "Payment required. x402 clients use the JSON body; MPP clients use the `WWW-Authenticate: Payment` header.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/X402Challenge" }
+              }
+            }
+          },
+          "409": { "description": "Agent is coming soon and can't be deployed yet." },
+          "503": { "description": "Feature not configured (e.g. managed AI or pod secrets disabled)." }
+        }
+      }
+    },
+    "/pods/{id}": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Get an Agent Pod",
+        "description": "Returns a single pod you own, including its latest heartbeat and (when enabled) masked delegated-credential state. Authenticate with the same compute auth as `/compute/*` (API key, session bearer, or wallet signature).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pod detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pod": {
+                      "allOf": [
+                        { "$ref": "#/components/schemas/PodView" },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "heartbeat": {
+                              "type": "object",
+                              "nullable": true,
+                              "properties": {
+                                "status": { "type": "string" },
+                                "telemetry": { "type": "object" },
+                                "last_seen_at": { "type": "string", "format": "date-time" }
+                              }
+                            },
+                            "credentials": {
+                              "type": "object",
+                              "nullable": true,
+                              "description": "Masked delegated-credential state (never raw keys). Null unless delegated credentials are enabled."
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Pod not found (or not owned by you)." }
+        }
+      }
+    },
+    "/pods/{id}/settings": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "patch": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Update Agent Pod settings",
+        "description": "Owner-tunable pod knobs. Send any subset of the fields below. `heartbeat_interval_sec` applies live (no restart); `model` triggers an agent restart (~40s); `auto_renew_enabled` controls lifecycle billing. Authenticate with the same compute auth as `/compute/*`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "heartbeat_interval_sec": { "type": "integer", "minimum": 10, "maximum": 3600, "description": "Pod worker poll interval in seconds." },
+                  "auto_renew_enabled": { "type": "boolean", "description": "Renew this pod from your credits at expiry. Rejected for free-trial pods." },
+                  "model": { "type": "string", "description": "Model slug like `provider/model` (e.g. `anthropic/claude-sonnet-4.5`). Applies to chat, channels, and the OpenAI adapter." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "settings": { "type": "object", "description": "The applied fields." },
+                    "note": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid field, or nothing to update." },
+          "404": { "description": "Pod not found." }
+        }
+      }
+    },
+    "/pods/{id}/usage": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Get Agent Pod AI usage",
+        "description": "Recent managed-AI usage for the pod plus aggregates, including the funding-source split (included AI allowance vs Singularity credits). Authenticate with the same compute auth as `/compute/*`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usage": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "model": { "type": "string" },
+                          "prompt_tokens": { "type": "integer" },
+                          "completion_tokens": { "type": "integer" },
+                          "cost_usd": { "type": "number" },
+                          "allowance_usd": { "type": "number", "description": "Portion paid from the pod's included AI allowance." },
+                          "credits_usd": { "type": "number", "description": "Portion paid from Singularity credits." },
+                          "created_at": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "count": { "type": "integer" },
+                        "total_usd": { "type": "number" },
+                        "allowance_usd": { "type": "number" },
+                        "credits_usd": { "type": "number" },
+                        "prompt_tokens": { "type": "integer" },
+                        "completion_tokens": { "type": "integer" },
+                        "included_allowance_usd": { "type": "number" },
+                        "included_used_usd": { "type": "number" },
+                        "included_remaining_usd": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Pod not found." }
+        }
+      }
+    },
+    "/pods/{id}/api-keys": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "List Agent Pod integration keys",
+        "description": "Lists the pod's OpenAI-adapter integration keys (`sk-sglpod-int-*`) in masked form. Requires the OpenAI adapter to be enabled. Authenticate with the same compute auth as `/compute/*`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Keys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "base_url": { "type": "string", "example": "https://compute.x402layer.cc/pods/{id}/v1" },
+                    "keys": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/PodApiKey" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Adapter not enabled, or pod not found." }
+        }
+      },
+      "post": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Create an Agent Pod integration key",
+        "description": "Creates a new integration key for the pod's OpenAI adapter. The raw key (`sk-sglpod-int-...`) is returned ONCE and never again. Use it as a bearer token against `/pods/{id}/v1/*`. Requires the OpenAI adapter to be enabled. Authenticate with the same compute auth as `/compute/*`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "maxLength": 60, "description": "Optional label. Defaults to \"API key\"." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Key created (raw key shown once)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "key": { "type": "string", "example": "sk-sglpod-int-...", "description": "The raw key. Shown once — store it now." },
+                    "base_url": { "type": "string", "example": "https://compute.x402layer.cc/pods/{id}/v1" },
+                    "row": { "$ref": "#/components/schemas/PodApiKey" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Adapter not enabled, or pod not found." }
+        }
+      }
+    },
+    "/pods/{id}/api-keys/{keyId}": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Revoke an Agent Pod integration key",
+        "description": "Revokes an integration key. Idempotent. Requires the OpenAI adapter to be enabled. Authenticate with the same compute auth as `/compute/*`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "keyId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Could not revoke (bad key id)." },
+          "404": { "description": "Adapter not enabled, or pod not found." }
+        }
+      }
+    },
+    "/pods/{id}/v1/models": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "List models (pod OpenAI adapter)",
+        "description": "OpenAI-compatible model list for the pod. Always returns the single model `agent-pod`. Authenticate with a pod integration key as a bearer token: `Authorization: Bearer sk-sglpod-int-<key>` (create one with `POST /pods/{id}/api-keys`).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string", "example": "Bearer sk-sglpod-int-..." },
+            "description": "Pod integration key as a bearer token."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": { "type": "string", "example": "list" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "example": "agent-pod" },
+                          "object": { "type": "string", "example": "model" },
+                          "created": { "type": "integer" },
+                          "owned_by": { "type": "string", "example": "singularity" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid integration key." },
+          "404": { "description": "Adapter not enabled, or pod unavailable." }
+        }
+      }
+    },
+    "/pods/{id}/v1/chat/completions": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Create chat completion (pod OpenAI adapter)",
+        "description": "Runs ONE agent turn on your pod and returns an OpenAI `chat.completion`. Non-streaming only: `stream:true` is rejected with `400 stream_unsupported`. `usage` is always `null` (token counts are not faked in v1). Point any OpenAI SDK at `https://compute.x402layer.cc/pods/{id}/v1` with `model=\"agent-pod\"`. Authenticate with a pod integration key as a bearer token: `Authorization: Bearer sk-sglpod-int-<key>`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string", "example": "Bearer sk-sglpod-int-..." },
+            "description": "Pod integration key as a bearer token."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["messages"],
+                "properties": {
+                  "model": { "type": "string", "example": "agent-pod", "description": "Ignored by the adapter; use `agent-pod`." },
+                  "messages": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": ["role", "content"],
+                      "properties": {
+                        "role": { "type": "string", "enum": ["system", "user", "assistant"] },
+                        "content": { "type": "string" }
+                      }
+                    },
+                    "example": [{ "role": "user", "content": "What can you do?" }]
+                  },
+                  "stream": { "type": "boolean", "default": false, "description": "Must be false or omitted. `true` returns `400 stream_unsupported`." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat completion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "example": "chatcmpl_sgl_..." },
+                    "object": { "type": "string", "example": "chat.completion" },
+                    "created": { "type": "integer" },
+                    "model": { "type": "string", "example": "agent-pod" },
+                    "choices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "index": { "type": "integer" },
+                          "message": {
+                            "type": "object",
+                            "properties": {
+                              "role": { "type": "string", "example": "assistant" },
+                              "content": { "type": "string" }
+                            }
+                          },
+                          "finish_reason": { "type": "string", "example": "stop" }
+                        }
+                      }
+                    },
+                    "usage": { "type": "null", "description": "Always null in v1." }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid JSON, empty `messages`, or `stream:true` (`stream_unsupported`)." },
+          "401": { "description": "Missing or invalid integration key." },
+          "403": { "description": "Pod expired (`pod_expired`)." },
+          "404": { "description": "Adapter not enabled, or pod unavailable (`pod_unavailable`)." },
+          "413": { "description": "Request body too large." },
+          "429": { "description": "Daily request cap reached for this key (`daily_cap`)." },
+          "502": { "description": "Agent could not complete the request." },
+          "503": { "description": "Agent is offline (`pod_offline`)." },
+          "504": { "description": "Agent took too long (`timeout`)." }
+        }
+      }
+    },
     "/grid/models": {
       "servers": [
         {
@@ -3459,6 +4161,56 @@
   },
   "components": {
     "schemas": {
+      "PodView": {
+        "type": "object",
+        "description": "Public view of an Agent Pod (never leaks secrets).",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "description": "Pod id (equals the compute order id)." },
+          "agent_id": { "type": "string" },
+          "ai_mode": { "type": "string", "enum": ["managed", "byok"] },
+          "tier": { "type": "string", "nullable": true },
+          "model": { "type": "string", "nullable": true },
+          "channels": { "type": "array", "items": { "type": "string" } },
+          "ai_included_usd": { "type": "number", "description": "Bundled managed-AI allowance (USD)." },
+          "ai_used_usd": { "type": "number", "description": "Managed-AI allowance consumed (USD)." },
+          "memory": {
+            "type": "object",
+            "properties": {
+              "backend": { "type": "string", "example": "raw" },
+              "lcm": { "type": "boolean" }
+            }
+          },
+          "heartbeat_interval_sec": { "type": "integer", "nullable": true },
+          "status": { "type": "string", "example": "active" },
+          "provider": { "type": "string" },
+          "region": { "type": "string" },
+          "plan": { "type": "string" },
+          "ip_address": { "type": "string", "nullable": true },
+          "expires_at": { "type": "string", "format": "date-time", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "is_trial": { "type": "boolean" },
+          "trial_expires_at": { "type": "string", "format": "date-time", "nullable": true },
+          "auto_renew_enabled": { "type": "boolean" },
+          "auto_renew": { "type": "boolean" },
+          "grace_days": { "type": "integer", "nullable": true }
+        }
+      },
+      "PodApiKey": {
+        "type": "object",
+        "description": "Masked Agent Pod integration key (never the raw key or hash).",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "prefix": { "type": "string", "example": "sk-sglpod-int-abcd" },
+          "last4": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "daily_request_cap": { "type": "integer", "nullable": true },
+          "requests_today": { "type": "integer" },
+          "revoked_at": { "type": "string", "format": "date-time", "nullable": true },
+          "last_used_at": { "type": "string", "format": "date-time", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
       "Listing": {
         "type": "object",
         "properties": {

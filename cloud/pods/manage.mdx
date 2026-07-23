@@ -1,0 +1,92 @@
+---
+title: Manage a Pod
+description: The pod workspace — Chat, Skills, Wallet, Memory, Scheduler, Usage, Status, Logs, Channels and Settings tabs — plus lifecycle actions (restart, redeploy, stop, extend, destroy) and auto-renew.
+---
+
+Open any pod from **Agent Pods → My Pods** to reach its workspace. The workspace is a set of tabs across the top; lifecycle actions live under **Settings**. Everything is owner-authed with your connected wallet (a signed compute session).
+
+## The workspace tabs
+
+<CardGroup cols={2}>
+  <Card title="Chat" icon="messages-square">
+    Talk to your agent right in the dashboard over a live connection — the same agent you reach on Telegram/Discord. Slash commands like `/model` work here.
+  </Card>
+  <Card title="Skills" icon="puzzle">
+    Browse and install skills onto the agent — the preinstalled `x402-compute` / `x402-layer` skills plus curated and ClawHub skills.
+  </Card>
+  <Card title="Wallet" icon="wallet">
+    The pod's own **Base + Solana** wallet: deposit, withdraw, and spending controls. See [Wallet](/cloud/pods/wallet).
+  </Card>
+  <Card title="Memory" icon="brain">
+    What the agent remembers and how — raw on-pod files, Lossless Context, or semantic memory. See [Memory](/cloud/pods/memory).
+  </Card>
+  <Card title="Scheduler" icon="clock">
+    Recurring or one-shot tasks the agent runs on time, even while you're away. See [Scheduler](/cloud/pods/scheduler).
+  </Card>
+  <Card title="Usage" icon="chart-line">
+    (Managed pods) A per-request log of managed-AI spend — model, tokens, cost, and whether it was funded by the included allowance or your credits.
+  </Card>
+  <Card title="Status" icon="activity">
+    Pod info, health/heartbeat, and plan details at a glance.
+  </Card>
+  <Card title="Logs" icon="file-text">
+    Run **Diagnose** (an agent self-check) or pull **Logs** on demand to see what the agent is doing.
+  </Card>
+  <Card title="Channels" icon="hash">
+    Add/remove Telegram & Discord tokens and complete **pairing** so only you can talk to the agent.
+  </Card>
+  <Card title="Settings" icon="sliders">
+    Lifecycle actions, auto-renew, heartbeat interval, the **Model** setting, **OpenAI-compatible access**, and the danger zone.
+  </Card>
+</CardGroup>
+
+<Note>
+  The **Usage** tab only appears on managed pods (there's no managed-AI meter to show on BYOK). Some tabs (Memory, Skills) are archived/read-only if the pod has been destroyed — extend it to bring the agent back online.
+</Note>
+
+## Lifecycle actions
+
+All lifecycle actions live under **Settings → Actions**. They're queued and picked up on the pod's next worker poll (≤ 60s).
+
+| Action | What it does |
+| --- | --- |
+| **Restart** | Restarts the agent process. Quick recovery — no config change. |
+| **Update agent** | Updates the agent to the latest platform version — refreshes built-in tools (wallet, skills, MCP) and config, **keeps** your memory, sessions and settings. |
+| **Redeploy** | Refreshes config + restarts (picks up new channels, model menu, etc.). Keeps the machine and memory; resets the active model to the tier default. |
+| **Stop** | Takes the agent offline until you Restart or Redeploy. |
+| **Extend plan** | Adds prepaid runtime so the pod stays online past its expiry. |
+
+## Channels & pairing
+
+In the **Channels** tab, add or change your Telegram/Discord bot tokens anytime. After adding a channel, message your bot once — it replies with a **pairing code**. Enter that code to let yourself in. Until you pair, the agent stays private.
+
+## Auto-renew & grace
+
+A paid pod is prepaid for a runtime window. Under **Settings → Auto-renew**:
+
+- **On** (default for paid pods) — at expiry the pod **renews from your Singularity credits**. If credits are short, it enters a short **grace window** before it's destroyed.
+- **Off** — automatic charging is disabled; you must **Extend** manually before expiry to keep it running.
+
+<Warning>
+  **Free-trial pods never auto-renew** — they're auto-destroyed at expiry. Extend a trial before the countdown ends to convert it to a paid pod.
+</Warning>
+
+## Heartbeat interval
+
+Under **Settings → Heartbeat**, tune how often the pod reports liveness and polls for queued actions. Lower = snappier dashboard/actions but more requests; higher = calmer. It's applied live (no restart).
+
+## Destroy
+
+Under **Settings → Danger zone**, **Destroy** stops the agent and releases its machine. For safety you type a confirmation first. Remaining prepaid time is **refunded** to your credits, and consumed runtime/AI usage is non-refundable.
+
+<Warning>
+  Destroying a pod is permanent for the machine and agent state. **Wallet funds are preserved** — the wallet stays reachable under Archived, so you never lose funds on destroy.
+</Warning>
+
+## Related
+
+<CardGroup cols={3}>
+  <Card title="Wallet" icon="wallet" href="/cloud/pods/wallet">Fund + spend controls.</Card>
+  <Card title="Scheduler" icon="clock" href="/cloud/pods/scheduler">Scheduled tasks.</Card>
+  <Card title="OpenAI adapter" icon="plug" href="/cloud/pods/openai-adapter">Call the agent via the API.</Card>
+</CardGroup>

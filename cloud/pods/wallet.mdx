@@ -1,0 +1,67 @@
+---
+title: Pod Wallet
+description: Every pod gets its own Coinbase-secured Base + Solana wallet. Fund it, set spending controls, and let the agent pay x402 endpoints and take on-chain actions — all under caps you control.
+---
+
+Every pod ships with its **own crypto wallet** so the agent is economically active out of the box — it can buy confidential compute, pay any x402 endpoint, and take on-chain actions itself. You control the money with deposit/withdraw and per-pod spending caps. Find it in the pod workspace under the **Wallet** tab.
+
+## What it is
+
+- **Base (EVM) + Solana** addresses, one wallet per pod.
+- **Secured by Coinbase** — private keys live in Coinbase's secure enclave, **never on the pod and never with us**.
+- Balances refresh automatically (on-chain reads lag a transfer by a few seconds; there's a manual **Refresh** too).
+
+<Note>
+  Addresses are shown exactly as issued. Solana base58 is case-sensitive and EVM checksums matter — always copy the address (or scan the QR); never retype it.
+</Note>
+
+## Deposit
+
+Open **Wallet → Deposit** to see your **Base** and **Solana** addresses (with QR codes). Send tokens from any wallet or exchange:
+
+- **Base** — send **USDC** or **ETH** on Base.
+- **Solana** — send **SOL** or **USDC** on Solana.
+
+Funds arrive on-chain and appear on the card within seconds.
+
+## Withdraw & send
+
+**Wallet → Withdraw** moves funds out. This uses the agent's brokered send, so it's governed by the same spending controls as agent spending (see below). Your funds are never lost on destroy — the wallet stays reachable under Archived.
+
+## Spending controls
+
+The agent's ability to **send** is **off by default**. Arm it deliberately under **Wallet → Controls**:
+
+- **Allow sending** — the master switch that lets this wallet move funds at all.
+- **Per-transaction cap** — the maximum a single agent transaction can spend. The backend **clamps it to a platform ceiling**, so a pod can't exceed the safe maximum even if you ask for more.
+- **Autonomy mode** — how much signing latitude the agent has (see below).
+
+<Warning>
+  Agent spending stays **disabled** until you turn on **Allow sending** and set a per-transaction cap. Your own withdrawals as the owner are not throttled the way agent spend is — but the send flow still respects the armed state.
+</Warning>
+
+### Autonomy modes
+
+<CardGroup cols={3}>
+  <Card title="Default" icon="shield-check">
+    Capped commerce tools — send USDC, buy x402 endpoints, swap Base USDC, and sign normal messages within the wallet controls.
+  </Card>
+  <Card title="DeFi" icon="layers">
+    Everything in Default, plus **EIP-712 typed-data** signatures for readable approvals, orders, and protocol actions.
+  </Card>
+  <Card title="Sovereign" icon="crown">
+    Everything in DeFi, plus **arbitrary hash signing**. Maximum autonomy — use for funded operating wallets, not treasury storage.
+  </Card>
+</CardGroup>
+
+## Paying x402 endpoints
+
+Because the wallet holds real USDC on Base and Solana, the agent can pay any **x402** endpoint on its own: when a paid API answers `402 Payment Required`, the agent settles from this wallet and retries — within your per-transaction cap and armed state. That's what makes the preinstalled `x402-compute` and `x402-layer` skills work end to end: buy confidential compute, use the marketplace, and pay per request, all under caps you set here.
+
+## Related
+
+<CardGroup cols={3}>
+  <Card title="Manage" icon="sliders" href="/cloud/pods/manage">Where the Wallet tab lives.</Card>
+  <Card title="Overview" icon="circle-info" href="/cloud/pods/overview">The three billing rails.</Card>
+  <Card title="Scheduler" icon="clock" href="/cloud/pods/scheduler">Let the agent act on a schedule.</Card>
+</CardGroup>

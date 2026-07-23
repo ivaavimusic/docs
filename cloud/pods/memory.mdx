@@ -1,0 +1,53 @@
+---
+title: Pod Memory
+description: How a pod remembers — raw on-pod memory files, Lossless Context for long chats, and cross-session semantic memory. What each backend does and which tier or key you need.
+---
+
+Every pod keeps **persistent per-pod memory** so the agent remembers across conversations. What kind of memory it has depends on your tier (managed) or the options you pick at deploy (BYOK). See it in the pod workspace under the **Memory** tab.
+
+## The three backends
+
+<CardGroup cols={1}>
+  <Card title="Raw — on-pod memory files" icon="file-text">
+    Persistent Markdown memory stored **on the pod's own box**. Private to the pod, nothing leaves it, and it's destroyed with the pod. This is the default for Starter and for BYOK pods.
+  </Card>
+  <Card title="Lossless Context" icon="layers">
+    Keeps the **whole conversation in view** instead of dropping older turns as a chat grows — so the agent never silently forgets earlier context in a long session. It works the running context harder (it uses your LLM), and can be layered on top of the other backends.
+  </Card>
+  <Card title="Semantic memory (cross-session)" icon="brain">
+    The agent **recalls facts across every conversation**, not just the current one. Memories are isolated to this pod and stored privately. Powered by mem0, brokered so the key never touches the VM.
+  </Card>
+</CardGroup>
+
+## What you get by tier / mode
+
+| Tier / mode | Memory |
+| --- | --- |
+| **Managed Starter** | Raw on-pod memory files. |
+| **Managed Pro** | Enhanced in-session recall — **Lossless Context**. |
+| **Managed Max** | **Semantic memory** (cross-session) **+ Lossless Context**. |
+| **BYOK** | Raw on-pod files by default; optionally bring **your own mem0 key**, plus an independent **Lossless Context** toggle. |
+
+<Note>
+  Advanced semantic recall is rolling out progressively. When the platform's memory feature isn't live yet, pods run on raw on-pod memory and the Memory tab notes that cross-session semantic memory and Lossless Context are coming soon.
+</Note>
+
+## BYOK memory options
+
+When you deploy a BYOK pod, the **Memory** section lets you choose:
+
+- **Raw files** (default) — on-pod Markdown memory; nothing leaves the box.
+- **mem0 (your key)** — cross-session semantic memory in **your own** mem0 account. Get a key at [app.mem0.ai](https://app.mem0.ai) and paste it at deploy.
+- **Lossless Context** — a checkbox to never lose earlier context in long chats (uses your LLM). Independent of the backend choice.
+
+## Viewing memory
+
+The **Memory** tab shows the active backend (Persistent vs Semantic), whether Lossless Context is on, and a short explanation of what's retained and where. If you're on raw memory, it points to the upgrade path (deploy a managed Max pod, or bring a mem0 key on BYOK).
+
+## Related
+
+<CardGroup cols={3}>
+  <Card title="Deploy" icon="rocket" href="/cloud/pods/deploy">Pick a tier / BYOK memory.</Card>
+  <Card title="Manage" icon="sliders" href="/cloud/pods/manage">Where the Memory tab lives.</Card>
+  <Card title="Models" icon="brain" href="/cloud/pods/models">The model that reads memory.</Card>
+</CardGroup>

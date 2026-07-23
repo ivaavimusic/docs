@@ -1,0 +1,76 @@
+---
+title: OpenAI-compatible Access
+description: Call your pod's agent from any OpenAI-compatible client. Create a key in Settings, point your SDK's base URL at the pod's /v1 endpoint, and every request runs one agent turn under the pod's wallet and spend policies.
+---
+
+Your pod exposes an **OpenAI-compatible endpoint**, so you can drive the agent from any OpenAI client, SDK, framework (LangChain, LlamaIndex, etc.), or router — no bespoke integration. Each request runs **one agent turn**, with the same model, wallet, autonomy, and spend policies as the dashboard Chat.
+
+<Note>
+  This is a **beta** feature and only appears once it's enabled for the platform. You'll find it in the pod workspace under **Settings → OpenAI-compatible access**.
+</Note>
+
+## 1. Create a key
+
+In the pod's **Settings → OpenAI-compatible access**:
+
+1. Copy the **base URL** — it looks like `https://compute.x402layer.cc/pods/{id}/v1`.
+2. Give a key a name (e.g. "my app") and hit **Create key**. The key is shown **once** — copy it immediately.
+
+You can create multiple keys and **revoke** any of them instantly if one leaks. Each key shows when it was last used and its per-day request count.
+
+<Warning>
+  Anyone with a key can instruct this agent within its current **autonomy and wallet settings**. Treat keys like secrets, and revoke immediately if one is exposed. See [Wallet](/cloud/pods/wallet) for spend caps.
+</Warning>
+
+## 2. Point any OpenAI client at it
+
+Use the base URL as `baseURL` and your pod key as the API key.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://compute.x402layer.cc/pods/{id}/v1",  # from Settings
+    api_key="<your-pod-key>",                              # created above
+)
+
+resp = client.chat.completions.create(
+    model="agent-pod",  # the pod runs its own configured model
+    messages=[{"role": "user", "content": "What's on my schedule today?"}],
+)
+print(resp.choices[0].message.content)
+```
+
+```bash
+# Discover the model
+curl https://compute.x402layer.cc/pods/{id}/v1/models \
+  -H "Authorization: Bearer <your-pod-key>"
+
+# Run one agent turn
+curl https://compute.x402layer.cc/pods/{id}/v1/chat/completions \
+  -H "Authorization: Bearer <your-pod-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"agent-pod","messages":[{"role":"user","content":"hi"}]}'
+```
+
+## What to expect
+
+- **One turn per request** — a call runs the agent once (it may use its tools, wallet, skills, and memory), then returns the reply. It's the agent answering, not a raw model passthrough.
+- **The pod's model** — the request uses whatever model the pod is set to (**Settings → Model** applies across chat, Telegram, and this API). See [Models](/cloud/pods/models).
+- **Same policies as chat** — the pod's wallet, autonomy mode, and spend caps all apply to API-driven turns.
+
+<Info>
+  The pod's configured model is the source of truth — you don't select an arbitrary model per request the way you would against a raw provider. Set the model once in **Settings → Model**.
+</Info>
+
+## Full API spec
+
+The examples above are the essentials. For the complete endpoint list, auth details, request/response schemas, and field-level reference, see the **[API reference](/api-reference/pods-adapter-chat)**.
+
+## Related
+
+<CardGroup cols={3}>
+  <Card title="Models" icon="brain" href="/cloud/pods/models">Set the model this API uses.</Card>
+  <Card title="Wallet" icon="wallet" href="/cloud/pods/wallet">Spend caps that apply to API turns.</Card>
+  <Card title="API reference" icon="code" href="/api-reference/pods-adapter-chat">The full spec.</Card>
+</CardGroup>

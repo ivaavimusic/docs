@@ -1,0 +1,65 @@
+---
+title: Pod Scheduler
+description: Give your always-on agent scheduled tasks — recurring (daily, weekday, weekly, hourly, every N) or one-shot — and it runs them on time, even while you're away. Deliver results to your chat or run them in the background.
+---
+
+An always-on agent is most useful when it does things **on its own schedule**. The pod's **Scheduler** tab lets you set recurring or one-shot tasks — e.g. a news brief every weekday at 9am — and the agent runs them on time, even while you're away.
+
+## Add a task
+
+Open the **Scheduler** tab and hit **New task**. You describe the task in plain English; there are no raw cron expressions unless you want them.
+
+<Steps>
+  <Step title="Name it">
+    A short label, e.g. "Morning brief".
+  </Step>
+  <Step title="Pick where it runs">
+    **Background** (isolated) — runs quietly on its own. **Your chat** (main) — runs in your main session so the result lands in the conversation.
+  </Step>
+  <Step title="Choose how often">
+    Every day, every weekday, weekly (pick a day), hourly, every N hours/minutes, or once at a specific time. Time-of-day tasks let you set the hour/minute.
+  </Step>
+  <Step title="Write the instruction">
+    The message the agent should act on when the task fires — e.g. "Summarize today's top AI news and post it."
+  </Step>
+</Steps>
+
+New tasks are applied on the pod's next poll (≤ 60s), then appear in the list — it can take up to ~2 minutes for the agent to report them back.
+
+## Frequencies
+
+Under the hood the friendly builder compiles to the agent's `cron` / `every` / `at` primitives:
+
+| Frequency | Compiles to |
+| --- | --- |
+| **Every day** | `cron` — daily at your chosen time |
+| **Every weekday** | `cron` — Mon–Fri at your time |
+| **Weekly** | `cron` — chosen weekday at your time |
+| **Hourly** | `every 1h` |
+| **Every N hours/minutes** | `every N h` / `every N m` |
+| **Once** | `at` — a single time |
+
+Prefer raw control? Switch the form to **Advanced (cron expression)** and enter a cron string directly.
+
+## Delivery
+
+Where a task's output goes depends on **where it runs**:
+
+- **Your chat (main session)** — the result is delivered into your conversation, so it reaches you on whatever channel you're paired to (dashboard Chat, Telegram, Discord).
+- **Background (isolated)** — runs quietly without posting into your main thread; use it for maintenance-style tasks.
+
+## Managing tasks
+
+The list shows each task's name and schedule. From there you can **pause/enable**, **run now**, or **delete** a task. Actions queue an agent command applied on the next worker poll. The pod reports its live schedule in its heartbeat, so use **Refresh** to reload what the agent currently has.
+
+<Note>
+  Scheduled tasks run the agent just like a chat turn — they use the pod's model and, if the task acts on the wallet or buys compute, the same wallet and spending controls apply. See [Wallet](/cloud/pods/wallet).
+</Note>
+
+## Related
+
+<CardGroup cols={3}>
+  <Card title="Manage" icon="sliders" href="/cloud/pods/manage">Where the Scheduler tab lives.</Card>
+  <Card title="Wallet" icon="wallet" href="/cloud/pods/wallet">Caps for scheduled spend.</Card>
+  <Card title="Memory" icon="brain" href="/cloud/pods/memory">What tasks can recall.</Card>
+</CardGroup>
