@@ -1,0 +1,82 @@
+---
+title: Processors — Pricing
+description: You keep 100% of your sales. You pay only for compute, held before each run and rebated to actual.
+---
+
+## Two flows, kept separate
+
+**Buyers pay you.** Directly, to your wallet, over x402. Singularity never holds it and takes **no percentage**.
+
+**You pay us for compute.** Per run, from your credit balance. That is the whole of our revenue.
+
+Your price and your margin are yours. We do not scale with your sales.
+
+## What a run costs
+
+| | |
+|---|---|
+| Base, per run | **$0.0002** |
+| Per wall-clock second | **$0.0001** |
+
+A typical fast processor finishes in well under a second, so it costs about **$0.0003** per run.
+
+These numbers come from measurement, not a guess: a trivial processor run repeatedly in production has a median wall time of ~193ms.
+
+## The hold, and the rebate
+
+Before a run we **hold** the maximum it could cost. After it finishes we **rebate** whatever it did not use.
+
+The ceiling is computed from the `timeout_ms` *you* declared:
+
+| Your `timeout_ms` | Held per run | Typical actual |
+|---|---|---|
+| 5s | $0.0007 | $0.0003 |
+| 60s | $0.0062 | depends on your code |
+| 600s (max) | $0.0602 | depends on your code |
+
+Two consequences worth internalising:
+
+1. **Tight limits are cheaper to run**, because you reserve less per call and need a smaller balance to serve traffic.
+2. **Your balance can never go negative.** We reserve before executing, so a run either has funds behind it or does not happen.
+
+Why not one fixed price? Because the same processor can cost a hundred times more on a different input. A price quoted from one sample would be wrong by the second call, and we would rather hold and refund than quote and be wrong.
+
+## What that means for your margin
+
+| You charge | Compute costs you | You keep |
+|---|---|---|
+| $0.50 | ~$0.0003 | 99.9% |
+| $0.05 | ~$0.0003 | 99.4% |
+| $0.01 | ~$0.0003 | 97% |
+| $0.001 | ~$0.0003 | 70% |
+
+There is **no minimum price**. Charge a tenth of a cent if the economics work for you — that is your call, not ours.
+
+## When you are and are not billed
+
+| Outcome | Billed? |
+|---|---|
+| Ran, returned a result | **Yes** — actual usage |
+| Ran, your code threw or hung | **Yes** — the compute was really spent |
+| Never started (our fault) | **No** — hold refunded in full, automatically |
+| Refused before starting (no input, over the concurrency cap, insufficient balance) | **No** — nothing is held |
+
+The same rule applies to your buyers: a run that fails *after starting* is still charged to them, because the work happened. That is why your failure rate is published on your listing — it is the signal buyers use, so it has to be honest.
+
+## Paying us
+
+Runtime draws from your **Singularity credit balance**, shared with Grid, Machines and Pods. Top it up like any other Singularity service; a plan allowance covers it too.
+
+If your balance runs out, your processor stops serving and callers get a clear error. Keep a buffer if people depend on you.
+
+## Free while you build
+
+**Deploying costs nothing.** So does editing, rotating tokens, reading logs, and every MCP discovery call (`tools/list`, `server/discover`).
+
+Only actually running your code costs anything — and while you are building, that is your own testing, at ~$0.0003 a go.
+
+## Compared to a revenue share
+
+A marketplace taking 5% of a $0.50 sale charges you $0.025. Running that same call here costs about **$0.0003** — roughly eighty times less — and the gap widens the more you sell, because we do not scale with your revenue.
+
+The trade is that you fund compute up front rather than paying out of proceeds.

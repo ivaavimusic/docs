@@ -1,25 +1,97 @@
 ---
 title: SGL Processors — Overview
-description: Serverless functions that run inside a TEE — deploy code, invoke on demand, pay per call. Coming soon.
+description: Deploy one function, get a paid API endpoint and an MCP tool. Buyers pay you directly; you pay only for compute.
 ---
 
-<Note>**SGL Processors are coming soon.** This page previews the direction; details may change before launch.</Note>
+<Note>**SGL Processors are not open yet.** The platform is built and tested end to end, but publishing is closed while we finish the launch checklist. This page describes what it actually does today, not a plan.</Note>
 
-**SGL Processors** bring serverless functions to confidential compute: deploy a function once, invoke it on demand, and have it run **inside a hardware TEE** — so your code and its data stay private from the host.
+A **processor** is one function you write, that we host, that becomes a URL anyone can call — with a price attached.
 
-## The idea
+Think of it as a serverless function that comes with a payment layer, a catalogue, and an MCP tool, so an AI agent can find it and pay for it without you writing any integration.
 
-- **Deploy a function** to the network (no servers to manage).
-- **Invoke it on demand** — it cold-starts in an enclave, runs, returns.
-- **Pay per call** — credits or x402, like the rest of the network.
-- **Confidential** — execution happens in a TEE; inputs/outputs can be end-to-end encrypted.
+## What one looks like
 
-## How it complements the rest of the network
+You write a normal request handler:
 
-- **Grid** = managed model inference.
-- **Machines** = full instances you control.
-- **Processors** = lightweight, event-driven functions for glue logic, pre/post-processing, private data transforms, and agent tools — without running a whole machine.
+```js
+export default {
+  async fetch(request) {
+    const { input } = await request.json();
+    // ...your logic: call an LLM, hit an API, transform data
+    return Response.json({ result: 'whatever you produce' });
+  }
+}
+```
 
-## Status
+You declare a price, an input shape, and which hosts your code may reach. Deploy, and you have a paid endpoint.
 
-Processors are in development. Follow the dashboard (**Processors**) for availability. In the meantime, use [Grid](/cloud/grid/overview) for inference and [Machines](/cloud/machines/overview) for general compute.
+## Who pays whom
+
+This is the part worth reading carefully, because it is unusual.
+
+- **Buyers pay you directly.** Payment goes straight to your Solana wallet over [x402](/payments/overview). Singularity never holds it and **takes no cut of your sales**.
+- **You pay us for compute.** Each run draws from your credit balance. That is our entire revenue.
+
+So your margin is yours to set. Charge $0.50 or $0.005 — we do not care, and we do not scale with your success.
+
+## How compute is charged
+
+Before each run we **hold** the most it could cost, then **rebate** the difference once it finishes — the same shape as a hotel pre-authorising your card.
+
+The ceiling comes from the limits *you* declare. A processor with a 5-second timeout reserves very little; one allowed to run for 600 seconds reserves a lot. Declaring tight limits is directly cheaper.
+
+We do this rather than quoting a fixed price because the same processor can cost far more on one input than another — a two-word prompt versus a twenty-step research loop behind the same schema. A fixed quote would be a promise we broke on the second call.
+
+<Note>A run that **fails after starting** is still billed — the compute was really spent. A run that **never starts** because of a fault on our side is refunded in full, automatically.</Note>
+
+## Three ways to call one
+
+All three run the same code and bill identically.
+
+| | For | Credential |
+|---|---|---|
+| **HTTP** | any language, any harness, LangGraph nodes | `X-Payment`, or your invoke token |
+| **MCP** | Claude, Cursor, OpenClaw, LangGraph adapters | same headers |
+| **CLI** | you, while building | wallet signature |
+
+Every processor is also a live **MCP server** — paste the URL into an MCP client and it appears as a tool, with its price and schema attached. See [Using processors from an agent](/cloud/processors/mcp).
+
+## Reselling it yourself
+
+Your **invoke token** is a server-side credential you can put behind your own product. Front the processor with your own site, your own Stripe, your own prices — your customers never touch Singularity, and you pay us only for the compute underneath.
+
+That is the supported way to serve customers who do not hold crypto.
+
+## What it runs on
+
+Processors execute in **isolated V8 sandboxes** on Cloudflare's edge — the same isolation model as Cloudflare Workers. Each run gets a fresh isolate with no filesystem, no ambient network, and no access to other processors.
+
+<Warning>Processors are **not** TEE / confidential compute. An earlier version of this page said they were; that was wrong. If you need hardware-attested confidentiality, use [SGL Grid](/cloud/grid/overview) for inference or a [confidential Machine](/cloud/machines/overview).</Warning>
+
+**Network access is deny-by-default.** Your code can only reach hosts you declare in the manifest. Everything else — including loopback, private ranges, and cloud metadata endpoints — is refused at the gateway.
+
+**Secrets are never in your code's scope.** You store an API key with us; we inject it into outbound requests to the host you bound it to. The running isolate cannot read it.
+
+## How it fits the rest of the network
+
+- **[Grid](/cloud/grid/overview)** — managed model inference. Processors can call it.
+- **[Machines](/cloud/machines/overview)** — a whole GPU you control.
+- **[Agent Pods](/cloud/pods/overview)** — a long-lived agent with its own workspace.
+- **Processors** — one function, priced per call, discoverable by agents. Stateless: each run is independent.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/cloud/processors/quickstart">
+    Deploy and call your first processor.
+  </Card>
+  <Card title="Pricing" icon="coins" href="/cloud/processors/pricing">
+    Exactly what a run costs and how the hold works.
+  </Card>
+  <Card title="From an agent (MCP)" icon="robot" href="/cloud/processors/mcp">
+    Use a processor as a tool in Claude or LangGraph.
+  </Card>
+  <Card title="Grid inference" icon="brain" href="/cloud/grid/overview">
+    Call an LLM from inside your processor.
+  </Card>
+</CardGroup>

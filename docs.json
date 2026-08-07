@@ -163,7 +163,10 @@
               {
                 "group": "SGL Processors",
                 "pages": [
-                  "cloud/processors/overview"
+                  "cloud/processors/overview",
+                  "cloud/processors/quickstart",
+                  "cloud/processors/pricing",
+                  "cloud/processors/mcp"
                 ]
               },
               {

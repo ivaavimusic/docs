@@ -1,0 +1,118 @@
+---
+title: Processors from an agent (MCP)
+description: Every processor is a live MCP server. Paste a URL into Claude, Cursor or LangGraph and it becomes a paid tool.
+---
+
+Every published processor is a **connectable MCP server**. No SDK, no integration code — an agent gets the URL, sees the tool and its schema, and can pay for a call on its own.
+
+## The endpoint
+
+```
+POST https://processors.x402compute.cc/processors/<slug>/mcp
+```
+
+Stateless, per the [2026-07-28 MCP revision](https://modelcontextprotocol.io/specification/2026-07-28/changelog): no handshake, no session id, no long-lived stream. `initialize` is still answered for 2025-era clients, so both generations work.
+
+`GET` on the same path returns a human-readable descriptor instead.
+
+## Adding it to a client
+
+<CodeGroup>
+```json Claude / Cursor
+{
+  "mcpServers": {
+    "deep-research": {
+      "type": "http",
+      "url": "https://processors.x402compute.cc/processors/deep-research/mcp"
+    }
+  }
+}
+```
+
+```python LangGraph
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+client = MultiServerMCPClient({
+    "deep_research": {
+        "transport": "streamable_http",
+        "url": "https://processors.x402compute.cc/processors/deep-research/mcp",
+    }
+})
+tools = await client.get_tools()
+```
+</CodeGroup>
+
+## What the agent sees
+
+`tools/list` returns one tool — one processor is one job — carrying its input schema and its price:
+
+```json
+{
+  "name": "deep_research",
+  "description": "Researches a topic. $0.25 per run via x402, paid DIRECTLY to the publisher's wallet — the platform takes no share. A run that fails after starting is still billed; a run that never starts is not.",
+  "inputSchema": { "type": "object", "properties": { "input": { … } }, "required": ["input"] }
+}
+```
+
+The cost is in the description on purpose: an agent deciding whether to call a tool should see the price where it sees the purpose.
+
+## Paying for a call
+
+Discovery is free. `tools/call` is the only method that costs anything.
+
+With no payment, the call comes back as a **tool-level error** carrying the HTTP status — not a protocol failure, because "you need to pay" is a normal answer the agent should act on:
+
+```json
+{ "result": { "isError": true, "_meta": { "cc.x402compute/status": 402 } } }
+```
+
+Send an `X-Payment` header and it runs. Any x402 client can produce one; MCP clients that support custom headers pass it straight through.
+
+```js
+const res = await fetch(MCP_URL, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json', 'X-Payment': paymentHeader },
+  body: JSON.stringify({
+    jsonrpc: '2.0', id: 1, method: 'tools/call',
+    params: { name: 'deep_research', arguments: { input: { topic: 'solana' } } },
+  }),
+});
+```
+
+<Note>One payment buys exactly one run — enforced across transports. The same `X-Payment` submitted over MCP and plain HTTP simultaneously results in a single execution; the loser gets `409`.</Note>
+
+## As a LangGraph node, without MCP
+
+A processor is just an HTTP call, so it drops into a graph directly:
+
+```python
+import requests
+
+def research_node(state):
+    r = requests.post(
+        "https://processors.x402compute.cc/processors/deep-research/run",
+        headers={"Authorization": f"Bearer {TOKEN}"},   # your own processor
+        json={"input": {"topic": state["topic"]}},
+        timeout=60,
+    )
+    return {"research": r.json()["output"]}
+
+graph.add_node("research", research_node)
+```
+
+State lives in your graph. A processor is stateless: one input, one output, nothing carried between runs.
+
+## Long-running calls
+
+If a run outlives the sync window you get `202` with a `poll_url` and a run token. Send `Prefer: respond-async` to get that immediately rather than waiting.
+
+## Supported methods
+
+| Method | Cost |
+|---|---|
+| `server/discover` | free |
+| `initialize`, `notifications/initialized`, `ping` | free |
+| `tools/list` | free |
+| `tools/call` | **charged** |
+
+Anything else returns `-32601`. `Mcp-Method` and `Mcp-Name` headers are honoured, and a header that contradicts the body is rejected — so a gateway metering your traffic can never disagree with what actually ran.

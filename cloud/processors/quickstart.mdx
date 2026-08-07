@@ -1,0 +1,149 @@
+---
+title: Processors — Quickstart
+description: Deploy a function, call it, and see what it cost. Every command here was run against production.
+---
+
+<Note>Publishing is closed while we finish the launch checklist. These are the real commands and real responses; you will be able to run them when processors open.</Note>
+
+## Install
+
+```bash
+npm i -g @singularity-layer/cli
+```
+
+Auth is a Solana wallet signature — the CLI uses `~/.config/solana/id.json` by default, or pass `--keypair`. Your key never leaves your machine.
+
+```bash
+singularity whoami
+```
+
+## 1. Scaffold
+
+```bash
+mkdir my-processor && cd my-processor
+singularity processors init my-processor
+```
+
+You get two files: `processor.json` (the manifest) and `processor.js` (your code).
+
+## 2. Write the function
+
+```js processor.js
+export default {
+  async fetch(request) {
+    const { input } = await request.json();
+    return Response.json({ greeting: `hello ${input.name}` });
+  }
+}
+```
+
+## 3. Declare what it needs
+
+```json processor.json
+{
+  "manifest_version": 1,
+  "slug": "my-processor",
+  "name": "My Processor",
+  "description": "One sentence buyers and agents will read.",
+  "lane": "managed",
+  "price_usd": "0.01",
+  "input_schema":  { "type": "object", "properties": { "name": { "type": "string" } } },
+  "output_schema": { "type": "object", "properties": { "greeting": { "type": "string" } } },
+  "limits": { "timeout_ms": 5000, "cpu_ms": 1000, "subrequests": 1 },
+  "egress": { "allow": [] },
+  "secrets": []
+}
+```
+
+<Tip>**Keep `limits` tight.** The ceiling we hold before each run is derived from `timeout_ms`, so a 5-second processor reserves a fraction of what a 600-second one does. Declaring honestly is directly cheaper.</Tip>
+
+## 4. Deploy
+
+```bash
+singularity processors deploy
+```
+
+```
+deployed  my-processor
+
+invoke token (shown once, saved to .singularity.json):
+  sk-sglproc_ECpZQbXq-1aENejIPsY0QnXyVhUvhcXRbSmurMotun0
+```
+
+The **invoke token** is shown once. It is your server-side credential — the one you put behind your own product if you resell. Rotate it with `singularity processors rotate`.
+
+## 5. Run it
+
+```bash
+singularity processors run '{"name":"world"}'
+```
+
+```json
+{ "greeting": "hello world" }
+```
+
+Runs typically complete in under 200ms plus your own work. Anything slower than the sync window returns `202` with a `poll_url` and a run token; send `Prefer: respond-async` to get that immediately.
+
+## 6. See what happened
+
+```bash
+singularity processors logs
+```
+
+```
+7 runs   failure rate 0.0%   platform faults 0
+
+2026-08-07 07:38:37  completed  186ms
+2026-08-07 07:38:35  completed  199ms
+```
+
+Your **failure rate is public** — it appears on your listing, because buyers pay for runs that fail after starting. Platform faults are ours and are excluded, so a bad day on our side never counts against you.
+
+## 7. Go live
+
+```bash
+singularity processors publish
+```
+
+Now it is in the catalogue, callable by anyone, and exposed as an MCP tool.
+
+<Warning>Your payout wallet must be able to receive USDC. If it has never held any, publishing is refused with instructions — send any amount of USDC to it once, then publish again. This is a Solana rule: you cannot transfer a token to an account that does not exist yet.</Warning>
+
+## Calling a published processor
+
+Without payment, you get the price:
+
+```bash
+curl -X POST https://processors.x402compute.cc/processors/my-processor/run \
+  -H 'content-type: application/json' -d '{"input":{"name":"world"}}'
+```
+
+```json
+{
+  "x402Version": 1,
+  "accepts": [{ "payTo": "<the publisher's wallet>", "maxAmountRequired": "10000", "asset": "EPjFW…Dt1v", "network": "solana" }],
+  "error": "payment required"
+}
+```
+
+Pay it and retry with an `X-Payment` header — any x402 client does this automatically. The USDC goes straight to the publisher.
+
+## Calling your own, from your own product
+
+Use the invoke token. No payment, because you are paying for the compute yourself:
+
+```bash
+curl -X POST https://processors.x402compute.cc/processors/my-processor/run \
+  -H "Authorization: Bearer $SGL_PROCESSOR_TOKEN" \
+  -H 'content-type: application/json' -d '{"input":{"name":"world"}}'
+```
+
+## Common rejections
+
+| Response | Meaning |
+|---|---|
+| `400 input_required` | body must be `{"input": …}` |
+| `402` | it is a paid processor and you sent no payment |
+| `404 not_found` | unknown, unlisted, or deleted — deliberately indistinguishable |
+| `429 too_many_concurrent_runs` | at the per-processor concurrency cap |
+| `402 insufficient_runtime_credits` | your own balance cannot cover the run's ceiling |
