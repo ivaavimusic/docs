@@ -135,15 +135,18 @@ const key = await SGL.secrets.get('SIGNING_KEY');
 Some credentials cannot be an outbound header: a key you sign something with locally, or a value an SDK
 insists on reading itself. For those, `env` exists.
 
-<Warning>**This is a real downgrade, and it is opt-in per secret for that reason.** Once the value is in
-your isolate it can be printed into your captured logs, or sent to any host in your egress allowlist, and
-we cannot stop either.
+<Warning>
+  **This is a real downgrade, and it is opt-in per secret for that reason.** Once the value is in your
+  isolate it can be printed into your captured logs, or sent to any host in your egress allowlist, and we
+  cannot stop either.
 
-It is also readable by **every dependency you bundled**, not just the code you wrote — anything running in
-that isolate can call `SGL.secrets.get()`. Treat an `env` secret as visible to your whole dependency tree.
+  It is also readable by **every dependency you bundled**, not just the code you wrote — anything running
+  in that isolate can call `SGL.secrets.get()`. Treat an `env` secret as visible to your whole dependency
+  tree.
 
-Use `inject` for anything that is only ever an outbound header. `env` is still better than hard-coding a
-secret in your source, which puts it in your stored code and in every version we retain.</Warning>
+  Use `inject` for anything that is only ever an outbound header. `env` is still better than hard-coding
+  a secret in your source, which puts it in your stored code and in every version we retain.
+</Warning>
 
 `singularity processors env list` shows which of yours is which.
 
