@@ -147,6 +147,9 @@ secret in your source, which puts it in your stored code and in every version we
 
 `singularity processors env list` shows which of yours is which.
 
+<Note>`singularity processors env list` shows which secrets are which, and the **State** tab in the
+dashboard shows what is in your key/value store — read-only, because it belongs to your code.</Note>
+
 ## What happens to all of this when you delete a processor
 
 It goes. State and files are removed with the processor, and its slug stays permanently reserved so no
