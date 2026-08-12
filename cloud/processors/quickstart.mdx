@@ -3,7 +3,7 @@ title: Processors — Quickstart
 description: Deploy a function, call it, and see what it cost. Every command here was run against production.
 ---
 
-<Note>Publishing is closed while we finish the launch checklist. These are the real commands and real responses; you will be able to run them when processors open.</Note>
+<Note>These are real commands with real responses — you can run them now. The dashboard UI is still being finished, so everything here is the CLI.</Note>
 
 ## Install
 
@@ -36,6 +36,24 @@ export default {
   }
 }
 ```
+
+### TypeScript and npm packages
+
+If you want imports, types, or a package from npm, add `--bundle`:
+
+```bash
+npm i zod
+singularity processors deploy --bundle --entry processor.ts
+```
+
+The bundling happens **on your machine**, with esbuild, and we ship the result. We deliberately never
+run `npm install` for you: a postinstall script is arbitrary code, and executing it on infrastructure
+that holds platform credentials is not something scanning makes safe. Your bundle crosses the boundary;
+your `node_modules` never does.
+
+Because the target is an isolate, a dependency reaching for `fs`, `child_process` or raw sockets fails
+**here, on your terminal**, naming the file that imported it — rather than inside a run a buyer already
+paid for.
 
 ## 3. Declare what it needs
 
@@ -98,6 +116,29 @@ singularity processors logs
 ```
 
 Your **failure rate is public** — it appears on your listing, because buyers pay for runs that fail after starting. Platform faults are ours and are excluded, so a bad day on our side never counts against you.
+
+### Your own console output
+
+Whatever your code printed is captured per run, which is how you actually debug one:
+
+```bash
+singularity processors logs --logs <run_id>
+```
+
+```
+     0ms  log   parsing input with zod
+   184ms  log   calling the model
+   611ms  error rate limited, retrying
+```
+
+Every `console.log` / `warn` / `error` / `info` / `debug` call is captured, capped, stripped of terminal
+escape sequences, and deleted with the run after 30 days. Anything you printed is here — including
+anything a caller sent you, if you printed it.
+
+It is best-effort observability, not an audit trail: it records what your code asked `console` to print,
+so code that writes output another way is not captured.
+
+`singularity processors logs --follow` tails new runs as they happen.
 
 ## 7. Go live
 

@@ -100,7 +100,9 @@ def research_node(state):
 graph.add_node("research", research_node)
 ```
 
-State lives in your graph. A processor is stateless: one input, one output, nothing carried between runs.
+State lives in your graph. The MCP CALL is stateless — one input, one output, no session — though the
+processor on the other side may keep its own [state between runs](/cloud/processors/state). What it does
+not do is remember anything about *your* graph.
 
 ## Long-running calls
 

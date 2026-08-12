@@ -165,6 +165,7 @@
                 "pages": [
                   "cloud/processors/overview",
                   "cloud/processors/quickstart",
+                  "cloud/processors/state",
                   "cloud/processors/pricing",
                   "cloud/processors/mcp"
                 ]

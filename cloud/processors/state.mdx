@@ -1,0 +1,169 @@
+---
+title: State, files, and secrets
+description: Keep a cursor between runs, store generated files, hand a buyer a download link, and choose how each credential reaches your code.
+---
+
+A processor is a **fresh isolate on every run**. Nothing you set in one call survives into the next by
+itself — so anything you want to keep goes somewhere deliberate.
+
+None of what follows needs an `egress.allow` entry. It is not the network.
+
+## Key/value: cursors, caches, counters
+
+```js
+await SGL.kv.put('cursor', '2026-08-12');
+const cursor = await SGL.kv.get('cursor');       // the string, or null
+await SGL.kv.delete('cursor');                    // true if a row went; false is not an error
+```
+
+Values are **opaque strings** and come back byte-for-byte as you wrote them. We do not parse them, so
+if you store canonical JSON or something you later hash, you get exactly those bytes back — which a
+JSON column would not give you, because it reorders object keys and normalises numbers.
+
+Serialize it yourself. `JSON.stringify` of a `Map`, a `Set`, a `Date` or a class instance silently
+loses information, and the person who chose the encoding should be the one who wrote it.
+
+### Concurrent runs are normal, so use the version
+
+Up to ten runs of your processor execute at once. A read-modify-write without a version is a lost
+update — two runs both read `5`, both write `6`, and one increment vanishes.
+
+```js
+for (let attempt = 0; attempt < 5; attempt++) {
+  const cur = await SGL.kv.getWithVersion('count');
+  try {
+    if (!cur) await SGL.kv.put('count', '1', { ifVersion: 0 });   // 0 means "only if absent"
+    else      await SGL.kv.put('count', String(Number(cur.value) + 1), { ifVersion: cur.version });
+    break;
+  } catch (e) {
+    if (e.code !== 'version_conflict') throw e;
+    // Somebody else won. Re-read and try again — this loop working IS the feature.
+  }
+}
+```
+
+A conflict throws with `err.code === 'version_conflict'` and `err.currentVersion`, so you can re-read,
+merge and retry rather than guess.
+
+Bound your retries. Under real contention a tight loop can exhaust your attempts and your `cpu_ms` on
+conflicts alone, and the buyer is charged for that run either way. A handful of attempts with a short
+delay between them is enough; if you are consistently exhausting them, the contention is the problem, not
+the loop.
+
+### Listing
+
+```js
+const { keys, cursor } = await SGL.kv.list({ prefix: 'user:' });
+```
+
+Keys and versions only, never values — a list that returned values could pull your whole store through
+one response. Paginate with the returned `cursor` until it is `null`.
+
+**Limits:** 10,000 keys, 1 KiB per key, 64 KiB per value.
+
+## Files: bytes, and links a buyer can fetch
+
+```js
+await SGL.files.put('reports/august.pdf', bytes, { contentType: 'application/pdf' });
+const res  = await SGL.files.get('reports/august.pdf');    // a Response, or null
+const meta = await SGL.files.head('reports/august.pdf');   // size/etag without transferring
+const { objects } = await SGL.files.list({ prefix: 'reports/' });
+```
+
+**Limits:** 100 MiB total, 10 MiB per object, 10,000 objects. Your paths live in your own namespace —
+you cannot read or write another processor's objects, and a path with `..` in it is refused.
+
+### Handing a file to a buyer
+
+```js
+const { url, expiresAt } = await SGL.files.downloadUrl('reports/august.pdf', { ttlSeconds: 3600 });
+return Response.json({ report: url });
+```
+
+That link needs **no credential**. Two things to understand before you put one in your output:
+
+- It is a **bearer link**. Anyone who obtains it can download until it expires — default one hour,
+  maximum 24 hours. Treat it like a password in a URL, because that is what it is: do not print one into
+  your logs, put one in a public page, or send one anywhere you would not send the file itself.
+- It is always served as an **attachment** with a forced `application/octet-stream` type. Your declared
+  content type is deliberately not echoed, so an HTML or SVG file you stored cannot execute in a
+  visitor's browser. If you need a file rendered inline, host it yourself.
+
+## Secrets: two modes, and the difference matters
+
+Declare a secret in your manifest, then set its value with
+`singularity processors secrets NAME=value`. We never hand a value back to you.
+
+### `inject` — the default, and the strong one
+
+```json
+{ "name": "OPENAI_API_KEY", "hosts": ["api.openai.com"],
+  "inject": { "header": "Authorization", "format": "Bearer {value}" } }
+```
+
+**The value never enters your isolate.** You call `fetch()` with no credential at all, and our egress
+gateway adds the header on the way out — only for the hosts you declared.
+
+```js
+// No key anywhere in your code. It is added server-side.
+await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', body });
+```
+
+Your key is held by our egress gateway and is **not readable from your code's environment**. So it
+cannot end up in a log line, an error message, or a response body by accident, and a dependency you
+pulled in cannot read it either.
+
+<Note>An `inject` secret is not readable from your code. `SGL.secrets.get()` returns `null` for one,
+exactly as it does for a name you never declared. That is the whole point of choosing this mode.</Note>
+
+**What this does not do**, because overselling it would be worse than not having it: your code can still
+*spend* the credential against the hosts you allowlisted, and if one of those hosts echoes request
+headers back — a debug endpoint, or a host you control — your code can read the injected value out of
+that response. Injection stops accidental leakage and casual exfiltration by a dependency. It is not a
+guarantee against code that is actively trying to see its own key.
+
+### `mode: "env"` — when the value has to be in your hands
+
+```json
+{ "name": "SIGNING_KEY", "mode": "env" }
+```
+
+```js
+const key = await SGL.secrets.get('SIGNING_KEY');
+```
+
+Some credentials cannot be an outbound header: a key you sign something with locally, or a value an SDK
+insists on reading itself. For those, `env` exists.
+
+<Warning>**This is a real downgrade, and it is opt-in per secret for that reason.** Once the value is in
+your isolate it can be printed into your captured logs, or sent to any host in your egress allowlist, and
+we cannot stop either.
+
+It is also readable by **every dependency you bundled**, not just the code you wrote — anything running in
+that isolate can call `SGL.secrets.get()`. Treat an `env` secret as visible to your whole dependency tree.
+
+Use `inject` for anything that is only ever an outbound header. `env` is still better than hard-coding a
+secret in your source, which puts it in your stored code and in every version we retain.</Warning>
+
+`singularity processors env list` shows which of yours is which.
+
+## What happens to all of this when you delete a processor
+
+It goes. State and files are removed with the processor, and its slug stays permanently reserved so no
+one else can take a name your buyers had saved.
+
+If you only want to **stop traffic**, do not delete:
+
+```bash
+singularity processors pause
+singularity processors resume
+```
+
+Pausing refuses buyers and invoke-token callers **before any payment is taken**, and takes you out of
+the catalogue. Runs already in flight finish. You can still invoke it yourself with your wallet, so you
+can verify a fix before resuming — and those owner runs **still cost you compute**, because a run costs us
+the same whoever triggered it.
+
+Unlisting is *not* the same thing: an unlisted processor is out of the catalogue but its endpoint keeps
+answering anyone who has the URL or an invoke token. Those calls earn you nothing and still draw
+**compute** from your credit balance, which is the part that surprises people.

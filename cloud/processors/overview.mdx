@@ -3,7 +3,7 @@ title: SGL Processors — Overview
 description: Deploy one function, get a paid API endpoint and an MCP tool. Buyers pay you directly; you pay only for compute.
 ---
 
-<Note>**SGL Processors are not open yet.** The platform is built and tested end to end, but publishing is closed while we finish the launch checklist. This page describes what it actually does today, not a plan.</Note>
+<Note>**Processors are live through the CLI.** Buyer payments and compute billing are both on, so you can deploy, price, publish and get paid today with `@singularity-layer/cli`. The **dashboard UI is still being finished**, so manage yours from the terminal for now. This page describes what it does, not a plan.</Note>
 
 A **processor** is one function you write, that we host, that becomes a URL anyone can call — with a price attached.
 
@@ -70,14 +70,16 @@ Processors execute in **isolated V8 sandboxes** on Cloudflare's edge — the sam
 
 **Network access is deny-by-default.** Your code can only reach hosts you declare in the manifest. Everything else — including loopback, private ranges, and cloud metadata endpoints — is refused at the gateway.
 
-**Secrets are never in your code's scope.** You store an API key with us; we inject it into outbound requests to the host you bound it to. The running isolate cannot read it.
+**Secrets are injected, not handed over.** You store an API key with us; we add it to outbound requests to the host you bound it to, and the running isolate never sees it. Code that never holds a key cannot leak the key.
+
+For the credentials that genuinely cannot be an outbound header — a key you sign with locally — you can opt a single secret into `mode: "env"` and read it from your code instead. That is a real trade, and [State, files and secrets](/cloud/processors/state) says exactly what you give up.
 
 ## How it fits the rest of the network
 
 - **[Grid](/cloud/grid/overview)** — managed model inference. Processors can call it.
 - **[Machines](/cloud/machines/overview)** — a whole GPU you control.
 - **[Agent Pods](/cloud/pods/overview)** — a long-lived agent with its own workspace.
-- **Processors** — one function, priced per call, discoverable by agents. Stateless: each run is independent.
+- **Processors** — one function, priced per call, discoverable by agents. Each run is a fresh isolate, but a processor can keep [state and files](/cloud/processors/state) between runs.
 
 ## Next
 
@@ -85,8 +87,11 @@ Processors execute in **isolated V8 sandboxes** on Cloudflare's edge — the sam
   <Card title="Quickstart" icon="rocket" href="/cloud/processors/quickstart">
     Deploy and call your first processor.
   </Card>
+  <Card title="State, files and secrets" icon="database" href="/cloud/processors/state">
+    Keep a cursor between runs, store files, hand a buyer a download link.
+  </Card>
   <Card title="Pricing" icon="coins" href="/cloud/processors/pricing">
-    Exactly what a run costs and how the hold works.
+    Charge a flat price or one computed from the input, and what a run costs you.
   </Card>
   <Card title="From an agent (MCP)" icon="robot" href="/cloud/processors/mcp">
     Use a processor as a tool in Claude or LangGraph.

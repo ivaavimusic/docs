@@ -11,7 +11,70 @@ description: You keep 100% of your sales. You pay only for compute, held before 
 
 Your price and your margin are yours. We do not scale with your sales.
 
-## What a run costs
+## Charging your buyers: flat, or by the input
+
+The simple case is one number:
+
+```json
+{ "price_usd": "0.01" }
+```
+
+But the same processor often does very different amounts of work — summarising ten documents is not the
+job of summarising one. Pricing for the worst case overcharges everybody for the common case, so you can
+declare a price that depends on the input:
+
+```json
+{
+  "price_usd": "0.01",
+  "pricing": {
+    "mode": "computed",
+    "base_usd": "0.01",
+    "units": [
+      { "field": "items", "measure": "length", "per_unit_usd": "0.005" },
+      { "field": "text",  "measure": "bytes",  "per_unit_usd": "0.001", "unit_size": 1000 }
+    ],
+    "max_usd": "1.00"
+  }
+}
+```
+
+Three items now costs $0.025. Add 1,500 bytes of `text` and it is $0.027 — partial blocks round up.
+Two hundred items would come to $1.01, so `max_usd` caps it at **$1.00** and that is the most any single
+request can ever cost.
+
+- `measure` is `length` (array length), `bytes` (UTF-8 byte length of a string), or `value` (a number
+  your caller supplies). `unit_size` charges per N units.
+- `field` is a **top-level** key of `input`. No nested paths.
+- `max_usd` is **required**. It is how your buyer knows what they are agreeing to before they pay.
+- `base_usd` must equal `price_usd`, and `price_usd` then means the **minimum** — the catalogue shows
+  your processor as "from $0.01", not "$0.01".
+
+<Note>This is a **declarative formula, not your code**. We do not run your processor to price a request:
+that would be free compute for anyone sending a probe, and it would let a price depend on the clock or a
+counter — so a buyer could be quoted one number and charged another. The formula reads your caller's
+input and nothing else.</Note>
+
+### How a buyer gets the exact price
+
+They send the request they intend to send, with no payment. The `402` response carries the amount for
+*that* input, plus the formula so they can check it:
+
+```json
+{
+  "x402Version": 1,
+  "accepts": [{ "maxAmountRequired": "25000", "…": "…" }],
+  "quote": "25000",
+  "quote_usd": "0.025000",
+  "pricing": { "mode": "computed", "base_usd": "0.01", "max_usd": "1.00", "units": [ … ] }
+}
+```
+
+Then they pay it. **Changing the input after quoting cannot underpay**: the price is recomputed when the
+payment arrives, and a payment that no longer covers it is rejected before anything moves. Buyers who
+want protection in the other direction can echo `X-SGL-Quote: 25000` when paying — a mismatch is a `409`
+that charges nothing, rather than a silent overpayment.
+
+## What a run costs *you*
 
 | | |
 |---|---|
