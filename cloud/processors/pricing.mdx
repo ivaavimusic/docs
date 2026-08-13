@@ -11,13 +11,51 @@ description: You keep 100% of your sales. You pay only for compute, held before 
 
 Your price and your margin are yours. We do not scale with your sales.
 
-<Note>
-  **Processor payments are USDC on Solana only.** Singularity accepts x402 on Base, Solana, MegaETH and
-  Robinhood Chain for [Machines](/cloud/machines/overview), [Pods](/cloud/pods/overview) and credit
-  top-ups — but a processor's 402 offers Solana alone, your payout wallet is a Solana address, and owner
-  auth is a Solana signature. A buyer needs a Solana wallet with USDC; an EVM payment is rejected.
+## Which chains buyers can pay on
 
-  Your own compute credits can still be topped up on any of those rails.
+Three, and you choose which of them you accept:
+
+| Chain | Asset | Your payout address |
+| --- | --- | --- |
+| Solana | USDC | base58 wallet — **the default**, your signing wallet |
+| Base | USDC | `0x…` |
+| Robinhood Chain | USDG | `0x…` |
+
+Do nothing and you are paid in USDC on Solana at the wallet you deploy with, which is how every
+processor worked before this existed. To accept more, add a `payout` block:
+
+```json
+{
+  "price_usd": "0.01",
+  "payout": {
+    "solana": "<your base58 wallet>",
+    "base": "0x…",
+    "robinhood": "0x…"
+  }
+}
+```
+
+**One `price_usd` is the price on every chain.** All three assets are 6-decimal stablecoins, so $0.01 is
+10000 micro-units of USDC on Solana, USDC on Base, or USDG on Robinhood — no conversion, no per-chain
+price. A buyer's 402 lists one `accepts` entry per chain you accept and they pay on whichever they hold.
+
+<Warning>
+  Check every address character by character, and paste rather than retype. Buyers pay **you** directly:
+  we never see the money and cannot reverse a payment, so a wrong address sends every sale for the life
+  of the processor to somebody else.
+
+  A `0x` address is checked against its **EIP-55 checksum** when it has mixed case, and deploy tells you
+  the address it thinks you meant. A Solana address has no such checksum — base58 is case-sensitive, and
+  a lowercased wallet is a *different, still-valid-looking* account. Nothing here ever changes the case
+  of an address you give us.
+</Warning>
+
+<Note>
+  Naming a chain in `payout` is not the same as it being live. We keep an operator-side allowlist, so a
+  chain you declare that is not enabled simply never appears in a 402 — it settles nothing and costs you
+  nothing. A processor deployed before per-chain payouts existed is Solana-only regardless.
+
+  Owner and CLI auth is still a **Solana** wallet signature, separately from how you get paid.
 </Note>
 
 ## Charging your buyers: flat, or by the input

@@ -148,7 +148,18 @@ singularity processors publish
 
 Now it is in the catalogue, callable by anyone, and exposed as an MCP tool.
 
-<Warning>Your payout wallet must be able to receive USDC. If it has never held any, publishing is refused with instructions — send any amount of USDC to it once, then publish again. This is a Solana rule: you cannot transfer a token to an account that does not exist yet.</Warning>
+<Warning>
+  Your Solana payout wallet must be able to receive USDC. If it has never held any, publishing is refused
+  with instructions — send any amount of USDC to it once, then publish again. This is a Solana rule: you
+  cannot transfer a token to an account that does not exist yet. It does not apply to Base or Robinhood.
+</Warning>
+
+<Note>
+  By default buyers pay you in USDC on Solana, at the wallet you deployed with. To also accept USDC on
+  Base or USDG on Robinhood Chain, add a `payout` block — see
+  [which chains buyers can pay on](/cloud/processors/pricing#which-chains-buyers-can-pay-on). One
+  `price_usd` covers every chain.
+</Note>
 
 ## Calling a published processor
 
@@ -167,7 +178,13 @@ curl -X POST https://processors.x402compute.cc/processors/my-processor/run \
 }
 ```
 
-Pay it and retry with an `X-Payment` header — any x402 client does this automatically. The USDC goes straight to the publisher.
+Pay it and retry with an `X-Payment` header — any x402 client does this automatically. The money goes
+straight to the publisher.
+
+`accepts` carries **one entry per chain that publisher accepts**, so a processor with a `payout` block
+returns several. Pick the one whose `network` you can sign for — `solana`, `base`, or `robinhood` — and
+pay that entry. `maxAmountRequired` is the same integer on all of them, because every asset is a
+6-decimal stablecoin.
 
 ## Calling your own, from your own product
 
