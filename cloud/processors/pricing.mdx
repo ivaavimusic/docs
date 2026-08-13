@@ -11,6 +11,29 @@ description: You keep 100% of your sales. You pay only for compute, held before 
 
 Your price and your margin are yours. We do not scale with your sales.
 
+## Refunds: there are none, and here is why
+
+<Warning>
+  **A payment is final. Singularity does not refund buyers and cannot reverse a payment.**
+
+  This is not a policy we chose to be strict — it follows from the payment being *direct*. The buyer's
+  funds move from their wallet to yours. We are never the recipient, never hold the money, and take no
+  part in the transaction beyond checking it and running your code. There is nothing on our side to give
+  back.
+</Warning>
+
+What a buyer does when a run does not deliver:
+
+1. **Retry with the same `X-Payment` header.** It returns the run that payment already bought — it does
+   **not** charge again. That is the recovery path, and it works whether the failure was your code, our
+   platform, or a lost response.
+2. **Read the failure rate before paying.** Every catalogue entry publishes the processor's 30-day
+   failure rate, with platform faults excluded so you are judged on your own code. That is how a buyer
+   decides whether to trust a processor, and it is why the number is public.
+
+If a run fails on **our** side, your held compute cost is returned to you — you are not charged for
+compute we failed to deliver.
+
 ## Which chains buyers can pay on
 
 Three, and you choose which of them you accept:
