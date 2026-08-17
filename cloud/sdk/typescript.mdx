@@ -75,6 +75,35 @@ const res = await grid.chatCompletions({
 });
 ```
 
+## Vision (image input)
+
+Send an image to a **vision model** (e.g. `qwen2.5-vl-3b`) by giving a message an array of
+content parts — a `text` part and an `image_url` part (a data URL or an https URL). The image
+is sealed end-to-end with the rest of your prompt; only the image count is disclosed so the
+grid can quote it and route to a vision-capable node. Image requests are non-streaming.
+
+```typescript
+import { GridClient, type ChatContentPart } from "@singularity-layer/grid";
+
+const grid = new GridClient({ apiKey: "scg_..." });
+
+const res = await grid.chatCompletions({
+  model: "qwen2.5-vl-3b",
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "What is in this image?" },
+        { type: "image_url", image_url: { url: "data:image/png;base64,iVBORw0KGgo..." } },
+      ] satisfies ChatContentPart[],
+    },
+  ],
+  max_tokens: 256,
+});
+
+console.log(res.choices[0].message.content);
+```
+
 ## Embeddings
 
 Turn text into vectors for search and RAG via the OpenAI-compatible `/v1/embeddings`
