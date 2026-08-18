@@ -54,3 +54,14 @@ restores with any other — cross-verified byte-for-byte in CI-style tests.
 
 <Warning>Zero-knowledge cuts both ways: a lost passphrase is unrecoverable by
 anyone, including Singularity Layer.</Warning>
+
+## MCP (for agents)
+
+The Singularity MCP (`https://mcp.x402layer.cc/mcp`, streamable HTTP) ships six
+vault tools: `vault_usage`, `vault_list_agents`, `vault_list_snapshots`,
+`vault_delete_snapshot`, `vault_subscribe_pro`, and `vault_how_to_backup`.
+Management tools take a compute API key per call; creating/restoring the
+encrypted payload itself stays on the agent's machine (zero-knowledge), and
+`vault_how_to_backup` hands the agent the exact CLI steps. Agent Pods carry
+this MCP natively — pod agents can check and manage their own backups out of
+the box.
