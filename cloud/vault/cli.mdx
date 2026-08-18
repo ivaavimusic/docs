@@ -41,6 +41,18 @@ Restores are hardened: path-traversal and link entries are rejected, dangerous
 permission bits are stripped, and on pods the previous state is parked in a
 `.pre-restore` directory until the next restore.
 
+## Back up anything (universal mode)
+
+Not on OpenClaw or Hermes? Any directory becomes a vaultable agent:
+
+```bash
+agentvault backup --path ~/my-agent --name "My Agent"
+```
+
+Works for Claude Code state, Cursor, custom stacks — whatever holds your
+agent's brain. Each directory gets its own lineage (same folder → same
+history), and restores work exactly like the built-in agents.
+
 ## Automatic backups
 
 ```bash
