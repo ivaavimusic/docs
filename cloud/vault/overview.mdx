@@ -1,0 +1,54 @@
+---
+title: Agent Vault — Overview
+description: Zero-knowledge encrypted backup, restore, and migration for AI agents. Snapshot an agent's memory, soul, and config — bring it back on any machine or pod.
+---
+
+**Agent Vault** is encrypted backup and migration for AI agents. Snapshot an
+agent's entire self — memory, soul, config, skills — and bring it back
+anywhere: a new machine, a fresh [Agent Pod](/cloud/pods/overview), or the
+same box after a bad day.
+
+Supported agents: **OpenClaw** (`~/.openclaw`) and **Hermes** (`~/.hermes`).
+
+## Zero-knowledge, for real
+
+Every backup is sealed **on the machine the agent lives on** — scrypt key
+derivation from *your* passphrase, AES-256-GCM, with the snapshot identity
+bound into the authentication tag. The vault stores ciphertext it cannot read.
+
+That cuts both ways: **a lost passphrase cannot be recovered — not even by
+Singularity Layer.** Write it down before your first backup.
+
+## Two ways in
+
+<CardGroup cols={2}>
+  <Card title="Pods — one click" icon="robot" href="/cloud/pods/manage">
+    Open a pod's **Backups** tab, pick a passphrase, press **Back up now**.
+    Nothing to install — the pod encrypts on-box.
+  </Card>
+  <Card title="Any machine — the CLI" icon="terminal" href="/cloud/vault/cli">
+    `npm i -g @singularity-layer/agentvault` — login is a browser wallet
+    approval, then `agentvault backup --all`.
+  </Card>
+</CardGroup>
+
+## Migration is just cross-restore
+
+Snapshots belong to your **wallet**, not to a machine. Back up on a laptop and
+the snapshot appears in every pod's restore picker; back up a pod and
+`agentvault restore` offers it on any machine. Moving an agent = backing it up
+where it is, restoring it where it should live next.
+
+## Pricing & limits
+
+Storage is **free at launch**. Caps: 5 GiB per wallet, 2 GiB per snapshot —
+a typical agent snapshot is a few megabytes. Stored backups are never deleted
+for non-payment.
+
+## Where things live
+
+| Surface | Where |
+|---|---|
+| Dashboard | [cloud.x402compute.cc/network/backups](https://cloud.x402compute.cc/network/backups) |
+| CLI | [`@singularity-layer/agentvault`](https://www.npmjs.com/package/@singularity-layer/agentvault) on npm |
+| For agents | The `x402-compute` skill (v1.18+) teaches any agent the full flow |

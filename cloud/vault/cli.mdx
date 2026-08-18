@@ -1,0 +1,61 @@
+---
+title: Agent Vault — CLI
+description: Back up, restore, and migrate agents from the terminal with the agentvault CLI — browser wallet login, scheduled backups, safe restores.
+---
+
+## Install & sign in
+
+```bash
+npm i -g @singularity-layer/agentvault
+
+agentvault login            # opens your browser — connect wallet, approve, done
+agentvault login --api-key  # headless machines: paste a compute API key instead
+```
+
+The browser flow mints a scoped API key for this machine automatically. For
+`--api-key`, create one under **Settings → API Keys** in the dashboard.
+
+## Back up
+
+```bash
+agentvault backup --all     # detect every local agent, encrypt, upload
+agentvault list             # agents and snapshot counts
+```
+
+You'll be asked for a **backup passphrase** — the encryption key is derived
+from it on your machine. <Warning>A lost passphrase is unrecoverable. Not by
+support, not by anyone. Write it down.</Warning>
+
+## Restore & migrate
+
+```bash
+agentvault restore              # pick a snapshot → passphrase → safe unpack
+agentvault restore --dest ~/x   # restore into a specific directory
+```
+
+- **Machine → machine:** back up on the old box, `login` + `restore` on the new one.
+- **Machine ↔ pod:** snapshots are wallet-scoped — they appear in every pod's
+  **Backups** tab restore picker, and pod snapshots appear in the CLI.
+
+Restores are hardened: path-traversal and link entries are rejected, dangerous
+permission bits are stripped, and on pods the previous state is parked in a
+`.pre-restore` directory until the next restore.
+
+## Automatic backups
+
+```bash
+agentvault passphrase set                      # store passphrase in the OS keychain
+agentvault daemon install --frequency weekly   # or daily (launchd / systemd)
+agentvault daemon status
+```
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `login [--api-key]` | Browser wallet sign-in, or paste a key |
+| `backup [--all] [--non-interactive]` | Encrypt + upload detected agents |
+| `restore [--dest <dir>]` | Download, decrypt, safely unpack |
+| `list` | Agents and snapshots |
+| `passphrase set\|clear` | Keychain passphrase for scheduled runs |
+| `daemon install\|uninstall\|status` | Automatic backups |

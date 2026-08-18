@@ -161,6 +161,13 @@
                 ]
               },
               {
+                "group": "Agent Vault",
+                "pages": [
+                  "cloud/vault/overview",
+                  "cloud/vault/cli"
+                ]
+              },
+              {
                 "group": "SGL Processors",
                 "pages": [
                   "cloud/processors/overview",
