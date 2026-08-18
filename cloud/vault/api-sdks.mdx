@@ -13,6 +13,7 @@ Full endpoint schemas: [Agent Vault API reference](/api-reference/vault-agents-l
 Pure-JS envelope (noble crypto) — works in Node **and** browsers.
 
 ```ts
+// npm i @singularity-layer/grid
 import { VaultClient } from "@singularity-layer/grid";
 
 const vault = new VaultClient({ apiKey: "x402c_..." });
@@ -27,12 +28,13 @@ await vault.subscribePro();                                // $3/mo from credits
 `backupBytes`/`restoreBytes` handle arbitrary payloads — pack directories with
 the CLI or Python SDK, or bring your own archive.
 
-## Python — `sgl-network`
+## Python — `singularity-grid`
 
 Full directory backup/restore, stdlib `scrypt` + `cryptography` AES-GCM:
 
 ```python
-from sgl_network import VaultClient
+# pip install singularity-grid
+from singularity_grid import VaultClient
 
 vault = VaultClient(api_key="x402c_...")
 
