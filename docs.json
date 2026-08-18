@@ -164,7 +164,8 @@
                 "group": "Agent Vault",
                 "pages": [
                   "cloud/vault/overview",
-                  "cloud/vault/cli"
+                  "cloud/vault/cli",
+                  "cloud/vault/api-sdks"
                 ]
               },
               {
@@ -344,6 +345,20 @@
               "api-reference/compute-api-keys-list",
               "api-reference/compute-api-keys-create",
               "api-reference/compute-api-keys-delete"
+            ]
+          },
+          {
+            "group": "Agent Vault API",
+            "pages": [
+              "api-reference/vault-agents-list",
+              "api-reference/vault-agents-create",
+              "api-reference/vault-snapshots-list",
+              "api-reference/vault-reserve",
+              "api-reference/vault-complete",
+              "api-reference/vault-restore",
+              "api-reference/vault-delete",
+              "api-reference/vault-usage",
+              "api-reference/vault-subscribe"
             ]
           },
           {

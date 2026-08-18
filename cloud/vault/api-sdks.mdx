@@ -1,0 +1,54 @@
+---
+title: Agent Vault — API & SDKs
+description: Integrate Agent Vault from your own stack — REST API, TypeScript SDK, and Python SDK, all sharing one byte-compatible zero-knowledge envelope.
+---
+
+Everything the CLI does is plain HTTP on `https://compute.x402layer.cc/backups/*`,
+authenticated with a compute API key (`X-API-Key`). Encryption always happens
+on **your** side — the flow is *reserve → presigned PUT of ciphertext → complete*.
+Full endpoint schemas: [Agent Vault API reference](/api-reference/vault-agents-list).
+
+## TypeScript — `@singularity-layer/grid`
+
+Pure-JS envelope (noble crypto) — works in Node **and** browsers.
+
+```ts
+import { VaultClient } from "@singularity-layer/grid";
+
+const vault = new VaultClient({ apiKey: "x402c_..." });
+
+const agent = await vault.createAgent("My Bot", "custom-my-bot-a1b2c3");
+const id = await vault.backupBytes(agent.id, payloadBytes, passphrase);
+
+const bytes = await vault.restoreBytes(id, passphrase);   // decrypted payload
+await vault.subscribePro();                                // $3/mo from credits
+```
+
+`backupBytes`/`restoreBytes` handle arbitrary payloads — pack directories with
+the CLI or Python SDK, or bring your own archive.
+
+## Python — `sgl-network`
+
+Full directory backup/restore, stdlib `scrypt` + `cryptography` AES-GCM:
+
+```python
+from sgl_network import VaultClient
+
+vault = VaultClient(api_key="x402c_...")
+
+snapshot_id = vault.backup_dir("~/my-agent", passphrase="...", name="My Agent")
+vault.restore(snapshot_id, passphrase="...", dest="./restored")
+
+vault.usage()          # plan, bytes, caps
+vault.subscribe_pro()  # $3/mo from credits
+```
+
+## One envelope, everywhere
+
+CLI, pod runner, TypeScript, and Python all produce the identical encrypted
+envelope (`scrypt N=2^17 r=8 p=1` → AES-256-GCM, snapshot identity bound into
+the AAD, parsed from the snapshot's `r2Key`). A blob encrypted by any of them
+restores with any other — cross-verified byte-for-byte in CI-style tests.
+
+<Warning>Zero-knowledge cuts both ways: a lost passphrase is unrecoverable by
+anyone, including Singularity Layer.</Warning>

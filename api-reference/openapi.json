@@ -4679,6 +4679,623 @@
           }
         }
       }
+    },
+    "/backups/agents": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "List vault agents",
+        "description": "Agents registered to the authenticated wallet.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "framework": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "local",
+                              "pod"
+                            ]
+                          },
+                          "pod_order_id": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "created_at": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "Register an agent",
+        "description": "Find-or-create by (wallet, framework). Custom integrations should use a `custom-<slug>-<hash>` framework label so lineages never collide.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Agent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agent": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "framework": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "local",
+                            "pod"
+                          ]
+                        },
+                        "pod_order_id": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "created_at": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "framework": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{1,32}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "framework"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backups": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "List snapshots",
+        "description": "Complete snapshots for the wallet. Filter with `agentId` or `podOrderId`.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          },
+          {
+            "name": "agentId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "podOrderId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Snapshots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "backups": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "agent_id": {
+                            "type": "string"
+                          },
+                          "size_bytes": {
+                            "type": "integer"
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "completed_at": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "Reserve an upload",
+        "description": "Reserves quota and returns a single-use presigned PUT URL (15 min). Encrypt CLIENT-SIDE before uploading \u2014 the platform must only ever see ciphertext. Flow: reserve \u2192 PUT blob \u2192 complete.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "backupId": {
+                      "type": "string"
+                    },
+                    "r2Key": {
+                      "type": "string",
+                      "description": "backups/{wallet}/{agentId}/{backupId}/blob.enc \u2014 parse it for the encryption AAD"
+                    },
+                    "uploadUrl": {
+                      "type": "string"
+                    },
+                    "expiresInSeconds": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "agentId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "description": "Payload size BEFORE encryption; the encrypted blob may exceed it slightly (envelope slack is allowed)."
+                  }
+                },
+                "required": [
+                  "agentId",
+                  "sizeBytes"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backups/{backupId}/complete": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "Complete an upload",
+        "description": "Verifies the uploaded object against storage and finalizes the snapshot. On the free plan this prunes every older snapshot (one rolling snapshot per wallet).",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          },
+          {
+            "name": "backupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "sizeBytes": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                },
+                "required": [
+                  "sha256"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backups/{backupId}/restore": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "Get restore URL",
+        "description": "Presigned download URL (15 min) for the encrypted blob. Decrypt client-side with the passphrase; the AAD comes from `r2Key`.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          },
+          {
+            "name": "backupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restore info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "downloadUrl": {
+                      "type": "string"
+                    },
+                    "r2Key": {
+                      "type": "string"
+                    },
+                    "expiresInSeconds": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backups/{backupId}": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "Delete a snapshot",
+        "description": "Frees the snapshot's storage and removes the encrypted object.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          },
+          {
+            "name": "backupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backups/usage": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "Vault usage & plan",
+        "description": "Bytes used/reserved, plan (free/pro), caps, and pricing.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bytesUsed": {
+                      "type": "integer"
+                    },
+                    "bytesReserved": {
+                      "type": "integer"
+                    },
+                    "plan": {
+                      "type": "string",
+                      "enum": [
+                        "free",
+                        "pro"
+                      ]
+                    },
+                    "planRenewsAt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "maxBytes": {
+                      "type": "integer"
+                    },
+                    "freeMaxBytes": {
+                      "type": "integer"
+                    },
+                    "proMaxBytes": {
+                      "type": "integer"
+                    },
+                    "proPriceUsd": {
+                      "type": "number"
+                    },
+                    "maxObjectBytes": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backups/subscribe": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Agent Vault"
+        ],
+        "summary": "Subscribe to Vault Pro",
+        "description": "Charges $3/month from platform credits and activates unlimited snapshots (5 GiB). Renewals are automatic; a failed renewal downgrades behavior only \u2014 stored data is never deleted.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute API key (create one in the dashboard under Settings \u2192 API Keys, or via agentvault login)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscribed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "plan": {
+                      "type": "string"
+                    },
+                    "already": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
