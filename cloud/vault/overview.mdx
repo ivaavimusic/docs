@@ -55,6 +55,24 @@ snapshot is a few megabytes. Per-snapshot cap: 2 GiB.
 **Revive from vault** to bring it back. Backups of a destroyed pod are kept
 **forever on Vault Pro** and **30 days** on the free plan.
 
+## Automatic pod backups — included with your pod plan
+
+Every Agent Pod can back itself up **daily**, no Vault Pro needed. Turn it on
+once in the pod's **Backups** tab; retention and storage come from the pod
+tier:
+
+| Pod tier | History kept | Pod backup storage |
+|---|---|---|
+| Starter | 30 days | 2 GiB |
+| Pro | 3 months | 5 GiB |
+| Max | 6 months | 10 GiB |
+
+One honest caveat: to run unattended, the passphrase you pick is stored
+**encrypted on our side** and released to the pod once per scheduled run — so
+automatic backups are *not* zero-knowledge the way manual ones are. Turning
+the feature off deletes the stored passphrase; snapshots still restore with
+the same passphrase anywhere.
+
 ## Where things live
 
 | Surface | Where |
