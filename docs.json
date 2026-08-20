@@ -175,7 +175,8 @@
                   "cloud/processors/quickstart",
                   "cloud/processors/state",
                   "cloud/processors/pricing",
-                  "cloud/processors/mcp"
+                  "cloud/processors/mcp",
+                  "cloud/processors/webhooks"
                 ]
               },
               {

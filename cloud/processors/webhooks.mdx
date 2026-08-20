@@ -1,0 +1,122 @@
+---
+title: Webhooks
+description: Get a signed HTTP call the moment your processor sells or fails, so your own systems react without polling.
+---
+
+A webhook is an HTTP `POST` we send to a URL you own when something happens to your processor — a paid
+sale, a failed run. You register one URL per processor, we sign every call so you can prove it came
+from us, and we keep retrying until your endpoint answers.
+
+One webhook per processor. Register it in **My Processors → Webhooks**, or over the API.
+
+## Register, and prove you own the endpoint
+
+When you save a URL we immediately send it a **one-time verification `POST`**. Your endpoint must
+answer `2xx`. Only then does the webhook activate.
+
+This step is not paperwork. A wallet signature proves *you* asked for the webhook; it does not prove
+the **target** agreed to receive our calls. The verification ping is what stops anyone pointing us at
+a stranger's server. Until your endpoint answers it, the webhook is registered but **inactive** and
+delivers nothing.
+
+<Note>
+The URL must be `https` on port 443, a real hostname (no IP addresses), and not one of our own domains.
+Redirects are not followed — a redirect is a second URL nobody verified.
+</Note>
+
+On success you are shown a **signing secret exactly once** (`whsec_…`). Save it now — it is never shown
+again. Registering again mints a new one, and is also how you re-verify after a change.
+
+## What you receive
+
+Three event types, each a JSON body:
+
+| `type` | when |
+| --- | --- |
+| `sale.completed` | a buyer paid and the run finished successfully |
+| `run.failed` | a paid run ran and failed |
+| `run.failed_platform` | a paid run failed on **our** side (excluded from your failure rate) |
+
+The payload carries the run's identity and outcome — never the caller's input or output, which are
+their data, not yours:
+
+```json
+{
+  "id": "e2b1…",                       // delivery id (a stable idempotency key)
+  "type": "sale.completed",
+  "created_at": "2026-08-20T06:58:26.409Z",
+  "processor": { "id": "b377…", "slug": "your-processor" },
+  "run": {
+    "id": "8d6d…",
+    "status": "completed",
+    "run_ms": 188,
+    "finished_at": "2026-08-20T06:58:24.347Z"
+  }
+}
+```
+
+## Verify the signature
+
+Every delivery carries an `X-SGL-Signature` header in Stripe's format:
+
+```
+X-SGL-Signature: t=1787209106,v1=bf371e37…
+```
+
+`v1` is `hmac-sha256(secret, "{t}.{rawBody}")`. Recompute it over the **raw** request body and reject
+anything that does not match — an unsigned or wrongly-signed call is not from us. The `t` timestamp is
+inside the signed string, so you can also reject anything too old to be a genuine, timely event.
+
+```js
+import crypto from 'node:crypto';
+
+function verify(rawBody, header, secret) {
+  const { t, v1 } = Object.fromEntries(header.split(',').map((p) => p.split('=')));
+  const expected = crypto.createHmac('sha256', secret).update(`${t}.${rawBody}`).digest('hex');
+  const fresh = Math.abs(Date.now() / 1000 - Number(t)) < 300;   // within 5 minutes
+  return fresh && crypto.timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
+}
+```
+
+Also present: `X-SGL-Event` (the type) and `X-SGL-Delivery` (the delivery id — use it to dedupe, since
+a retried delivery reuses it).
+
+## Retries, and auto-disable
+
+Answer `2xx` fast — we time out a delivery after 10 seconds. If your endpoint is down or slow, we
+**retry with backoff** — roughly 1 minute, then 5, 15, an hour, and on out to a day, eight attempts in
+all. Do the slow work *after* you have acknowledged; a webhook handler that blocks on your own
+processing is a webhook handler that times out.
+
+After **20 consecutive failed deliveries** the webhook **auto-disables** so we never hammer a dead
+endpoint. Re-register (which re-verifies) to turn it back on. A delivery older than about a day is
+dropped unsent rather than arriving stale.
+
+<Note>
+Events are derived from your sales, not emitted from the payment path, so a webhook problem can only
+ever delay a notification — it can never affect a buyer's payment or your runs.
+</Note>
+
+## Test it
+
+The **Send test ping** button (or `POST /processors/{slug}/webhook/test`) delivers a `test.ping` event
+through the real signing-and-delivery path, and tells you exactly what your endpoint answered. Use it
+to confirm your signature check before a real sale depends on it.
+
+## From code
+
+```bash
+# register (owner wallet signature required) — returns the signing secret ONCE
+curl -X PUT https://processors.x402compute.cc/processors/<slug>/webhook \
+  -H "X-Auth-Address: <wallet>" -H "X-Auth-Signature: …" -H "…" \
+  -d '{"url": "https://api.your-service.com/sgl-webhook"}'
+
+# check status
+curl https://processors.x402compute.cc/processors/<slug>/webhook -H "X-Auth-…: …"
+
+# remove it
+curl -X DELETE https://processors.x402compute.cc/processors/<slug>/webhook -H "X-Auth-…: …"
+```
+
+Registration and deletion are owner mutations, so each needs a fresh Solana wallet signature, the same
+as every other change to your processor.
