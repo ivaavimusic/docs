@@ -41,23 +41,39 @@ where it is, restoring it where it should live next.
 
 ## Pricing & limits
 
-| | Free | Vault Pro — $3/month |
-|---|---|---|
-| Snapshots | **1, rolling** — each new backup replaces the previous | **Unlimited** — full history kept |
-| Storage | 1 GiB | 5 GiB |
+| | Free | Vault Pro | Vault Max |
+|---|---|---|---|
+| Storage | 200 MB | 1 GB | 5 GB |
+| Snapshots | **1, rolling** — each new backup replaces the previous | the last **5 of each agent** | **Unlimited** — full history kept |
+| Monthly | $0 | $3 | $5 |
+| Yearly | — | **$30** (2 months free) | **$50** (2 months free) |
 
-Vault Pro is charged from your [credits](https://cloud.x402compute.cc/network/settings/credits)
-and renews monthly; if a renewal can't be paid you simply drop back to the free
-plan — **stored backups are never deleted for non-payment**. A typical agent
-snapshot is a few megabytes. Per-snapshot cap: 2 GiB.
+Paid plans are charged from your [credits](https://cloud.x402compute.cc/network/settings/credits).
+A typical agent snapshot is a few megabytes; the per-snapshot cap is 2 GiB.
+
+Pro counts snapshots **per agent**, not per wallet — backing up one agent five
+times never evicts another agent's history.
+
+**Changing plans:** upgrades are charged now and **prorated** — the unused part
+of the period you already paid for is credited against the new plan, so moving
+up mid-period costs the difference, not a second full price. Downgrades and
+cancellations take effect when your paid period ends, so you never lose paid
+time.
+
+**Downgrading never deletes a snapshot.** Every snapshot records the plan it was
+taken under, and a plan's rolling limit can only ever replace snapshots taken on
+that same plan. Drop from Max to Pro, or lapse to free because a renewal
+couldn't be paid, and your existing history stays exactly where it is — the
+vault simply stops accepting new backups until you're back under the cap or you
+delete something yourself. **Nothing is ever deleted for non-payment.**
 
 **Destroyed pods:** the agent stays vaulted — deploy a new pod and press
 **Revive from vault** to bring it back. Backups of a destroyed pod are kept
-**forever on Vault Pro** and **30 days** on the free plan.
+**forever on any paid plan** and **30 days** on the free plan.
 
 ## Automatic pod backups — included with your pod plan
 
-Every Agent Pod can back itself up **daily**, no Vault Pro needed. Turn it on
+Every Agent Pod can back itself up **daily**, no paid Vault plan needed. Turn it on
 once in the pod's **Backups** tab; retention and storage come from the pod
 tier:
 
