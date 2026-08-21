@@ -45,6 +45,42 @@ vault.usage()          # plan, bytes, caps
 vault.subscribe_pro()  # $3/mo from credits
 ```
 
+## Paying with x402
+
+`POST /backups/subscribe` takes credits by default. Add `pay: "x402"` (and
+optionally `network`) and, **if a charge is actually required and your credits
+are short**, it answers `402` with a standard x402 challenge:
+
+```bash
+# 1. Ask for the plan, requesting the x402 rail
+curl -X POST https://compute.x402layer.cc/backups/subscribe \
+  -H "X-API-Key: x402c_..." -H "Content-Type: application/json" \
+  -d '{"plan":"pro","interval":"year","pay":"x402","network":"base"}'
+# -> 402 { "x402Version": 1, "accepts": [ { "network":"base", "maxAmountRequired":"30000000", ... } ] }
+
+# 2. Settle it and re-send with the X-Payment header
+curl -X POST https://compute.x402layer.cc/backups/subscribe \
+  -H "X-API-Key: x402c_..." -H "X-Payment: <base64 payload>" \
+  -H "Content-Type: application/json" \
+  -d '{"plan":"pro","interval":"year","pay":"x402","network":"base"}'
+# -> 200 { "ok": true, "plan": "pro", "interval": "year", "charged": 30 }
+```
+
+Networks: `base` (USDC) · `solana` (USDC) · `robinhood` (USDG) · `megaeth` (USDm).
+
+A few deliberate properties worth knowing:
+
+- **The challenge quotes the full plan price.** Upgrades are prorated against
+  the time you already paid for, so the actual debit is often lower — whatever
+  the charge doesn't consume stays in your credit balance.
+- **You are never asked to pay for nothing.** The subscription decides first,
+  so cancelling (`plan: "free"`), scheduling a downgrade, or re-picking the plan
+  you are already on returns `200` and never issues a challenge.
+- **The payer must be the authenticated wallet.** Paying from one wallet to
+  subscribe another is refused.
+- **Replays are safe.** Settlement is idempotent on the transaction hash, so
+  re-sending the same `X-Payment` cannot charge you twice.
+
 ## One envelope, everywhere
 
 CLI, pod runner, TypeScript, and Python all produce the identical encrypted

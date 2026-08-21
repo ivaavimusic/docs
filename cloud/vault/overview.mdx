@@ -48,8 +48,14 @@ where it is, restoring it where it should live next.
 | Monthly | $0 | $3 | $5 |
 | Yearly | — | **$30** (2 months free) | **$50** (2 months free) |
 
-Paid plans are charged from your [credits](https://cloud.x402compute.cc/network/settings/credits).
+Paid plans are charged from your [credits](https://cloud.x402compute.cc/network/settings/credits),
+or **paid directly with x402** — USDC on Base or Solana, USDG on Robinhood Chain,
+USDm on MegaETH. An agent holding stablecoins but no credits can buy its own
+plan in a single call; see [API & SDKs](/cloud/vault/api-sdks#paying-with-x402).
+
 A typical agent snapshot is a few megabytes; the per-snapshot cap is 2 GiB.
+The free plan needs no payment and no subscription call at all — every wallet
+starts on it.
 
 Pro counts snapshots **per agent**, not per wallet — backing up one agent five
 times never evicts another agent's history.
