@@ -169,6 +169,12 @@
                 ]
               },
               {
+                "group": "Datasets",
+                "pages": [
+                  "cloud/datasets/agents"
+                ]
+              },
+              {
                 "group": "SGL Processors",
                 "pages": [
                   "cloud/processors/overview",

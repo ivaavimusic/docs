@@ -1,0 +1,228 @@
+---
+title: Datasets for agents (x402)
+description: Buy a synthetic fine-tuning dataset with a wallet and no account. Ask, get a 402 with the exact price, pay, poll, download. Base, Solana, Robinhood Chain and MegaETH.
+---
+
+An agent that needs training data can buy it outright: no signup, no dashboard,
+no human. You describe the behaviour you want, pay a stated price in USDC, and
+collect a validated JSONL file a few minutes later.
+
+Everything here is one endpoint and one status URL.
+
+## Why it is not a single call
+
+Generating a dataset takes minutes, and a large one can take considerably
+longer. Nothing holds an HTTP connection for that: Cloudflare and most agent
+HTTP clients give up around 100 seconds.
+
+So payment and manufacturing are separate. Paying returns in about a second
+with a `dataset_id` and a `claim_token`. Generation runs in the background and
+you either poll for it or receive a signed webhook.
+
+## 1. Check the price
+
+<CodeGroup>
+```bash curl
+curl https://compute.x402layer.cc/datasets/config
+```
+</CodeGroup>
+
+```json
+{
+  "synth": {
+    "rates_per_100_usd": { "fast": 0.5, "balanced": 0.75, "best": 1.5, "grid": 0.35 },
+    "max_rows": 2000,
+    "models": [
+      { "id": "deepseek-v3.1", "tier": "fast", "label": "DeepSeek V3.1", "in_per_m": 0.25, "out_per_m": 1 }
+    ]
+  }
+}
+```
+
+Price is **rate x rows / 100**. So 500 examples on the `fast` tier costs
+$2.50; 2,000 on `best` costs $30. The per-million-token figures are the
+provider's published rates, shown so you can compare models. You pay the flat
+per-example price, not per token.
+
+**Two ways to generate.** *Managed* models are the fastest with the strongest
+data quality. The *decentralized grid* runs on our own confidential network,
+end to end encrypted, where nothing is sent to an outside provider: it costs
+less and takes longer, and if a node drops mid-job the next most appropriate
+model on the network takes over automatically.
+
+## 2. Ask, and get a price
+
+`POST /datasets/x402/synth` with no payment header returns **402** with a
+standard x402 challenge plus a `singularity` block describing what you are
+buying.
+
+<CodeGroup>
+```bash curl
+curl -X POST https://compute.x402layer.cc/datasets/x402/synth \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "description": "Classify a support message as billing, technical, or account",
+    "seed_examples": [
+      {"messages":[{"role":"user","content":"I was charged twice"},{"role":"assistant","content":"billing"}]},
+      {"messages":[{"role":"user","content":"The app crashes on launch"},{"role":"assistant","content":"technical"}]},
+      {"messages":[{"role":"user","content":"How do I change my email?"},{"role":"assistant","content":"account"}]},
+      {"messages":[{"role":"user","content":"My invoice VAT is wrong"},{"role":"assistant","content":"billing"}]},
+      {"messages":[{"role":"user","content":"SMS codes never arrive"},{"role":"assistant","content":"technical"}]}
+    ],
+    "target_rows": 200,
+    "model_tier": "fast",
+    "network": "base"
+  }'
+```
+</CodeGroup>
+
+```json
+{
+  "x402Version": 1,
+  "accepts": [{ "scheme": "exact", "network": "base", "maxAmountRequired": "1000000", "payTo": "0x…", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" }],
+  "singularity": {
+    "product": "dataset_synth",
+    "quote_id": "8cc8258d-…",
+    "rows": 200, "tier": "fast", "price_usd": 1,
+    "quote_expires_at": "2026-08-31T13:36:13.046Z"
+  }
+}
+```
+
+Between five and twenty seed examples are required: they are what the
+generator learns your format and tone from. Sizes run from 50 to 2,000 rows.
+
+<Note>
+Quotes last ten minutes. The price is snapshotted when it is issued, so a rate
+change can never alter what you are charged.
+</Note>
+
+## 3. Pay
+
+Sign the challenge and send it back with the same body plus the `quote_id`.
+
+<CodeGroup>
+```bash curl
+curl -X POST https://compute.x402layer.cc/datasets/x402/synth \
+  -H 'Content-Type: application/json' \
+  -H "X-Payment: $SIGNED_PAYLOAD" \
+  -d '{ …the same job…, "quote_id": "8cc8258d-…" }'
+```
+</CodeGroup>
+
+```json
+{
+  "dataset_id": "9e46c485-…",
+  "status_url": "/datasets/x402/jobs/9e46c485-…",
+  "claim_token": "kXm2…",
+  "price_paid_usd": 1,
+  "tx_hash": "0x4863e9…"
+}
+```
+
+<Warning>
+Save the `claim_token`. It is shown once and it is the only way to read the job
+or download the result. It is stored only as a hash, so it cannot be recovered.
+</Warning>
+
+The payment is bound to the exact job you were quoted. Sending a payment with a
+different body is refused, so a captured payment cannot be redirected at a
+different (or larger) dataset.
+
+## 4. Collect it
+
+<CodeGroup>
+```bash curl
+curl https://compute.x402layer.cc/datasets/x402/jobs/9e46c485-… \
+  -H "Authorization: Bearer $CLAIM_TOKEN"
+```
+</CodeGroup>
+
+While it runs:
+
+```json
+{ "status": "generating", "rows_done": 120, "rows_target": 200 }
+```
+
+When it is done:
+
+```json
+{
+  "status": "complete",
+  "row_count": 205,
+  "bytes": 31820,
+  "download_url": "https://…r2.cloudflarestorage.com/…",
+  "download_expires_in_seconds": 300,
+  "format": "jsonl"
+}
+```
+
+The download link is presigned and lasts five minutes; poll again for a fresh
+one whenever you need it. The file is JSONL, one conversation per line, ready
+for fine-tuning as-is.
+
+If generation cannot produce enough usable examples the job fails and the fee
+comes back to your wallet as credits:
+
+```json
+{ "status": "failed", "refund_status": "applied" }
+```
+
+`refund_status` is read from the ledger rather than asserted, so `pending`
+genuinely means the refund is still being applied.
+
+## Webhooks
+
+Pass a `webhook_url` when you ask for the quote and we will POST to it when the
+job reaches a terminal state, so you do not have to poll at all.
+
+```json
+{
+  "event": "dataset.synth.completed",
+  "event_id": "8cc8258d-…:completed",
+  "dataset_id": "9e46c485-…",
+  "status": "complete",
+  "row_count": 205,
+  "download_url": "https://…"
+}
+```
+
+Every delivery is signed with the `webhook_secret` returned in the 202:
+
+```
+X-SGL-Signature: t=1756645200,v1=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+```
+
+Verify it by computing `HMAC-SHA256(secret, "<t>.<raw body>")` and comparing to
+`v1`, then rejecting anything where `t` is more than a few minutes old. That
+timestamp is what makes a captured delivery non-replayable. Redirects are not
+followed, and only a 2xx counts as delivered; we retry three times (one minute,
+five minutes, twenty-five minutes) and then stop. Delivery never affects the
+job, so polling always works as a fallback.
+
+## Chains
+
+USDC on **Base** and **Solana**, USDG on **Robinhood Chain**, USDM on
+**MegaETH**. Pick with `"network"` in the request body; the challenge comes
+back with the right asset and amount for that chain.
+
+## Through MCP
+
+If your agent speaks MCP, the same flow is four tools on
+`https://mcp.x402layer.cc/mcp`:
+
+| Tool | What it does |
+| --- | --- |
+| `list_dataset_pricing` | rates, sizes and the model catalog |
+| `request_dataset_payment` | submit a job, get the challenge and price |
+| `create_dataset_with_payment` | pay, get the dataset id and claim token |
+| `get_dataset_status` | poll, then download |
+
+## What you actually get
+
+Not raw model output. Every line is schema-checked and dropped if malformed;
+near-duplicates and reworded repeats of an earlier scenario are rejected rather
+than padding the count; the generator is steered across a rotating set of
+coverage axes so you get edge cases instead of fifty variations of one; and
+every row carries the same standing instruction, so the file is uniform. If we
+cannot reach a usable floor, you get your money back.
