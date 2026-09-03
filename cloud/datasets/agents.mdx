@@ -31,6 +31,7 @@ curl https://compute.x402layer.cc/datasets/config
 {
   "synth": {
     "rates_per_100_usd": { "fast": 0.2, "balanced": 0.35, "best": 1.0, "grid": 0.15 },
+    "verify_rate_per_100_usd": { "managed": 0.1, "grid": 0.03 },
     "max_rows": 2000,
     "models": [
       { "id": "deepseek-v3.1", "tier": "fast", "label": "DeepSeek V3.1", "in_per_m": 0.55, "out_per_m": 1.65 }
@@ -39,10 +40,41 @@ curl https://compute.x402layer.cc/datasets/config
 }
 ```
 
-Price is **rate x rows / 100**. So 500 examples on the `fast` tier costs
-$1.00; 2,000 on `best` costs $20, and 200 on the grid costs $0.30. The per-million-token figures are the
-provider's published rates, shown so you can compare models. You pay the flat
-per-example price, not per token.
+Price is **(generation + verification) x rows / 100**. Every dataset is checked
+by default, and that check is its own line, so 200 examples on `fast` costs
+$0.60, 200 on the grid costs $0.36, and 2,000 on `best` costs $22. Send
+`"verify": false` to skip checking and pay for generation only. The
+per-million-token figures are the provider's published rates, shown so you can
+compare models. You pay the flat per-example price, not per token.
+
+## Every row is checked
+
+A second model reads each generated row back and scores it against your rules
+before it is allowed into the dataset. Rows that break a rule are thrown away
+and regenerated, so you receive a full-size dataset of rows that passed rather
+than a full-size dataset with failures in it.
+
+Who does the checking depends on where you generate, and the difference matters:
+
+**Managed** jobs are checked by a separate frontier model, never the one that
+wrote the rows, because a model marks its own homework badly. That costs $0.10
+per 100 examples.
+
+**Grid** jobs are checked by the grid itself, using the network's own models, so
+your data never leaves the confidential network even to be verified. That costs
+$0.03 per 100. The honest trade is that on-network models are smaller, so it is
+a lighter check than the frontier judge, which is why it costs a third as much.
+
+The status response carries the receipt, so you can see what happened:
+`checked`, `rejected`, and `unchecked` if the budget ran out before a batch
+could be judged. A job never claims a check it did not perform.
+
+<Note>
+This is why generated data beats prompting a model yourself in a loop. A real
+200-row support dataset built without rules or checking invented twelve
+different compensation policies, including thirteen full refunds, because
+nothing ever verified the output against a policy.
+</Note>
 
 **Two ways to generate.** *Managed* models are the fastest with the strongest
 data quality. The *decentralized grid* runs on our own confidential network,
@@ -79,11 +111,11 @@ curl -X POST https://compute.x402layer.cc/datasets/x402/synth \
 ```json
 {
   "x402Version": 1,
-  "accepts": [{ "scheme": "exact", "network": "base", "maxAmountRequired": "400000", "payTo": "0x…", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" }],
+  "accepts": [{ "scheme": "exact", "network": "base", "maxAmountRequired": "600000", "payTo": "0x…", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" }],
   "singularity": {
     "product": "dataset_synth",
     "quote_id": "8cc8258d-…",
-    "rows": 200, "tier": "fast", "price_usd": 0.4,
+    "rows": 200, "tier": "fast", "price_usd": 0.6, "verified": true,
     "quote_expires_at": "2026-08-31T13:36:13.046Z"
   }
 }
@@ -123,7 +155,7 @@ curl -X POST https://compute.x402layer.cc/datasets/x402/synth \
   "dataset_id": "9e46c485-…",
   "status_url": "/datasets/x402/jobs/9e46c485-…",
   "claim_token": "kXm2…",
-  "price_paid_usd": 0.4,
+  "price_paid_usd": 0.6,
   "tx_hash": "0x4863e9…"
 }
 ```
@@ -149,7 +181,7 @@ curl https://compute.x402layer.cc/datasets/x402/jobs/9e46c485-… \
 While it runs:
 
 ```json
-{ "status": "generating", "rows_done": 120, "rows_target": 200 }
+{ "status": "generating", "rows_done": 120, "rows_target": 200, "checked": 120, "rejected": 4 }
 ```
 
 When it is done:
