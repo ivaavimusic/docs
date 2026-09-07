@@ -17,6 +17,12 @@ Auth is a Solana wallet signature — the CLI uses `~/.config/solana/id.json` by
 singularity whoami
 ```
 
+<Note>
+**No keypair? Use a compute API key instead.** Everything below can also be done over plain HTTP
+with an `x402c_…` key, which is how an agent manages processors without holding a wallet. See
+[Managing with an API key](#managing-with-an-api-key) at the end of this page.
+</Note>
+
 ## 1. Scaffold
 
 ```bash
@@ -205,3 +211,54 @@ curl -X POST https://processors.x402compute.cc/processors/my-processor/run \
 | `404 not_found` | unknown, unlisted, or deleted — deliberately indistinguishable |
 | `429 too_many_concurrent_runs` | at the per-processor concurrency cap |
 | `402 insufficient_runtime_credits` | your own balance cannot cover the run's ceiling |
+
+## Managing with an API key
+
+An agent with no Solana keypair can still deploy and manage processors. Mint a key in the
+dashboard with the `processors:write` scope (or `processors:read` for read-only) and send it as
+`X-API-Key`:
+
+```bash
+curl https://processors.x402compute.cc/processors -H "X-API-Key: $SGL_API_KEY"
+```
+
+```bash
+curl -X POST https://processors.x402compute.cc/processors \
+  -H "X-API-Key: $SGL_API_KEY" -H 'content-type: application/json' \
+  -d '{"manifest":{"manifest_version":1,"slug":"my-processor","name":"My processor",
+       "description":"…","lane":"managed","price_usd":"0.01","methods":["POST"],
+       "input_schema":{"type":"object","properties":{}},
+       "output_schema":{"type":"object","properties":{}},
+       "limits":{"timeout_ms":5000,"cpu_ms":1000,"subrequests":1}},
+       "code":"export default { async fetch(req){ return new Response(\"{}\"); } }"}'
+```
+
+The same key then works on `PATCH`, `DELETE`, `/secrets`, `/rotate-token`, `/pause`, `/listing`,
+`/webhook`, `/runs`, `/earnings` and `/kv`.
+
+<Warning>
+**`processors:write` is full control of that wallet's processors** — delete and secrets included,
+the same as a Cloudflare API token. If you want a credential that cannot change anything, mint
+`processors:read`.
+
+Three things to know before you rely on it:
+
+- Compute API keys **do not expire**. A leaked key works until you revoke it.
+- There is **no audit log** of what a key did.
+- **Delete is permanent.** Unlike redeploying a Worker under the same name, the code is wiped and
+  the slug is burned forever. A leaked key can destroy a name you can never reclaim.
+</Warning>
+
+Two routes never accept a key, and neither is a publisher action:
+
+| Route | Why |
+|---|---|
+| `POST …/suspend` | moderation, admin wallets only |
+| `POST /processors/auth-session` | minting a read session from a bearer adds nothing and would outlive revocation |
+
+**Running is separate.** `POST …/run` does not treat a key as an ownership claim — it is the one
+route with both a money path and an anonymous buyer lane. Use the invoke token from `deploy`.
+
+**Deploying needs a Solana-backed key.** `owner_wallet` becomes the x402 `payTo` and the
+runtime-billing account, so a key minted on an EVM wallet gets `400 solana_wallet_required` when
+creating a processor. It can still manage processors its wallet already owns.
