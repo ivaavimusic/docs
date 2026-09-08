@@ -1,9 +1,9 @@
 ---
-title: Processors from an agent (MCP)
+title: From an agent (MCP)
 description: Every processor is a live MCP server. Paste a URL into Claude, Cursor or LangGraph and it becomes a paid tool.
 ---
 
-Every published processor is a **connectable MCP server**. No SDK, no integration code — an agent gets the URL, sees the tool and its schema, and can pay for a call on its own.
+Every published processor is a **connectable MCP server**. No SDK, no integration code, an agent gets the URL, sees the tool and its schema, and can pay for a call on its own.
 
 ## The endpoint
 
@@ -44,12 +44,12 @@ tools = await client.get_tools()
 
 ## What the agent sees
 
-`tools/list` returns one tool — one processor is one job — carrying its input schema and its price:
+`tools/list` returns one tool. One processor is one job, carrying its input schema and its price:
 
 ```json
 {
   "name": "deep_research",
-  "description": "Researches a topic. $0.25 per run via x402, paid DIRECTLY to the publisher's wallet — the platform takes no share. A run that fails after starting is still billed; a run that never starts is not.",
+  "description": "Researches a topic. $0.25 per run via x402, paid DIRECTLY to the publisher's wallet. The platform takes no share. A run that fails after starting is still billed; a run that never starts is not.",
   "inputSchema": { "type": "object", "properties": { "input": { … } }, "required": ["input"] }
 }
 ```
@@ -60,7 +60,7 @@ The cost is in the description on purpose: an agent deciding whether to call a t
 
 Discovery is free. `tools/call` is the only method that costs anything.
 
-With no payment, the call comes back as a **tool-level error** carrying the HTTP status — not a protocol failure, because "you need to pay" is a normal answer the agent should act on:
+With no payment, the call comes back as a **tool-level error** carrying the HTTP status, not a protocol failure, because "you need to pay" is a normal answer the agent should act on:
 
 ```json
 { "result": { "isError": true, "_meta": { "cc.x402compute/status": 402 } } }
@@ -79,7 +79,7 @@ const res = await fetch(MCP_URL, {
 });
 ```
 
-<Note>One payment buys exactly one run — enforced across transports. The same `X-Payment` submitted over MCP and plain HTTP simultaneously results in a single execution; the loser gets `409`.</Note>
+<Note>One payment buys exactly one run, enforced across transports. The same `X-Payment` submitted over MCP and plain HTTP simultaneously results in a single execution; the loser gets `409`.</Note>
 
 ## As a LangGraph node, without MCP
 
@@ -100,7 +100,7 @@ def research_node(state):
 graph.add_node("research", research_node)
 ```
 
-State lives in your graph. The MCP CALL is stateless — one input, one output, no session — though the
+State lives in your graph. The MCP CALL is stateless: one input, one output, no session, though the
 processor on the other side may keep its own [state between runs](/cloud/processors/state). What it does
 not do is remember anything about *your* graph.
 
@@ -117,4 +117,4 @@ If a run outlives the sync window you get `202` with a `poll_url` and a run toke
 | `tools/list` | free |
 | `tools/call` | **charged** |
 
-Anything else returns `-32601`. `Mcp-Method` and `Mcp-Name` headers are honoured, and a header that contradicts the body is rejected — so a gateway metering your traffic can never disagree with what actually ran.
+Anything else returns `-32601`. `Mcp-Method` and `Mcp-Name` headers are honoured, and a header that contradicts the body is rejected. So a gateway metering your traffic can never disagree with what actually ran.

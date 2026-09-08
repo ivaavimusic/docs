@@ -1,10 +1,10 @@
 ---
-title: State, files, and secrets
+title: State and secrets
 description: Keep a cursor between runs, store generated files, hand a buyer a download link, and choose how each credential reaches your code.
 ---
 
 A processor is a **fresh isolate on every run**. Nothing you set in one call survives into the next by
-itself — so anything you want to keep goes somewhere deliberate.
+itself. So anything you want to keep goes somewhere deliberate.
 
 None of what follows needs an `egress.allow` entry. It is not the network.
 
@@ -17,7 +17,7 @@ await SGL.kv.delete('cursor');                    // true if a row went; false i
 ```
 
 Values are **opaque strings** and come back byte-for-byte as you wrote them. We do not parse them, so
-if you store canonical JSON or something you later hash, you get exactly those bytes back — which a
+if you store canonical JSON or something you later hash, you get exactly those bytes back. Which a
 JSON column would not give you, because it reorders object keys and normalises numbers.
 
 Serialize it yourself. `JSON.stringify` of a `Map`, a `Set`, a `Date` or a class instance silently
@@ -26,7 +26,7 @@ loses information, and the person who chose the encoding should be the one who w
 ### Concurrent runs are normal, so use the version
 
 Up to ten runs of your processor execute at once. A read-modify-write without a version is a lost
-update — two runs both read `5`, both write `6`, and one increment vanishes.
+update. Two runs both read `5`, both write `6`, and one increment vanishes.
 
 ```js
 for (let attempt = 0; attempt < 5; attempt++) {
@@ -37,7 +37,7 @@ for (let attempt = 0; attempt < 5; attempt++) {
     break;
   } catch (e) {
     if (e.code !== 'version_conflict') throw e;
-    // Somebody else won. Re-read and try again — this loop working IS the feature.
+    // Somebody else won. Re-read and try again. This loop working IS the feature.
   }
 }
 ```
@@ -56,7 +56,7 @@ the loop.
 const { keys, cursor } = await SGL.kv.list({ prefix: 'user:' });
 ```
 
-Keys and versions only, never values — a list that returned values could pull your whole store through
+Keys and versions only, never values, a list that returned values could pull your whole store through
 one response. Paginate with the returned `cursor` until it is `null`.
 
 **Limits:** 10,000 keys, 1 KiB per key, 64 KiB per value.
@@ -70,8 +70,7 @@ const meta = await SGL.files.head('reports/august.pdf');   // size/etag without 
 const { objects } = await SGL.files.list({ prefix: 'reports/' });
 ```
 
-**Limits:** 100 MiB total, 10 MiB per object, 10,000 objects. Your paths live in your own namespace —
-you cannot read or write another processor's objects, and a path with `..` in it is refused.
+**Limits:** 100 MiB total, 10 MiB per object, 10,000 objects. Your paths live in your own namespace. You cannot read or write another processor's objects, and a path with `..` in it is refused.
 
 ### Handing a file to a buyer
 
@@ -82,7 +81,7 @@ return Response.json({ report: url });
 
 That link needs **no credential**. Two things to understand before you put one in your output:
 
-- It is a **bearer link**. Anyone who obtains it can download until it expires — default one hour,
+- It is a **bearer link**. Anyone who obtains it can download until it expires, default one hour,
   maximum 24 hours. Treat it like a password in a URL, because that is what it is: do not print one into
   your logs, put one in a public page, or send one anywhere you would not send the file itself.
 - It is always served as an **attachment** with a forced `application/octet-stream` type. Your declared
@@ -94,7 +93,7 @@ That link needs **no credential**. Two things to understand before you put one i
 Declare a secret in your manifest, then set its value with
 `singularity processors secrets NAME=value`. We never hand a value back to you.
 
-### `inject` — the default, and the strong one
+### `inject`. The default, and the strong one
 
 ```json
 { "name": "OPENAI_API_KEY", "hosts": ["api.openai.com"],
@@ -102,7 +101,7 @@ Declare a secret in your manifest, then set its value with
 ```
 
 **The value never enters your isolate.** You call `fetch()` with no credential at all, and our egress
-gateway adds the header on the way out — only for the hosts you declared.
+gateway adds the header on the way out, only for the hosts you declared.
 
 ```js
 // No key anywhere in your code. It is added server-side.
@@ -118,11 +117,11 @@ exactly as it does for a name you never declared. That is the whole point of cho
 
 **What this does not do**, because overselling it would be worse than not having it: your code can still
 *spend* the credential against the hosts you allowlisted, and if one of those hosts echoes request
-headers back — a debug endpoint, or a host you control — your code can read the injected value out of
+headers back, a debug endpoint, or a host you control. Your code can read the injected value out of
 that response. Injection stops accidental leakage and casual exfiltration by a dependency. It is not a
 guarantee against code that is actively trying to see its own key.
 
-### `mode: "env"` — when the value has to be in your hands
+### `mode: "env"`. When the value has to be in your hands
 
 ```json
 { "name": "SIGNING_KEY", "mode": "env" }
@@ -140,7 +139,7 @@ insists on reading itself. For those, `env` exists.
   isolate it can be printed into your captured logs, or sent to any host in your egress allowlist, and we
   cannot stop either.
 
-  It is also readable by **every dependency you bundled**, not just the code you wrote — anything running
+  It is also readable by **every dependency you bundled**, not just the code you wrote. Anything running
   in that isolate can call `SGL.secrets.get()`. Treat an `env` secret as visible to your whole dependency
   tree.
 
@@ -151,7 +150,7 @@ insists on reading itself. For those, `env` exists.
 `singularity processors env list` shows which of yours is which.
 
 <Note>`singularity processors env list` shows which secrets are which, and the **State** tab in the
-dashboard shows what is in your key/value store — read-only, because it belongs to your code.</Note>
+dashboard shows what is in your key/value store, read-only, because it belongs to your code.</Note>
 
 ## What happens to all of this when you delete a processor
 
@@ -167,7 +166,7 @@ singularity processors resume
 
 Pausing refuses buyers and invoke-token callers **before any payment is taken**, and takes you out of
 the catalogue. Runs already in flight finish. You can still invoke it yourself with your wallet, so you
-can verify a fix before resuming — and those owner runs **still cost you compute**, because a run costs us
+can verify a fix before resuming. And those owner runs **still cost you compute**, because a run costs us
 the same whoever triggered it.
 
 Unlisting is *not* the same thing: an unlisted processor is out of the catalogue but its endpoint keeps

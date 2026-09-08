@@ -1,9 +1,9 @@
 ---
-title: Processors — Quickstart
+title: Quickstart
 description: Deploy a function, call it, and see what it cost. Every command here was run against production.
 ---
 
-<Note>These are real commands with real responses — you can run them now. The dashboard UI is still being finished, so everything here is the CLI.</Note>
+<Note>These are real commands with real responses. You can run them now. The dashboard UI is still being finished, so everything here is the CLI.</Note>
 
 ## Install
 
@@ -11,7 +11,7 @@ description: Deploy a function, call it, and see what it cost. Every command her
 npm i -g @singularity-layer/cli
 ```
 
-Auth is a Solana wallet signature — the CLI uses `~/.config/solana/id.json` by default, or pass `--keypair`. Your key never leaves your machine.
+Auth is a Solana wallet signature. The CLI uses `~/.config/solana/id.json` by default, or pass `--keypair`. Your key never leaves your machine.
 
 ```bash
 singularity whoami
@@ -58,7 +58,7 @@ that holds platform credentials is not something scanning makes safe. Your bundl
 your `node_modules` never does.
 
 Because the target is an isolate, a dependency reaching for `fs`, `child_process` or raw sockets fails
-**here, on your terminal**, naming the file that imported it — rather than inside a run a buyer already
+**here, on your terminal**, naming the file that imported it, rather than inside a run a buyer already
 paid for.
 
 ## 3. Declare what it needs
@@ -94,7 +94,7 @@ invoke token (shown once, saved to .singularity.json):
   sk-sglproc_ECpZQbXq-1aENejIPsY0QnXyVhUvhcXRbSmurMotun0
 ```
 
-The **invoke token** is shown once. It is your server-side credential — the one you put behind your own product if you resell. Rotate it with `singularity processors rotate`.
+The **invoke token** is shown once. It is your server-side credential, the one you put behind your own product if you resell. Rotate it with `singularity processors rotate`.
 
 ## 5. Run it
 
@@ -121,7 +121,7 @@ singularity processors logs
 2026-08-07 07:38:35  completed  199ms
 ```
 
-Your **failure rate is public** — it appears on your listing, because buyers pay for runs that fail after starting. Platform faults are ours and are excluded, so a bad day on our side never counts against you.
+Your **failure rate is public**. It appears on your listing, because buyers pay for runs that fail after starting. Platform faults are ours and are excluded, so a bad day on our side never counts against you.
 
 ### Your own console output
 
@@ -138,7 +138,7 @@ singularity processors logs --logs <run_id>
 ```
 
 Every `console.log` / `warn` / `error` / `info` / `debug` call is captured, capped, stripped of terminal
-escape sequences, and deleted with the run after 30 days. Anything you printed is here — including
+escape sequences, and deleted with the run after 30 days. Anything you printed is here, including
 anything a caller sent you, if you printed it.
 
 It is best-effort observability, not an audit trail: it records what your code asked `console` to print,
@@ -156,13 +156,13 @@ Now it is in the catalogue, callable by anyone, and exposed as an MCP tool.
 
 <Warning>
   Your Solana payout wallet must be able to receive USDC. If it has never held any, publishing is refused
-  with instructions — send any amount of USDC to it once, then publish again. This is a Solana rule: you
+  with instructions, send any amount of USDC to it once, then publish again. This is a Solana rule: you
   cannot transfer a token to an account that does not exist yet. It does not apply to Base or Robinhood.
 </Warning>
 
 <Note>
   By default buyers pay you in USDC on Solana, at the wallet you deployed with. To also accept USDC on
-  Base or USDG on Robinhood Chain, add a `payout` block — see
+  Base or USDG on Robinhood Chain, add a `payout` block, see
   [which chains buyers can pay on](/cloud/processors/pricing#which-chains-buyers-can-pay-on). One
   `price_usd` covers every chain.
 </Note>
@@ -184,11 +184,11 @@ curl -X POST https://processors.x402compute.cc/processors/my-processor/run \
 }
 ```
 
-Pay it and retry with an `X-Payment` header — any x402 client does this automatically. The money goes
+Pay it and retry with an `X-Payment` header. Any x402 client does this automatically. The money goes
 straight to the publisher.
 
 `accepts` carries **one entry per chain that publisher accepts**, so a processor with a `payout` block
-returns several. Pick the one whose `network` you can sign for — `solana`, `base`, or `robinhood` — and
+returns several. Pick the one whose `network` you can sign for, `solana`, `base`, or `robinhood`. And
 pay that entry. `maxAmountRequired` is the same integer on all of them, because every asset is a
 6-decimal stablecoin.
 
@@ -208,7 +208,7 @@ curl -X POST https://processors.x402compute.cc/processors/my-processor/run \
 |---|---|
 | `400 input_required` | body must be `{"input": …}` |
 | `402` | it is a paid processor and you sent no payment |
-| `404 not_found` | unknown, unlisted, or deleted — deliberately indistinguishable |
+| `404 not_found` | unknown, unlisted, or deleted, deliberately indistinguishable |
 | `429 too_many_concurrent_runs` | at the per-processor concurrency cap |
 | `402 insufficient_runtime_credits` | your own balance cannot cover the run's ceiling |
 
@@ -237,7 +237,7 @@ The same key then works on `PATCH`, `DELETE`, `/secrets`, `/rotate-token`, `/pau
 `/webhook`, `/runs`, `/earnings` and `/kv`.
 
 <Warning>
-**`processors:write` is full control of that wallet's processors** — delete and secrets included,
+**`processors:write` is full control of that wallet's processors**, delete and secrets included,
 the same as a Cloudflare API token. If you want a credential that cannot change anything, mint
 `processors:read`.
 
@@ -256,7 +256,7 @@ Two routes never accept a key, and neither is a publisher action:
 | `POST …/suspend` | moderation, admin wallets only |
 | `POST /processors/auth-session` | minting a read session from a bearer adds nothing and would outlive revocation |
 
-**Running is separate.** `POST …/run` does not treat a key as an ownership claim — it is the one
+**Running is separate.** `POST …/run` does not treat a key as an ownership claim. It is the one
 route with both a money path and an anonymous buyer lane. Use the invoke token from `deploy`.
 
 **Deploying needs a Solana-backed key.** `owner_wallet` becomes the x402 `payTo` and the

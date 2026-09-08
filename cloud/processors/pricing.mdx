@@ -1,5 +1,5 @@
 ---
-title: Processors — Pricing
+title: Pricing
 description: You keep 100% of your sales. You pay only for compute, held before each run and rebated to actual.
 ---
 
@@ -16,7 +16,7 @@ Your price and your margin are yours. We do not scale with your sales.
 <Warning>
   **A payment is final. Singularity does not refund buyers and cannot reverse a payment.**
 
-  This is not a policy we chose to be strict — it follows from the payment being *direct*. The buyer's
+  This is not a policy we chose to be strict. It follows from the payment being *direct*. The buyer's
   funds move from their wallet to yours. We are never the recipient, never hold the money, and take no
   part in the transaction beyond checking it and running your code. There is nothing on our side to give
   back.
@@ -24,14 +24,14 @@ Your price and your margin are yours. We do not scale with your sales.
 
 What a buyer does when a run does not deliver:
 
-1. **Retry with the same `X-Payment` header.** It returns the run that payment already bought — it does
+1. **Retry with the same `X-Payment` header.** It returns the run that payment already bought. It does
    **not** charge again. That is the recovery path, and it works whether the failure was your code, our
    platform, or a lost response.
 2. **Read the failure rate before paying.** Every catalogue entry publishes the processor's 30-day
    failure rate, with platform faults excluded so you are judged on your own code. That is how a buyer
    decides whether to trust a processor, and it is why the number is public.
 
-If a run fails on **our** side, your held compute cost is returned to you — you are not charged for
+If a run fails on **our** side, your held compute cost is returned to you. You are not charged for
 compute we failed to deliver.
 
 ## Which chains buyers can pay on
@@ -40,7 +40,7 @@ Three, and you choose which of them you accept:
 
 | Chain | Asset | Your payout address |
 | --- | --- | --- |
-| Solana | USDC | base58 wallet — **the default**, your signing wallet |
+| Solana | USDC | base58 wallet. **The default**, your signing wallet |
 | Base | USDC | `0x…` |
 | Robinhood Chain | USDG | `0x…` |
 
@@ -59,7 +59,7 @@ processor worked before this existed. To accept more, add a `payout` block:
 ```
 
 **One `price_usd` is the price on every chain.** All three assets are 6-decimal stablecoins, so $0.01 is
-10000 micro-units of USDC on Solana, USDC on Base, or USDG on Robinhood — no conversion, no per-chain
+10000 micro-units of USDC on Solana, USDC on Base, or USDG on Robinhood. No conversion, no per-chain
 price. A buyer's 402 lists one `accepts` entry per chain you accept and they pay on whichever they hold.
 
 <Warning>
@@ -68,14 +68,14 @@ price. A buyer's 402 lists one `accepts` entry per chain you accept and they pay
   of the processor to somebody else.
 
   A `0x` address is checked against its **EIP-55 checksum** when it has mixed case, and deploy tells you
-  the address it thinks you meant. A Solana address has no such checksum — base58 is case-sensitive, and
+  the address it thinks you meant. A Solana address has no such checksum, base58 is case-sensitive, and
   a lowercased wallet is a *different, still-valid-looking* account. Nothing here ever changes the case
   of an address you give us.
 </Warning>
 
 <Note>
   Naming a chain in `payout` is not the same as it being live. We keep an operator-side allowlist, so a
-  chain you declare that is not enabled simply never appears in a 402 — it settles nothing and costs you
+  chain you declare that is not enabled simply never appears in a 402. It settles nothing and costs you
   nothing. A processor deployed before per-chain payouts existed is Solana-only regardless.
 
   Owner and CLI auth is still a **Solana** wallet signature, separately from how you get paid.
@@ -89,7 +89,7 @@ The simple case is one number:
 { "price_usd": "0.01" }
 ```
 
-But the same processor often does very different amounts of work — summarising ten documents is not the
+But the same processor often does very different amounts of work, summarising ten documents is not the
 job of summarising one. Pricing for the worst case overcharges everybody for the common case, so you can
 declare a price that depends on the input:
 
@@ -108,7 +108,7 @@ declare a price that depends on the input:
 }
 ```
 
-Three items now costs $0.025. Add 1,500 bytes of `text` and it is $0.027 — partial blocks round up.
+Three items now costs $0.025. Add 1,500 bytes of `text` and it is $0.027, partial blocks round up.
 Two hundred items would come to $1.01, so `max_usd` caps it at **$1.00** and that is the most any single
 request can ever cost.
 
@@ -116,12 +116,12 @@ request can ever cost.
   your caller supplies). `unit_size` charges per N units.
 - `field` is a **top-level** key of `input`. No nested paths.
 - `max_usd` is **required**. It is how your buyer knows what they are agreeing to before they pay.
-- `base_usd` must equal `price_usd`, and `price_usd` then means the **minimum** — the catalogue shows
+- `base_usd` must equal `price_usd`, and `price_usd` then means the **minimum**. The catalogue shows
   your processor as "from $0.01", not "$0.01".
 
 <Note>This is a **declarative formula, not your code**. We do not run your processor to price a request:
 that would be free compute for anyone sending a probe, and it would let a price depend on the clock or a
-counter — so a buyer could be quoted one number and charged another. The formula reads your caller's
+counter. So a buyer could be quoted one number and charged another. The formula reads your caller's
 input and nothing else.</Note>
 
 ### How a buyer gets the exact price
@@ -141,7 +141,7 @@ They send the request they intend to send, with no payment. The `402` response c
 
 Then they pay it. **Changing the input after quoting cannot underpay**: the price is recomputed when the
 payment arrives, and a payment that no longer covers it is rejected before anything moves. Buyers who
-want protection in the other direction can echo `X-SGL-Quote: 25000` when paying — a mismatch is a `409`
+want protection in the other direction can echo `X-SGL-Quote: 25000` when paying, a mismatch is a `409`
 that charges nothing, rather than a silent overpayment.
 
 ## What a run costs *you*
@@ -183,18 +183,18 @@ Why not one fixed price? Because the same processor can cost a hundred times mor
 | $0.01 | ~$0.0003 | 97% |
 | $0.001 | ~$0.0003 | 70% |
 
-There is **no minimum price**. Charge a tenth of a cent if the economics work for you — that is your call, not ours.
+There is **no minimum price**. Charge a tenth of a cent if the economics work for you. That is your call, not ours.
 
 ## When you are and are not billed
 
 | Outcome | Billed? |
 |---|---|
-| Ran, returned a result | **Yes** — actual usage |
-| Ran, your code threw or hung | **Yes** — the compute was really spent |
-| Never started (our fault) | **No** — hold refunded in full, automatically |
-| Refused before starting (no input, over the concurrency cap, insufficient balance) | **No** — nothing is held |
+| Ran, returned a result | **Yes**, actual usage |
+| Ran, your code threw or hung | **Yes**. The compute was really spent |
+| Never started (our fault) | **No**, hold refunded in full, automatically |
+| Refused before starting (no input, over the concurrency cap, insufficient balance) | **No**. Nothing is held |
 
-The same rule applies to your buyers: a run that fails *after starting* is still charged to them, because the work happened. That is why your failure rate is published on your listing — it is the signal buyers use, so it has to be honest.
+The same rule applies to your buyers: a run that fails *after starting* is still charged to them, because the work happened. That is why your failure rate is published on your listing. It is the signal buyers use, so it has to be honest.
 
 ## Paying us
 
@@ -206,10 +206,10 @@ If your balance runs out, your processor stops serving and callers get a clear e
 
 **Deploying costs nothing.** So does editing, rotating tokens, reading logs, and every MCP discovery call (`tools/list`, `server/discover`).
 
-Only actually running your code costs anything — and while you are building, that is your own testing, at ~$0.0003 a go.
+Only actually running your code costs anything. And while you are building, that is your own testing, at ~$0.0003 a go.
 
 ## Compared to a revenue share
 
-A marketplace taking 5% of a $0.50 sale charges you $0.025. Running that same call here costs about **$0.0003** — roughly eighty times less — and the gap widens the more you sell, because we do not scale with your revenue.
+A marketplace taking 5% of a $0.50 sale charges you $0.025. Running that same call here costs about **$0.0003**, roughly eighty times less. And the gap widens the more you sell, because we do not scale with your revenue.
 
 The trade is that you fund compute up front rather than paying out of proceeds.

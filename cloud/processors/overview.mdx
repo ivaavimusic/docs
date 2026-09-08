@@ -1,11 +1,11 @@
 ---
-title: SGL Processors — Overview
+title: Overview
 description: Deploy one function, get a paid API endpoint and an MCP tool. Buyers pay you directly; you pay only for compute.
 ---
 
 <Note>**Processors are live through the CLI.** Buyer payments and compute billing are both on, so you can deploy, price, publish and get paid today with `@singularity-layer/cli`. The **dashboard UI is still being finished**, so manage yours from the terminal for now. This page describes what it does, not a plan.</Note>
 
-A **processor** is one function you write, that we host, that becomes a URL anyone can call — with a price attached.
+A **processor** is one function you write, that we host, that becomes a URL anyone can call, with a price attached.
 
 Think of it as a serverless function that comes with a payment layer, a catalogue, and an MCP tool, so an AI agent can find it and pay for it without you writing any integration.
 
@@ -29,20 +29,20 @@ You declare a price, an input shape, and which hosts your code may reach. Deploy
 
 This is the part worth reading carefully, because it is unusual.
 
-- **Buyers pay you directly.** Payment goes straight to your own wallet over [x402](/payments/overview) — USDC on Solana by default, and USDC on Base or USDG on Robinhood Chain if you [declare an address](/cloud/processors/pricing#which-chains-buyers-can-pay-on) for them. Singularity never holds it and **takes no cut of your sales**.
+- **Buyers pay you directly.** Payment goes straight to your own wallet over [x402](/payments/overview), USDC on Solana by default, and USDC on Base or USDG on Robinhood Chain if you [declare an address](/cloud/processors/pricing#which-chains-buyers-can-pay-on) for them. Singularity never holds it and **takes no cut of your sales**.
 - **You pay us for compute.** Each run draws from your credit balance. That is our entire revenue.
 
-So your margin is yours to set. Charge $0.50 or $0.005 — we do not care, and we do not scale with your success.
+So your margin is yours to set. Charge $0.50 or $0.005. We do not care, and we do not scale with your success.
 
 ## How compute is charged
 
-Before each run we **hold** the most it could cost, then **rebate** the difference once it finishes — the same shape as a hotel pre-authorising your card.
+Before each run we **hold** the most it could cost, then **rebate** the difference once it finishes, the same shape as a hotel pre-authorising your card.
 
 The ceiling comes from the limits *you* declare. A processor with a 5-second timeout reserves very little; one allowed to run for 600 seconds reserves a lot. Declaring tight limits is directly cheaper.
 
-We do this rather than quoting a fixed price because the same processor can cost far more on one input than another — a two-word prompt versus a twenty-step research loop behind the same schema. A fixed quote would be a promise we broke on the second call.
+We do this rather than quoting a fixed price because the same processor can cost far more on one input than another, a two-word prompt versus a twenty-step research loop behind the same schema. A fixed quote would be a promise we broke on the second call.
 
-<Note>A run that **fails after starting** is still billed — the compute was really spent. A run that **never starts** because of a fault on our side is refunded in full, automatically.</Note>
+<Note>A run that **fails after starting** is still billed. The compute was really spent. A run that **never starts** because of a fault on our side is refunded in full, automatically.</Note>
 
 ## Three ways to call one
 
@@ -54,32 +54,32 @@ All three run the same code and bill identically.
 | **MCP** | Claude, Cursor, OpenClaw, LangGraph adapters | same headers |
 | **CLI** | you, while building | wallet signature |
 
-Every processor is also a live **MCP server** — paste the URL into an MCP client and it appears as a tool, with its price and schema attached. See [Using processors from an agent](/cloud/processors/mcp).
+Every processor is also a live **MCP server**. Paste the URL into an MCP client and it appears as a tool, with its price and schema attached. See [Using processors from an agent](/cloud/processors/mcp).
 
 ## Reselling it yourself
 
-Your **invoke token** is a server-side credential you can put behind your own product. Front the processor with your own site, your own Stripe, your own prices — your customers never touch Singularity, and you pay us only for the compute underneath.
+Your **invoke token** is a server-side credential you can put behind your own product. Front the processor with your own site, your own Stripe, your own prices. Your customers never touch Singularity, and you pay us only for the compute underneath.
 
 That is the supported way to serve customers who do not hold crypto.
 
 ## What it runs on
 
-Processors execute in **isolated V8 sandboxes** on Cloudflare's edge — the same isolation model as Cloudflare Workers. Each run gets a fresh isolate with no filesystem, no ambient network, and no access to other processors.
+Processors execute in **isolated V8 sandboxes** on Cloudflare's edge, the same isolation model as Cloudflare Workers. Each run gets a fresh isolate with no filesystem, no ambient network, and no access to other processors.
 
 <Warning>Processors are **not** TEE / confidential compute. An earlier version of this page said they were; that was wrong. If you need hardware-attested confidentiality, use [SGL Grid](/cloud/grid/overview) for inference or a [confidential Machine](/cloud/machines/overview).</Warning>
 
-**Network access is deny-by-default.** Your code can only reach hosts you declare in the manifest. Everything else — including loopback, private ranges, and cloud metadata endpoints — is refused at the gateway.
+**Network access is deny-by-default.** Your code can only reach hosts you declare in the manifest. Everything else, including loopback, private ranges, and cloud metadata endpoints, is refused at the gateway.
 
 **Secrets are injected, not handed over.** You store an API key with us; we add it to outbound requests to the host you bound it to, and the running isolate never sees it. Code that never holds a key cannot leak the key.
 
-For the credentials that genuinely cannot be an outbound header — a key you sign with locally — you can opt a single secret into `mode: "env"` and read it from your code instead. That is a real trade, and [State, files and secrets](/cloud/processors/state) says exactly what you give up.
+For the credentials that genuinely cannot be an outbound header, a key you sign with locally. You can opt a single secret into `mode: "env"` and read it from your code instead. That is a real trade, and [State, files and secrets](/cloud/processors/state) says exactly what you give up.
 
 ## How it fits the rest of the network
 
-- **[Grid](/cloud/grid/overview)** — managed model inference. Processors can call it.
-- **[Machines](/cloud/machines/overview)** — a whole GPU you control.
-- **[Agent Pods](/cloud/pods/overview)** — a long-lived agent with its own workspace.
-- **Processors** — one function, priced per call, discoverable by agents. Each run is a fresh isolate, but a processor can keep [state and files](/cloud/processors/state) between runs.
+- **[Grid](/cloud/grid/overview)**, managed model inference. Processors can call it.
+- **[Machines](/cloud/machines/overview)**, a whole GPU you control.
+- **[Agent Pods](/cloud/pods/overview)**, a long-lived agent with its own workspace.
+- **Processors**. One function, priced per call, discoverable by agents. Each run is a fresh isolate, but a processor can keep [state and files](/cloud/processors/state) between runs.
 
 ## Next
 
