@@ -10158,6 +10158,189 @@
           }
         }
       }
+    },
+    "/pods/v1/pods/{id}/updates": {
+      "get": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "servers": null,
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "summary": "Get the update policy",
+        "operationId": "podsV1UpdatesGet",
+        "description": "Who decides WHEN this pod takes our updates.\n\nBy default we do: the pod polls every six hours and applies whatever we answer, restarting its gateway for about forty seconds. That is right for a pod somebody runs for themselves and wrong for pods run on behalf of customers, whose agents would all restart at a moment their operator did not choose.\n\n`manual` makes us keep answering with the version the pod already has, so it never updates itself. Apply the update yourself with `POST /actions {\"action\":\"update\"}`.\n\n**The hold expires after 30 days.** Security fixes ride these bundles, so an indefinitely pinned pod stops being a scheduling choice and becomes an unpatched machine. `hold_expires_at` always names the date.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The pod's update policy.",
+            "headers": {
+              "x-request-id": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updates": {
+                      "type": "object",
+                      "properties": {
+                        "mode": {
+                          "type": "string",
+                          "enum": [
+                            "auto",
+                            "manual"
+                          ]
+                        },
+                        "serving_version": {
+                          "type": "string",
+                          "description": "The version we are telling the pod to be on. In auto this is simply the latest."
+                        },
+                        "latest_version": {
+                          "type": "string"
+                        },
+                        "update_available": {
+                          "type": "boolean",
+                          "description": "True only when a hold is actually keeping a release back."
+                        },
+                        "hold_expires_at": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "The date the pod updates itself regardless. Null in auto."
+                        },
+                        "hold_expired": {
+                          "type": "boolean",
+                          "description": "True once the 30-day ceiling has passed: still manual, no longer holding anything."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "servers": null,
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "summary": "Set the update policy",
+        "operationId": "podsV1UpdatesPatch",
+        "description": "Who decides WHEN this pod takes our updates.\n\nBy default we do: the pod polls every six hours and applies whatever we answer, restarting its gateway for about forty seconds. That is right for a pod somebody runs for themselves and wrong for pods run on behalf of customers, whose agents would all restart at a moment their operator did not choose.\n\n`manual` makes us keep answering with the version the pod already has, so it never updates itself. Apply the update yourself with `POST /actions {\"action\":\"update\"}`.\n\n**The hold expires after 30 days.** Security fixes ride these bundles, so an indefinitely pinned pod stops being a scheduling choice and becomes an unpatched machine. `hold_expires_at` always names the date.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mode"
+                ],
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "manual"
+                    ],
+                    "description": "Switching to manual pins the version the pod is on TODAY and restarts the 30-day clock. Switching to auto clears the pin so the pod takes the next release on its own."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated policy.",
+            "headers": {
+              "x-request-id": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updates": {
+                      "type": "object",
+                      "properties": {
+                        "mode": {
+                          "type": "string",
+                          "enum": [
+                            "auto",
+                            "manual"
+                          ]
+                        },
+                        "serving_version": {
+                          "type": "string",
+                          "description": "The version we are telling the pod to be on. In auto this is simply the latest."
+                        },
+                        "latest_version": {
+                          "type": "string"
+                        },
+                        "update_available": {
+                          "type": "boolean",
+                          "description": "True only when a hold is actually keeping a release back."
+                        },
+                        "hold_expires_at": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "The date the pod updates itself regardless. Null in auto."
+                        },
+                        "hold_expired": {
+                          "type": "boolean",
+                          "description": "True once the 30-day ceiling has passed: still manual, no longer holding anything."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
