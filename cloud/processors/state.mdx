@@ -88,6 +88,39 @@ That link needs **no credential**. Two things to understand before you put one i
   content type is deliberately not echoed, so an HTML or SVG file you stored cannot execute in a
   visitor's browser. If you need a file rendered inline, host it yourself.
 
+## Instructions for the model
+
+A processor that calls a model can keep its standing instructions in the manifest instead of
+hard-coding them, and change them later without redeploying.
+
+```json processor.json
+{ "prompt": "You are a Solana transaction reviewer. Never say a transaction is safe." }
+```
+
+```js
+const instructions = await SGL.prompt.get();   // string, or null when unset
+```
+
+We never send it anywhere for you. Your code decides whether it becomes a system message, part of
+one, or is ignored.
+
+<Note>
+**Editing it is free.** Saving a new prompt writes the manifest and nothing else. It creates no new
+isolate and does not count against your daily config changes, unlike editing code or limits. New
+runs pick it up within about 15 seconds, the same window as rotating a secret, because it is
+resolved per request rather than baked into your isolate.
+
+Read it once at the top of your handler. Two reads in one run can straddle an edit.
+</Note>
+
+<Warning>
+**A prompt is not a secret.** It is stored in your manifest and returned to anyone holding a read
+key for this processor. Never put an API key in it, declare a secret instead. It does not appear on
+any public surface: not the catalogue, not the OpenAPI document, not the MCP tool.
+</Warning>
+
+Maximum 8192 characters. Reading it counts as one subrequest, like every other `SGL.` call.
+
 ## Secrets: two modes, and the difference matters
 
 Declare a secret in your manifest, then set its value with
