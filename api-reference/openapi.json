@@ -10059,7 +10059,6 @@
         "tags": [
           "Agent Pods API"
         ],
-        "servers": null,
         "security": [
           {
             "podsApiKey": []
@@ -10164,7 +10163,6 @@
         "tags": [
           "Agent Pods API"
         ],
-        "servers": null,
         "security": [
           {
             "podsApiKey": []
@@ -10243,7 +10241,6 @@
         "tags": [
           "Agent Pods API"
         ],
-        "servers": null,
         "security": [
           {
             "podsApiKey": []
