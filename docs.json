@@ -157,7 +157,8 @@
                   "cloud/pods/wallet",
                   "cloud/pods/memory",
                   "cloud/pods/scheduler",
-                  "cloud/pods/openai-adapter"
+                  "cloud/pods/openai-adapter",
+                  "cloud/pods/api"
                 ]
               },
               {
@@ -382,6 +383,41 @@
               "api-reference/pods-api-keys-revoke",
               "api-reference/pods-adapter-models",
               "api-reference/pods-adapter-chat"
+            ]
+          },
+          {
+            "group": "Agent Pods API",
+            "pages": [
+              "api-reference/pods-v1-create",
+              "api-reference/pods-v1-list",
+              "api-reference/pods-v1-get",
+              "api-reference/pods-v1-patch",
+              "api-reference/pods-v1-delete",
+              "api-reference/pods-v1-keys-create",
+              "api-reference/pods-v1-keys-list",
+              "api-reference/pods-v1-keys-revoke",
+              "api-reference/pods-v1-usage",
+              "api-reference/pods-v1-actions-post",
+              "api-reference/pods-v1-actions-get",
+              "api-reference/pods-v1-tasks-list",
+              "api-reference/pods-v1-tasks-add",
+              "api-reference/pods-v1-tasks-patch",
+              "api-reference/pods-v1-tasks-delete",
+              "api-reference/pods-v1-wallet-get",
+              "api-reference/pods-v1-wallet-patch",
+              "api-reference/pods-v1-connectors-list",
+              "api-reference/pods-v1-connectors-add",
+              "api-reference/pods-v1-connectors-remove",
+              "api-reference/pods-v1-backups-get",
+              "api-reference/pods-v1-backups-patch",
+              "api-reference/pods-v1-chat-ticket",
+              "api-reference/pods-v1-telegram-join-code-create",
+              "api-reference/pods-v1-telegram-join-code-get",
+              "api-reference/pods-v1-events-list",
+              "api-reference/pods-v1-webhooks-create",
+              "api-reference/pods-v1-webhooks-list",
+              "api-reference/pods-v1-webhooks-patch",
+              "api-reference/pods-v1-webhooks-delete"
             ]
           },
           {

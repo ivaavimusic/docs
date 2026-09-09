@@ -1,0 +1,366 @@
+---
+title: Pods API
+description: The programmatic /pods/v1 surface. Create, drive and destroy Agent Pods with a single X-API-Key, page an event log, receive signed webhooks, and talk to any pod from an OpenAI client.
+---
+
+A pod is a running agent on its own machine. It holds a conversation, keeps a workspace, takes
+scheduled tasks and connectors, and exposes an **OpenAI-compatible endpoint**, so anything that
+already speaks to OpenAI can speak to it instead.
+
+`/pods/v1` is that product behind **one API key**. It is for building pods into your own product,
+rather than clicking them in a dashboard.
+
+- **Base URL:** `https://compute.x402layer.cc/pods/v1`
+- **Auth:** `X-API-Key: x402c_...` on every route
+- **Mint a key:** dashboard, **Settings → API Keys**
+
+<Note>
+  **This is not the same surface as the pod routes in [Manage a Pod](/cloud/pods/manage).** Those
+  are the dashboard's own routes (`POST /pods`, `PATCH /pods/{id}/settings`, and so on). They expect
+  a wallet signature or a browser session, they are documented under **Agent Pods** in the API
+  Reference, and they are free to change.
+
+  `/pods/v1` is a versioned contract for programmatic integrators, it takes `X-API-Key` and nothing
+  else, and it is documented under **Agent Pods API**. Pick one and stay on it. Mixing them is the
+  fastest way to a confusing `403`.
+</Note>
+
+## Two rules that cost money if you skip them
+
+### 1. Create is idempotent, and `Idempotency-Key` is required
+
+`POST /pods` **refuses without an `Idempotency-Key` header**, because the call provisions a machine
+and charges for it.
+
+- Replaying the same key returns the original response byte for byte, with `Idempotent-Replay: true`
+  and a `200` instead of a `201`. It does not make a second pod.
+- The same key with a *different* body is a `409` carrying `details.code = idempotency_mismatch`.
+  That is a bug in the caller, and swallowing it would hide it.
+
+Use an id you already have: an order number, a job id. A generated UUID protects a retry inside one
+process. Only a stable id protects a retry after that process dies.
+
+### 2. `DELETE` can answer `202`, and `202` may still bill
+
+A provider refuses to remove a machine that is still installing, so teardown can be parked and
+retried.
+
+| Response | `status` | Meaning |
+| --- | --- | --- |
+| `200` | `destroyed` | The machine is confirmed gone. |
+| `202` | `destroying` | Accepted, teardown in progress, **may still bill for a few minutes**. |
+
+<Warning>
+  Treating `202` as `200` is how a pod keeps billing after you thought you deleted it. Poll
+  `GET /pods/v1/pods/{id}` until `status` is `destroyed`, or use `waitForDestroyed` /
+  `wait_for_destroyed` in the SDKs. Both hold until the machine is genuinely gone, rather than until
+  we accepted the request.
+</Warning>
+
+## Quick start
+
+```bash
+POD=$(curl -s -X POST https://compute.x402layer.cc/pods/v1/pods \
+  -H "X-API-Key: $SGL_API_KEY" \
+  -H "Idempotency-Key: order-4471" \
+  -H 'content-type: application/json' \
+  -d '{"tier":"starter","name":"support agent","external_ref":"customer-42"}' \
+  | jq -r .pod.id)
+
+# Booting takes a few minutes. status goes provisioning -> online.
+curl -s "https://compute.x402layer.cc/pods/v1/pods/$POD" \
+  -H "X-API-Key: $SGL_API_KEY" | jq -r .pod.status
+```
+
+`external_ref` is **your** id. It comes back on every read and filters `GET /pods`, so you can find
+a pod again from your own database without storing ours.
+
+## SDKs
+
+Both published clients wrap this surface and are kept feature-equal.
+
+<CodeGroup>
+
+```ts TypeScript
+// npm i @singularity-layer/grid
+import { PodsClient } from "@singularity-layer/grid";
+
+const pods = new PodsClient({ apiKey: process.env.SGL_API_KEY! });
+
+const pod = await pods.createPod({
+  tier: "starter",
+  name: "support agent",
+  external_ref: "customer-42",       // YOUR id; find it again without storing ours
+  idempotencyKey: `order-${orderId}`, // a stable id, not a fresh UUID
+});
+
+await pods.waitForOnline(pod.id);
+```
+
+```python Python
+# pip install singularity-grid
+import os
+from singularity_grid import PodsClient
+
+pods = PodsClient(api_key=os.environ["SGL_API_KEY"])
+
+pod = pods.create_pod(
+    tier="starter",
+    name="support agent",
+    external_ref="customer-42",
+    idempotency_key=f"order-{order_id}",
+)
+
+pods.wait_for_online(pod["id"])
+```
+
+</CodeGroup>
+
+## Talking to a pod
+
+Every pod exposes an OpenAI-compatible endpoint. Mint a key for it, point any OpenAI client at it,
+and use the model id **`agent-pod`**. Each request runs one agent turn, so the agent may use its
+tools, wallet, skills and memory before it answers.
+
+<CodeGroup>
+
+```python Python
+key = pods.mint_pod_key(pod["id"])["secret"]   # returned ONCE
+
+from openai import OpenAI
+oa = OpenAI(base_url=pods.endpoint_url(pod), api_key=key)
+
+oa.chat.completions.create(
+    model="agent-pod",
+    messages=[{"role": "user", "content": "summarise today's tickets"}],
+)
+```
+
+```bash cURL
+KEY=$(curl -s -X POST "https://compute.x402layer.cc/pods/v1/pods/$POD/keys" \
+  -H "X-API-Key: $SGL_API_KEY" -H 'content-type: application/json' -d '{}' \
+  | jq -r .key.secret)
+
+curl -s -X POST "https://compute.x402layer.cc/pods/$POD/v1/chat/completions" \
+  -H "Authorization: Bearer $KEY" -H 'content-type: application/json' \
+  -d '{"model":"agent-pod","messages":[{"role":"user","content":"summarise today"}]}'
+```
+
+</CodeGroup>
+
+Streaming works (`"stream": true`, SSE), as does anything else that speaks the OpenAI protocol,
+including tools that only let you change a base URL.
+
+<Warning>
+  The pod key is returned **once**. It is not the account key, it cannot manage pods, and anyone
+  holding it can instruct the agent within its current wallet and autonomy settings. Revoke a leaked
+  key immediately with `DELETE /pods/v1/pods/{id}/keys/{keyId}`.
+</Warning>
+
+See [OpenAI-compatible access](/cloud/pods/openai-adapter) for what a turn does and does not do.
+
+## Routes
+
+### Pods
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/pods` | **`Idempotency-Key` required.** `201`, `status: provisioning` |
+| `GET` | `/pods` | Newest first. `?external_ref=`, `?cursor=`, `?limit=` |
+| `GET` | `/pods/{id}` | |
+| `PATCH` | `/pods/{id}` | `name`, `model`, `slug`, `auto_renew`, `ai.*` (BYOK rotation) |
+| `DELETE` | `/pods/{id}` | `200 destroyed` or `202 destroying`, see above |
+
+### Endpoint keys
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/pods/{id}/keys` | Secret returned **once** |
+| `GET` | `/pods/{id}/keys` | Masked |
+| `DELETE` | `/pods/{id}/keys/{keyId}` | Takes effect immediately |
+
+### Operating
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/pods/{id}/usage` | Managed-AI spend and request counts |
+| `POST` `GET` | `/pods/{id}/actions` | `restart`, `stop`, `redeploy`, `update`, `diagnose`, `logs` |
+| `GET` `POST` | `/pods/{id}/tasks` | Scheduled tasks |
+| `PATCH` `DELETE` | `/pods/{id}/tasks/{jobId}` | `enabled`, or `run_now` |
+| `GET` `PATCH` | `/pods/{id}/wallet` | Cap field is `per_tx_cap_usd` |
+| `GET` `POST` `DELETE` | `/pods/{id}/connectors` | MCP connectors |
+| `GET` `PATCH` | `/pods/{id}/backups` | Agent Vault settings |
+| `POST` | `/pods/{id}/chat-ticket` | Short-lived ticket for the streaming socket |
+| `POST` `GET` | `/pods/{id}/channels/telegram/join-code` | POST mints, GET polls |
+
+### Events and webhooks
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/events` | Account log, paged by `seq` |
+| `POST` `GET` | `/webhooks` | Secret returned **once** |
+| `PATCH` `DELETE` | `/webhooks/{id}` | |
+
+### Actions, tasks and connectors are queued, not immediate
+
+`POST /actions`, the task routes and the connector routes all return **`202`**. The pod applies the
+change on its next check-in, usually within a minute. A `202` means the pod has been told, not that
+it is done.
+
+`diagnose` and `logs` write their output back through the heartbeat. Read it from `GET /actions` as
+`last_result`, and expect a minute or two, not a second. `GET /tasks` reports what the pod itself
+says it has, so it lags a write by one heartbeat, and `known: false` means the pod has not reported
+its schedule yet, which is not the same as having no tasks.
+
+## Scopes
+
+Ordinary work needs `compute:read` and `compute:write`. Two powers are deliberately separate, so a
+general-purpose key cannot use them.
+
+| Scope | Grants |
+| --- | --- |
+| `pods:wallet:write` | Send from a pod wallet, raise its cap, set the backup passphrase |
+| `pods:control:write` | Add and remove connectors, and a full-power control socket (pod files, skills, backups) |
+
+Without `pods:control:write`, a chat ticket is issued at **`chat`** scope: the socket accepts
+conversation and nothing else. That is the intended default. Ask for the scope only when you
+genuinely need the workspace, and expect a `403` naming it in `details.required_scope` if you did
+not.
+
+<Note>
+  The backup passphrase sits behind `pods:wallet:write` rather than an ordinary write because
+  backups hold the agent's whole state, memory, workspace and credentials, and the passphrase is
+  what makes a snapshot readable. Setting it to a value you know is an exfiltration path, not a
+  settings change. Turning backups on or off is ordinary API-key work.
+</Note>
+
+### A chat ticket still shares one conversation
+
+A pod runs **one** session. Every socket talks into it, so an end user can ask the agent about
+earlier turns and be told. Replies route back per turn id, so nobody passively reads someone else's
+stream, but the history is common ground. Issue tickets to your own server or a signed-in user, not
+to the anonymous public. The ticket rides in the query string of `websocket_url`, which is fine for
+its 60 second life but is captured in request logs, so treat the whole URL as the secret and do not
+persist it.
+
+## Events
+
+**The log is the source of truth; webhooks are one way to read it.** A failed delivery is gone. The
+log is not. If you miss a delivery, page `GET /events` and catch up.
+
+**Page by `seq`, never by timestamp.** `seq` is an integer that only goes up. Two events can share a
+millisecond, and a timestamp cursor either skips one or repeats it forever. Store the `next_after`
+you get back and pass it as `after`; it is returned even on an empty page, so a poller always has a
+cursor to carry forward.
+
+```bash
+curl -s "https://compute.x402layer.cc/pods/v1/events?after=41&limit=50" \
+  -H "X-API-Key: $SGL_API_KEY"
+# { "events": [ { "seq": 42, "type": "pod.status.changed", "pod_id": "...", "data": {} } ],
+#   "next_after": 42, "has_more": false }
+```
+
+Event types: `pod.created`, `pod.active`, `pod.destroyed`, `pod.destroy_failed`,
+`pod.action.queued`, `pod.status.changed`, `pod.renewed`, `pod.renewal_failed`, `pod.expiring`,
+`pod.backup.completed`, `pod.backup.failed`.
+
+Events are retained **30 days**.
+
+## Webhooks
+
+HTTPS only. The signing secret is returned **once** at creation and never again, because an endpoint
+secret that can be fetched is one an attacker with read access can forge deliveries with. Omit
+`event_types` to receive everything; an empty array is refused, because a subscription to nothing is
+a webhook that silently never fires.
+
+Deliveries carry:
+
+```
+x-sgl-signature: t=<unix>,v1=<hmac-sha256 of "<t>.<raw body>">
+x-sgl-event-type: pod.status.changed
+x-sgl-event-id: <uuid>
+```
+
+<Warning>
+  **Verify against the RAW body.** Parsing and re-encoding JSON changes key order and spacing, and
+  the signature covers the bytes we sent. Re-serialise, and a genuine delivery fails to verify.
+</Warning>
+
+<CodeGroup>
+
+```ts TypeScript
+import { verifyPodWebhook } from "@singularity-layer/grid";
+
+const raw = await req.text();                      // NOT JSON.stringify(req.body)
+const ok = await verifyPodWebhook(raw, req.headers["x-sgl-signature"], secret);
+```
+
+```python Python
+from singularity_grid import verify_pod_webhook
+
+ok = verify_pod_webhook(raw_body, request.headers["x-sgl-signature"], secret)
+```
+
+</CodeGroup>
+
+The timestamp is inside the signed string, so a captured delivery cannot be replayed later under a
+fresh one. Both helpers enforce a 300 second window by default. That window is not optional: without
+it, an old capture still verifies and putting the timestamp in the signature buys nothing.
+
+**Failed deliveries back off** at 1, 5, 15, 60, 180, 360 and 720 minutes, then stop. When we give
+up, `disabled_by_us_at` is set. It is deliberately distinct from `enabled: false`, which is you
+turning it off, because from the outside both look like silence.
+
+Re-enabling clears the failure state and the give-up marker. `skip_to_now` jumps the delivery cursor
+to the newest event, which is usually what an endpoint that was off for a week wants; it only moves
+forward, so it can never be used to make us resend.
+
+## Errors
+
+```json
+{
+  "error": {
+    "code": "conflict",
+    "message": "...",
+    "details": { "code": "idempotency_mismatch" }
+  }
+}
+```
+
+Branch on `code`, not on the message. The stable codes are `invalid_request`, `unauthorized`,
+`forbidden`, `not_found`, `conflict`, `limit_exceeded`, `capability_disabled`, `rate_limited`,
+`not_implemented` and `internal`.
+
+Every response carries **`x-request-id`**. Send your own and it is echoed back. Quote it in a support
+message and your request can be found in our logs. Both SDKs attach it to the exception.
+
+A `409 capability_disabled` is not a `404`: the pod exists, it simply was not created with that
+capability. `details.capability` names which one.
+
+## Limits
+
+| Limit | |
+| --- | --- |
+| Reads | 240 per minute, per account |
+| Writes | 60 per minute, per account |
+| **Creates** | **60 per hour**, a separate and tighter bucket |
+| Request body | 128 KB |
+| Webhooks | 10 per account |
+| Event retention | 30 days |
+
+Creates get their own bucket because that is the call that provisions a machine and charges for it,
+so a runaway loop costs money rather than a wasted query. The idempotency key stops an accidental
+double-create; it does nothing about a deliberate loop, which is what the bucket is for.
+
+## What this API deliberately does not expose
+
+The pod's engine, its version, the provider, the region, the machine plan, the IP address and every
+credential are all absent from the public pod object, on purpose. That is what lets the pod's
+implementation change without breaking your integration.
+
+Two known handoff gaps, stated rather than left to be discovered:
+
+- A Telegram join code can be driven to `claimed`, but **attaching** the claimed group is still
+  dashboard-only.
+- Wallet **sends** are not on this surface. `PATCH /pods/{id}/wallet` changes the spend policy;
+  moving funds is a dashboard or scoped-session action. See [Wallet](/cloud/pods/wallet).
