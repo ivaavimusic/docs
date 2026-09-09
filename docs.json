@@ -473,7 +473,8 @@
               "api-reference/enterprise-transactions"
             ]
           }
-        ]
+        ],
+        "openapi": "api-reference/openapi.json"
       }
     ],
     "global": {
