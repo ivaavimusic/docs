@@ -413,6 +413,7 @@
               "api-reference/pods-v1-chat-ticket",
               "api-reference/pods-v1-telegram-join-code-create",
               "api-reference/pods-v1-telegram-join-code-get",
+              "api-reference/pods-v1-telegram-connect",
               "api-reference/pods-v1-events-list",
               "api-reference/pods-v1-webhooks-create",
               "api-reference/pods-v1-webhooks-list",

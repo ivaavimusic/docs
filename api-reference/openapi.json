@@ -10053,6 +10053,111 @@
           }
         }
       }
+    },
+    "/pods/v1/pods/{id}/channels/telegram/connect": {
+      "post": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "servers": null,
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "summary": "Connect the claimed Telegram group",
+        "operationId": "podsV1TelegramConnect",
+        "description": "Attaches the group that claimed the join code, completing Telegram onboarding without a human in the dashboard.\n\n**Takes no chat id from the caller.** Only the group that claimed the code is attached, because a claim means somebody actually typed the code inside that room, which is the proof they are in it. Accepting an arbitrary id would let a key point a pod at any room whose id it could guess.\n\nExisting connected groups are preserved. Returns `409 no_claim` if no group has claimed a code yet.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "require_mention": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Default true: a freshly connected room should not have the agent answering every message until the owner decides that is what they want."
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "description": "Optional per-group instruction."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connected. The pod applies it on its next check-in.",
+            "headers": {
+              "x-request-id": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Correlation id, echoed if you sent one."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "channel": {
+                      "type": "object",
+                      "properties": {
+                        "platform": {
+                          "type": "string"
+                        },
+                        "chat_id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "require_mention": {
+                          "type": "boolean"
+                        },
+                        "already_connected": {
+                          "type": "boolean"
+                        },
+                        "note": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No group has claimed a code yet (details.code = no_claim), or channels are not exposed on this pod.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

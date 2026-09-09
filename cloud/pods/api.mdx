@@ -358,9 +358,12 @@ The pod's engine, its version, the provider, the region, the machine plan, the I
 credential are all absent from the public pod object, on purpose. That is what lets the pod's
 implementation change without breaking your integration.
 
-Two known handoff gaps, stated rather than left to be discovered:
+One known gap, stated rather than left to be discovered:
 
-- A Telegram join code can be driven to `claimed`, but **attaching** the claimed group is still
-  dashboard-only.
 - Wallet **sends** are not on this surface. `PATCH /pods/{id}/wallet` changes the spend policy;
   moving funds is a dashboard or scoped-session action. See [Wallet](/cloud/pods/wallet).
+
+Telegram onboarding IS complete over the API: mint a code with `POST .../join-code`, send it in
+the group, poll until `claimed`, then `POST .../channels/telegram/connect` to attach it. That
+last call takes no chat id from you and attaches only the group that claimed the code — a claim
+means somebody actually typed it inside that room, which is the proof that they are in it.
