@@ -7,7 +7,7 @@ description: The agentic skill for the Singularity Cloud Network — provision M
 
 The `x402-compute` skill is the agentic interface to the **Singularity Cloud Network**. It covers three jobs:
 
-- **SGL Machines** — provision and manage VPS/GPU instances on Vultr or DigitalOcean (x402 on Base/Solana/MegaETH/Robinhood Chain — **Arc USDC for credit top-ups** — MPP via `mppx`, or pre-loaded USD credits; OWS auth, API keys, in-place resize).
+- **SGL Machines** — provision and manage VPS/GPU instances on Vultr or DigitalOcean (x402 on Base/Solana/MegaETH/Robinhood Chain/Arc — direct Arc payments min $5, Arc credit top-ups too — MPP via `mppx`, or pre-loaded USD credits; OWS auth, API keys, in-place resize).
 - **SGL Grid — inference** — call decentralized, confidential (TEE), **OpenAI-compatible** inference (`https://grid.x402compute.cc/v1`) with the same `x402c_…` API key/credits or per-request x402; supports token streaming + end-to-end encryption.
 - **Provide Compute (run a node)** — turn a TEE-capable machine into a grid node: stake $SGL, install the `sgl` CLI, register, attest, and serve a model to earn **USDC + SGL**. See [Provide Compute](/cloud/provide/overview) and the skill's `references/node-operator.md`.
 - **Agent Pods** — deploy an always-on hosted OpenClaw agent with its own crypto wallet, memory, scheduler, and preinstalled x402 skills; managed or BYOK. See [Agent Pods](/cloud/pods/overview) and the skill's `references/agent-pods.md`.
@@ -278,7 +278,7 @@ This works once per instance. Repeated calls return `409`.
 | x402 Solana USDC | Live | Existing script flow |
 | x402 MegaETH USDm | Live | ERC-2612 permit flow; embedded facilitator; gasless for users |
 | x402 Robinhood USDG | Live | EIP-3009 `transferWithAuthorization`; embedded facilitator; single-tx settle; gasless for users |
-| x402 Arc USDC | Live | EIP-3009 on Arc (chainId 5042); embedded facilitator with Alchemy-primary RPC failover; credit top-ups (min $5 — Arc gas is USDC); explorer.arc.io |
+| x402 Arc USDC | Live | EIP-3009 on Arc (chainId 5042); embedded facilitator with Alchemy-primary RPC failover; credit top-ups (min $5 — Arc gas is USDC); **direct machine/AI provision + extend payments** (same $5 direct floor); explorer.arc.io |
 | MPP Tempo USDC.e | Live | Tested with `npx mppx`; returns `Payment-Receipt` |
 | Credits | Live | Pre-load USD via x402 topup; provision/extend with `use_credits: true` |
 | MPP Stripe cards | Pending | Requires Stripe Machine Payments / Shared Payment Token access |

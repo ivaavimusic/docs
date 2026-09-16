@@ -3510,9 +3510,10 @@
                       "base",
                       "solana",
                       "megaeth",
-                      "robinhood"
+                      "robinhood",
+                      "arc"
                     ],
-                    "description": "x402 payment network. MPP clients use `Authorization: Payment` and omit this."
+                    "description": "x402 payment network. Arc (USDC, chainId 5042) works here and on /extend; direct Arc payments carry a $5 minimum (gas is USDC) — smaller prepayments use credits. MPP clients use `Authorization: Payment` and omit this."
                   },
                   "prepaid_hours": {
                     "type": "integer",
