@@ -3173,16 +3173,19 @@
                     "type": "number",
                     "minimum": 1,
                     "example": 50,
-                    "description": "USD to deposit (minimum $1)"
+                    "description": "USD to deposit (minimum $1 — $5 on Arc, whose gas is paid in USDC)"
                   },
                   "network": {
                     "type": "string",
                     "enum": [
                       "base",
                       "solana",
-                      "megaeth"
+                      "megaeth",
+                      "robinhood",
+                      "arc"
                     ],
-                    "example": "base"
+                    "example": "base",
+                    "description": "x402 payment network. base/solana/arc settle in USDC (Arc is EIP-3009 on chain 5042), megaeth in USDm, robinhood in USDG."
                   }
                 }
               }
