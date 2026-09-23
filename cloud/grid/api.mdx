@@ -61,6 +61,19 @@ Pass one of:
 
 See [Wallet & auth](/cloud/concepts/wallet-auth).
 
+## Laya / System One
+
+System One models use a typed-decision endpoint instead of Chat Completions:
+
+```bash
+curl -X POST https://grid.x402compute.cc/v1/systemone \
+  -H "X-API-Key: <YOUR_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"convaiinnovations/laya","state":{"ticket":"refund request"},"questions":{"route":{"type":"choice","instructions":"Pick the best team.","criteria":{"billing":"Billing/refund issue","support":"Technical issue"}}}}'
+```
+
+Use `GET /v1/models?type=systemone` to list System One models. See [Laya / System One](/cloud/grid/systemone).
+
 ## Paying
 
 - **API key / credits** — billed to the key's wallet at exact token cost.
@@ -69,6 +82,7 @@ See [Wallet & auth](/cloud/concepts/wallet-auth).
 ## Notes
 
 - Request/response shapes match OpenAI Chat Completions (`model`, `messages`, `max_tokens`, `temperature`, `usage`).
+- Laya/System One uses `POST /v1/systemone`; it is intentionally not a chat-completions model.
 - For maximum privacy (browser-side end-to-end encryption), use the dashboard/SDK confidential path — see [Confidential inference](/cloud/grid/confidential-inference).
 - **Streaming** (`stream: true`) is on the roadmap; today set `stream: false`.
 

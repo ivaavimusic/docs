@@ -2688,6 +2688,21 @@
               "example": "x402c_..."
             },
             "description": "Compute/Grid API key (billed to prepaid credits). Omit to pay per request via x402 `X-Payment`."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "chat",
+                "embedding",
+                "systemone"
+              ],
+              "example": "systemone"
+            },
+            "description": "Optional modality filter. Use `systemone` to list Laya/System One models such as `convaiinnovations/laya`."
           }
         ],
         "responses": {
@@ -2967,6 +2982,169 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Invalid or revoked API key"
+          },
+          "402": {
+            "description": "Payment required — resend with `X-Payment`, or top up credits in Settings → Credits"
+          }
+        }
+      }
+    },
+    "/v1/systemone": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Create System One typed decision",
+        "description": "Run Laya/System One typed decisions. Current model: `convaiinnovations/laya`. This is not an OpenAI chat-completions endpoint; use it for `choice`, `score`, and `noul` questions. Authenticate with `X-API-Key` (prepaid credits) or pay per request with x402 after a `402` challenge. For end-to-end private Laya, first reserve a node with `POST /v1/systemone/reserve`, encrypt locally to the returned node key, then submit the sealed payload here.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute/Grid API key (billed to prepaid credits). Omit to pay per request via x402 `X-Payment`."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model",
+                  "state",
+                  "questions"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "example": "convaiinnovations/laya"
+                  },
+                  "state": {
+                    "description": "JSON-serializable state for the decision. Max 64 KiB.",
+                    "oneOf": [
+                      {
+                        "type": "object"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "questions": {
+                    "type": "object",
+                    "description": "Object keyed by question id. Max 32 questions.",
+                    "additionalProperties": {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "instructions"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "choice",
+                            "score",
+                            "noul"
+                          ]
+                        },
+                        "instructions": {
+                          "type": "string"
+                        },
+                        "criteria": {
+                          "description": "`choice` uses an object with at least two options. `score` uses a non-empty array of criteria strings.",
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string"
+                              }
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "example": {
+                      "route": {
+                        "type": "choice",
+                        "instructions": "Pick the best team.",
+                        "criteria": {
+                          "billing": "Billing or refund issue",
+                          "support": "Technical support issue"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Typed System One result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "example": "systemone.result"
+                    },
+                    "model": {
+                      "type": "string",
+                      "example": "convaiinnovations/laya"
+                    },
+                    "answers": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object"
+                      }
+                    },
+                    "usage": {
+                      "type": "object",
+                      "properties": {
+                        "input_tokens": {
+                          "type": "integer"
+                        },
+                        "output_tokens": {
+                          "type": "integer"
+                        },
+                        "cost_usd": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid System One request"
           },
           "401": {
             "description": "Invalid or revoked API key"

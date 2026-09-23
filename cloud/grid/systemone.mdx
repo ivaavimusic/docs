@@ -1,0 +1,95 @@
+---
+title: Laya / System One
+description: Use Laya on SGL Grid for typed decisions, scoring, and private System One workflows.
+---
+
+Laya is the open-source System One model served on SGL Grid as `convaiinnovations/laya`.
+Use it when you need structured decisions instead of chat text: route choices, scores, or compact
+`noul` answers.
+
+<Warning>
+  Laya is not a chat-completions model. Call `POST /v1/systemone`, not
+  `POST /v1/chat/completions`.
+</Warning>
+
+## Quickstart
+
+```bash
+curl "https://grid.x402compute.cc/v1/models?type=systemone" \
+  -H "X-API-Key: $SGL_API_KEY"
+
+curl -X POST https://grid.x402compute.cc/v1/systemone \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $SGL_API_KEY" \
+  -d '{
+    "model": "convaiinnovations/laya",
+    "state": {
+      "ticket": "Enterprise customer cannot access billing exports",
+      "customer_tier": "enterprise"
+    },
+    "questions": {
+      "route": {
+        "type": "choice",
+        "instructions": "Choose the best team to handle this ticket.",
+        "criteria": {
+          "billing": "Billing, invoice, refund, or account credit issue.",
+          "support": "Product defect or technical troubleshooting."
+        }
+      },
+      "urgency": {
+        "type": "score",
+        "instructions": "Score urgency from 0 to 1.",
+        "criteria": ["customer blocked", "money at risk", "security risk"]
+      }
+    }
+  }'
+```
+
+Typical response:
+
+```json
+{
+  "object": "systemone.result",
+  "model": "convaiinnovations/laya",
+  "answers": {
+    "route": { "type": "choice", "choice": "billing", "confidence": 0.83 },
+    "urgency": { "type": "score", "score": 0.7 }
+  },
+  "usage": { "input_tokens": 178, "output_tokens": 0, "cost_usd": 0.000001 }
+}
+```
+
+## Privacy Modes
+
+Plain `POST /v1/systemone` validates and routes plaintext through the orchestrator, then dispatches
+only to attested confidential nodes. This is private at the node/runtime layer.
+
+For end-to-end private Laya, use the reserved sealed flow:
+
+1. `POST /v1/systemone/reserve` with `model` and `input_tokens_upper_bound`.
+2. Encrypt locally to the returned node X25519 key.
+3. Submit the sealed payload to `POST /v1/systemone`.
+4. Decrypt the sealed result locally.
+
+In the sealed flow, the orchestrator sees ciphertext while the node decrypts locally and runs Laya
+inside its serving boundary.
+
+## Limits
+
+- Model id: `convaiinnovations/laya`
+- Aliases: `laya`, `laya-system-one`, `systemone-laya`
+- Question types: `choice`, `score`, `noul`
+- Max state: 64 KiB
+- Max questions: 32
+- Max criteria per question: 64
+- Max input context: 16,384 tokens
+- Max request body: 256 KiB
+- Max response body: 1 MiB
+
+## Operators
+
+Node operators can serve Laya from Singularity Node app v1.7.4 or newer: open **Models → System One
+→ Laya** and connect. The app manages a local loopback sidecar at `127.0.0.1:8765` and starts the
+normal SGL node service with the System One runtime attached.
+
+See [Node setup](/cloud/provide/node-setup) for the operator path.

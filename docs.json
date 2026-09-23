@@ -128,6 +128,7 @@
                   "cloud/grid/overview",
                   "cloud/grid/models",
                   "cloud/grid/embeddings",
+                  "cloud/grid/systemone",
                   "cloud/grid/playground",
                   "cloud/grid/api",
                   "cloud/grid/confidential-inference",
@@ -329,6 +330,7 @@
             "pages": [
               "api-reference/grid-models",
               "api-reference/grid-chat-completions",
+              "api-reference/grid-systemone",
               "api-reference/grid-capacity",
               "api-reference/grid-staking-metrics",
               "api-reference/grid-nodes",
