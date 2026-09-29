@@ -64,7 +64,15 @@ POD=$(curl -s -X POST https://compute.x402layer.cc/pods/v1/pods \
   -H "X-API-Key: $SGL_API_KEY" \
   -H "Idempotency-Key: order-4471" \
   -H 'content-type: application/json' \
-  -d '{"tier":"starter","name":"support agent","external_ref":"customer-42"}' \
+  -d '{
+    "tier": "starter",
+    "name": "support agent",
+    "external_ref": "customer-42",
+    "agent_identity": "You are Atlas, Acme Cloud support.",
+    "agent_instructions": "Answer as Acme support and cite the current integration step.",
+    "heartbeat_prompt": "Check open escalations and renew yourself if runway is low. Stay silent if clear.",
+    "agent_heartbeat_minutes": 30
+  }' \
   | jq -r .pod.id)
 
 # Booting takes a few minutes. status goes provisioning -> online.
@@ -74,6 +82,14 @@ curl -s "https://compute.x402layer.cc/pods/v1/pods/$POD" \
 
 `external_ref` is **your** id. It comes back on every read and filters `GET /pods`, so you can find
 a pod again from your own database without storing ours.
+
+## Customizing the agent
+
+Platforms can set the customer's identity, operating instructions, and self-check heartbeat without taking over managed runtime files. Use `agent_identity`, `agent_instructions`, `heartbeat_prompt`, and `agent_heartbeat_minutes` on create or update.
+
+<Note>
+  `AGENTS.md` is not raw-editable through the API. The managed base keeps wallet survival, spend caps, x402 payment safety, and tool permissions intact. Your text is rendered into a bounded owner/platform section. Send an empty string or `null` on PATCH to clear a custom text field.
+</Note>
 
 ## SDKs
 
@@ -91,6 +107,10 @@ const pod = await pods.createPod({
   tier: "starter",
   name: "support agent",
   external_ref: "customer-42",       // YOUR id; find it again without storing ours
+  agentIdentity: "You are Atlas, Acme Cloud support.",
+  agentInstructions: "Answer as Acme support and cite the current integration step.",
+  heartbeatPrompt: "Check open escalations. Stay silent if clear.",
+  agentHeartbeatMinutes: 30,
   idempotencyKey: `order-${orderId}`, // a stable id, not a fresh UUID
 });
 
@@ -108,6 +128,10 @@ pod = pods.create_pod(
     tier="starter",
     name="support agent",
     external_ref="customer-42",
+    agent_identity="You are Atlas, Acme Cloud support.",
+    agent_instructions="Answer as Acme support and cite the current integration step.",
+    heartbeat_prompt="Check open escalations. Stay silent if clear.",
+    agent_heartbeat_minutes=30,
     idempotency_key=f"order-{order_id}",
 )
 
@@ -168,7 +192,7 @@ See [OpenAI-compatible access](/cloud/pods/openai-adapter) for what a turn does 
 | `POST` | `/pods` | **`Idempotency-Key` required.** `201`, `status: provisioning` |
 | `GET` | `/pods` | Newest first. `?external_ref=`, `?cursor=`, `?limit=` |
 | `GET` | `/pods/{id}` | |
-| `PATCH` | `/pods/{id}` | `name`, `model`, `slug`, `auto_renew`, `ai.*` (BYOK rotation) |
+| `PATCH` | `/pods/{id}` | `name`, `model`, `slug`, `auto_renew`, `ai.*` (BYOK rotation), `agent_identity`, `agent_instructions`, `heartbeat_prompt`, `agent_heartbeat_minutes` |
 | `DELETE` | `/pods/{id}` | `200 destroyed` or `202 destroying`, see above |
 
 ### Endpoint keys

@@ -3618,7 +3618,7 @@
           "Agent Pods"
         ],
         "summary": "Deploy an Agent Pod",
-        "description": "Deploys a hosted agent. The paid deploy rides the audited `/compute/provision` money path, so payment works exactly like provisioning a machine: pay from prepaid credits (`use_credits: true`) or complete an x402/MPP payment (a `402` challenge is returned when no payment credential is supplied). All `/compute/provision` fields (`plan`, `region`, `prepaid_hours`, `network`, `ssh_public_key`, ...) are accepted alongside the pod-specific fields below; `os_id` is ignored (pods always run Ubuntu 24.04). Authenticate with the same compute auth as `/compute/*` (API key, session bearer, or wallet signature).",
+        "description": "Deploys a hosted agent. The paid deploy rides the audited `/compute/provision` money path, so payment works exactly like provisioning a machine: pay from prepaid credits (`use_credits: true`) or complete an x402/MPP payment (a `402` challenge is returned when no payment credential is supplied). All `/compute/provision` fields (`plan`, `region`, `prepaid_hours`, `network`, `ssh_public_key`, ...) are accepted alongside the pod-specific fields below; `os_id` is ignored (pods always run Ubuntu 24.04). Authenticate with the same compute auth as `/compute/*` (API key, session bearer, or wallet signature).\n\nPlatforms can customize a pod with `agent_identity`, `agent_instructions`, `heartbeat_prompt`, and `agent_heartbeat_minutes`. Raw `AGENTS.md` replacement is not exposed; custom text is layered into a bounded owner/platform section so wallet survival, spend caps, x402 safety and tool permissions stay intact.",
         "parameters": [
           {
             "name": "X-API-Key",
@@ -3740,6 +3740,30 @@
                   "ssh_public_key": {
                     "type": "string",
                     "description": "Optional. Rarely needed — pods are headless."
+                  },
+                  "agent_identity": {
+                    "type": "string",
+                    "maxLength": 8000,
+                    "nullable": true,
+                    "description": "Owner/platform identity text layered into managed AGENTS.md and IDENTITY.md. Empty or null clears it on PATCH."
+                  },
+                  "agent_instructions": {
+                    "type": "string",
+                    "maxLength": 8000,
+                    "nullable": true,
+                    "description": "Owner/platform operating instructions layered into managed AGENTS.md. Empty or null clears it on PATCH."
+                  },
+                  "heartbeat_prompt": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "nullable": true,
+                    "description": "Prompt for the agent quiet self-check heartbeat. Empty or null restores the default survival/check-work prompt on PATCH."
+                  },
+                  "agent_heartbeat_minutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1440,
+                    "description": "Self-check cadence in minutes. 0 disables it; otherwise use 15-1440."
                   }
                 }
               }
@@ -3915,7 +3939,7 @@
           "Agent Pods"
         ],
         "summary": "Update Agent Pod settings",
-        "description": "Owner-tunable pod knobs. Send any subset of the fields below. `heartbeat_interval_sec` applies live (no restart); `model` triggers an agent restart (~40s); `auto_renew_enabled` controls lifecycle billing. Authenticate with the same compute auth as `/compute/*`.",
+        "description": "Owner-tunable pod knobs. Send any subset of the fields below. `agent_heartbeat_minutes`, `heartbeat_prompt`, `agent_identity`, and `agent_instructions` change the agent self-check/customization layer and queue an update/restart; `model` triggers an agent restart (~40s); `auto_renew_enabled` controls lifecycle billing. Authenticate with the same compute auth as `/compute/*`. Raw `AGENTS.md` replacement is intentionally not exposed.",
         "parameters": [
           {
             "name": "id",
@@ -3934,12 +3958,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "heartbeat_interval_sec": {
-                    "type": "integer",
-                    "minimum": 10,
-                    "maximum": 3600,
-                    "description": "Pod worker poll interval in seconds."
-                  },
                   "auto_renew_enabled": {
                     "type": "boolean",
                     "description": "Renew this pod from your credits at expiry. Rejected for free-trial pods."
@@ -3947,6 +3965,30 @@
                   "model": {
                     "type": "string",
                     "description": "Model slug like `provider/model` (e.g. `anthropic/claude-sonnet-4.5`). Applies to chat, channels, and the OpenAI adapter."
+                  },
+                  "agent_identity": {
+                    "type": "string",
+                    "maxLength": 8000,
+                    "nullable": true,
+                    "description": "Owner/platform identity text layered into managed AGENTS.md and IDENTITY.md. Empty or null clears it on PATCH."
+                  },
+                  "agent_instructions": {
+                    "type": "string",
+                    "maxLength": 8000,
+                    "nullable": true,
+                    "description": "Owner/platform operating instructions layered into managed AGENTS.md. Empty or null clears it on PATCH."
+                  },
+                  "heartbeat_prompt": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "nullable": true,
+                    "description": "Prompt for the agent quiet self-check heartbeat. Empty or null restores the default survival/check-work prompt on PATCH."
+                  },
+                  "agent_heartbeat_minutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1440,
+                    "description": "Self-check cadence in minutes. 0 disables it; otherwise use 15-1440."
                   }
                 }
               }
@@ -5494,7 +5536,7 @@
           "Agent Pods API"
         ],
         "summary": "Create a pod",
-        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Auth is `X-API-Key` only. This is the PROGRAMMATIC surface and is NOT the same as the dashboard pod routes (`POST /pods`, `PATCH /pods/{id}/settings`, ...), which take a wallet signature or a browser session and are free to change. Every response carries `x-request-id`.\n\n**`Idempotency-Key` is REQUIRED and the request is refused without it.** This call provisions a machine and charges for it. Replaying the same key returns the ORIGINAL response byte for byte with `Idempotent-Replay: true` and a `200` instead of a `201`, rather than making a second pod. The same key with a DIFFERENT body is a `409` carrying `details.code = idempotency_mismatch`, because that is a bug in your code and swallowing it would hide it.\n\nUse an id you already have - an order number, a job id. A generated UUID protects a retry inside one process; only a stable id protects a retry after that process dies.\n\nReturns `201` with `status: provisioning`. The machine takes a few minutes to boot; poll `GET /pods/v1/pods/{id}` until `status` is `online`.\n\nRate limit: **60 creates per HOUR**, a separate and tighter bucket than ordinary writes, because this is the call that costs money. The idempotency key stops an accidental double-create; it does nothing about a deliberate loop, which is what this bucket is for.\n\n**Rate limit: 60 creates per hour**, a separate and tighter bucket than the 60/min write limit. This is the call that provisions a machine and charges for it, so a runaway loop costs money rather than a wasted query. The `Idempotency-Key` prevents an *accidental* double-create; it does nothing about a deliberate loop.",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Auth is `X-API-Key` only. This is the PROGRAMMATIC surface and is NOT the same as the dashboard pod routes (`POST /pods`, `PATCH /pods/{id}/settings`, ...), which take a wallet signature or a browser session and are free to change. Every response carries `x-request-id`.\n\n**`Idempotency-Key` is REQUIRED and the request is refused without it.** This call provisions a machine and charges for it. Replaying the same key returns the ORIGINAL response byte for byte with `Idempotent-Replay: true` and a `200` instead of a `201`, rather than making a second pod. The same key with a DIFFERENT body is a `409` carrying `details.code = idempotency_mismatch`, because that is a bug in your code and swallowing it would hide it.\n\nUse an id you already have - an order number, a job id. A generated UUID protects a retry inside one process; only a stable id protects a retry after that process dies.\n\nReturns `201` with `status: provisioning`. The machine takes a few minutes to boot; poll `GET /pods/v1/pods/{id}` until `status` is `online`.\n\nRate limit: **60 creates per HOUR**, a separate and tighter bucket than ordinary writes, because this is the call that costs money. The idempotency key stops an accidental double-create; it does nothing about a deliberate loop, which is what this bucket is for.\n\n**Rate limit: 60 creates per hour**, a separate and tighter bucket than the 60/min write limit. This is the call that provisions a machine and charges for it, so a runaway loop costs money rather than a wasted query. The `Idempotency-Key` prevents an *accidental* double-create; it does nothing about a deliberate loop.\n\nCustomization fields: `agent_identity`, `agent_instructions`, `heartbeat_prompt`, and `agent_heartbeat_minutes`. Raw `AGENTS.md` replacement is not exposed; custom text is layered into a bounded owner/platform section while the managed base keeps wallet survival, spend controls, x402 safety, and tool permissions intact.",
         "security": [
           {
             "podsApiKey": []
@@ -5548,10 +5590,6 @@
                     "type": "string",
                     "description": "Model slug. Managed pods clamp this to the tier's allowed list."
                   },
-                  "system_prompt": {
-                    "type": "string",
-                    "description": "Initial system prompt for the agent."
-                  },
                   "region": {
                     "type": "string",
                     "description": "Optional datacentre pin. Omit it and we choose - picking a datacentre is our job, not yours."
@@ -5590,6 +5628,30 @@
                         "description": "BYOK only. Provider API type."
                       }
                     }
+                  },
+                  "agent_identity": {
+                    "type": "string",
+                    "maxLength": 8000,
+                    "nullable": true,
+                    "description": "Owner/platform identity text layered into managed AGENTS.md and IDENTITY.md. Empty or null clears it on PATCH."
+                  },
+                  "agent_instructions": {
+                    "type": "string",
+                    "maxLength": 8000,
+                    "nullable": true,
+                    "description": "Owner/platform operating instructions layered into managed AGENTS.md. Empty or null clears it on PATCH."
+                  },
+                  "heartbeat_prompt": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "nullable": true,
+                    "description": "Prompt for the agent quiet self-check heartbeat. Empty or null restores the default survival/check-work prompt on PATCH."
+                  },
+                  "agent_heartbeat_minutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1440,
+                    "description": "Self-check cadence in minutes. 0 disables it; otherwise use 15-1440."
                   }
                 }
               }
@@ -6007,7 +6069,7 @@
           "Agent Pods API"
         ],
         "summary": "Update a pod",
-        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Auth is `X-API-Key` only. This is the PROGRAMMATIC surface and is NOT the same as the dashboard pod routes (`POST /pods`, `PATCH /pods/{id}/settings`, ...), which take a wallet signature or a browser session and are free to change. Every response carries `x-request-id`.\n\nSend any subset of the editable fields. This is an allowlist: fields not listed here are not settable from the public API.\n\n**Not atomic.** `name` is applied before the rest, so a failure on the rest can leave the name already changed. When that happens the error carries `details.partially_applied: [\"name\"]` rather than letting you infer nothing happened.\n\nWallet spend controls live on `PATCH /pods/v1/pods/{id}/wallet`, not here. Rate limit: the shared write bucket, 60 requests/minute per account.",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Auth is `X-API-Key` only. This is the PROGRAMMATIC surface and is NOT the same as the dashboard pod routes (`POST /pods`, `PATCH /pods/{id}/settings`, ...), which take a wallet signature or a browser session and are free to change. Every response carries `x-request-id`.\n\nSend any subset of the editable fields. This is an allowlist: fields not listed here are not settable from the public API.\n\n**Not atomic.** `name` is applied before the rest, so a failure on the rest can leave the name already changed. When that happens the error carries `details.partially_applied: [\"name\"]` rather than letting you infer nothing happened.\n\nWallet spend controls live on `PATCH /pods/v1/pods/{id}/wallet`, not here. Rate limit: the shared write bucket, 60 requests/minute per account.\n\nCustomization fields are editable here too. Send `\"\"` or `null` for a custom text field to clear it. Raw `AGENTS.md` replacement is not exposed.",
         "security": [
           {
             "podsApiKey": []
@@ -6047,6 +6109,30 @@
                   },
                   "auto_renew": {
                     "type": "boolean"
+                  },
+                  "agent_identity": {
+                    "type": "string",
+                    "maxLength": 8000,
+                    "nullable": true,
+                    "description": "Owner/platform identity text layered into managed AGENTS.md and IDENTITY.md. Empty or null clears it on PATCH."
+                  },
+                  "agent_instructions": {
+                    "type": "string",
+                    "maxLength": 8000,
+                    "nullable": true,
+                    "description": "Owner/platform operating instructions layered into managed AGENTS.md. Empty or null clears it on PATCH."
+                  },
+                  "heartbeat_prompt": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "nullable": true,
+                    "description": "Prompt for the agent quiet self-check heartbeat. Empty or null restores the default survival/check-work prompt on PATCH."
+                  },
+                  "agent_heartbeat_minutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1440,
+                    "description": "Self-check cadence in minutes. 0 disables it; otherwise use 15-1440."
                   },
                   "ai": {
                     "type": "object",
@@ -10577,9 +10663,14 @@
               }
             }
           },
-          "heartbeat_interval_sec": {
+          "customization": {
+            "$ref": "#/components/schemas/PodCustomization"
+          },
+          "agent_heartbeat_minutes": {
             "type": "integer",
-            "nullable": true
+            "minimum": 0,
+            "maximum": 1440,
+            "description": "Self-check cadence in minutes. 0 disables it."
           },
           "status": {
             "type": "string",
@@ -11863,6 +11954,15 @@
               }
             }
           },
+          "customization": {
+            "$ref": "#/components/schemas/PodCustomization"
+          },
+          "agent_heartbeat_minutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1440,
+            "description": "Self-check cadence in minutes. 0 disables it."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -12256,6 +12356,24 @@
           "created_at": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "PodCustomization": {
+        "type": "object",
+        "description": "Structured owner/platform customization. Raw AGENTS.md replacement is intentionally not exposed; these fields render into a bounded customization section while the platform-managed safety base remains intact.",
+        "properties": {
+          "agent_identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "agent_instructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "heartbeat_prompt": {
+            "type": "string",
+            "nullable": true
           }
         }
       }
