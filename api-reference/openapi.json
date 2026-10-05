@@ -10323,6 +10323,11 @@
       }
     },
     "/pods/v1/pods/{id}/channels/telegram/connect": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "post": {
         "tags": [
           "Agent Pods API"
@@ -10427,6 +10432,11 @@
       }
     },
     "/pods/v1/pods/{id}/updates": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "get": {
         "tags": [
           "Agent Pods API"
