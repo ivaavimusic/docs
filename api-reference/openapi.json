@@ -927,6 +927,11 @@
       }
     },
     "/compute/plans": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "get": {
         "tags": [
           "Compute Catalog"
@@ -960,6 +965,11 @@
       ]
     },
     "/compute/regions": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "get": {
         "tags": [
           "Compute Catalog"
@@ -978,6 +988,11 @@
       ]
     },
     "/compute/os": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "get": {
         "tags": [
           "Compute Catalog"
@@ -996,6 +1011,11 @@
       ]
     },
     "/compute/provision": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "post": {
         "tags": [
           "Compute Instances"
@@ -1129,6 +1149,11 @@
       ]
     },
     "/compute/api-keys": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "get": {
         "tags": [
           "Compute API Keys"
@@ -1173,6 +1198,11 @@
       ]
     },
     "/compute/api-keys/{id}": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "delete": {
         "tags": [
           "Compute API Keys"
@@ -1202,6 +1232,11 @@
       ]
     },
     "/compute/instances": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "get": {
         "tags": [
           "Compute Instances"
@@ -1229,6 +1264,11 @@
       ]
     },
     "/compute/instances/{id}": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "get": {
         "tags": [
           "Compute Instances"
@@ -1280,6 +1320,11 @@
       ]
     },
     "/compute/instances/{id}/password": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "post": {
         "tags": [
           "Compute Instances"
@@ -1309,6 +1354,11 @@
       ]
     },
     "/compute/instances/{id}/extend": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "post": {
         "tags": [
           "Compute Instances"
@@ -1376,6 +1426,11 @@
       ]
     },
     "/compute/instances/{id}/resize": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "post": {
         "tags": [
           "Compute Instances"
@@ -10323,6 +10378,11 @@
       }
     },
     "/pods/v1/pods/{id}/channels/telegram/connect": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "post": {
         "tags": [
           "Agent Pods API"
@@ -10427,6 +10487,11 @@
       }
     },
     "/pods/v1/pods/{id}/updates": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
       "get": {
         "tags": [
           "Agent Pods API"
