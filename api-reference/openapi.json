@@ -2992,6 +2992,565 @@
         }
       }
     },
+    "/v1/embeddings": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Create embeddings",
+        "description": "OpenAI-compatible embeddings with input-only billing. Existing text models accept a string or string array. `embeddinggemma-2` also accepts ordered text, image, audio, and video content parts and returns one normalized vector per top-level item. Omitted EG2 `input_type` defaults to `query`; `unspecified` explicitly opts out. Legacy omission retains each model's existing behavior. The model is default off and is callable only when it appears in `GET /v1/models?type=embedding`. Authenticate with an `X-API-Key` carrying `grid:write` (prepaid credits), or omit it and retry the `402` challenge with `X-Payment`. EG2 input and results are persisted only as sealed envelopes. Terminal input becomes purge-eligible after 30 minutes and results after one hour; the hourly purge makes practical upper bounds about 90 minutes and two hours. Plaintext node error text is never persisted.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute/Grid API key with `grid:write` scope. Requests debit prepaid credits. Omit to use the x402 challenge."
+          },
+          {
+            "name": "X-Payment",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "x402 payment payload. Send after receiving the endpoint's `402` challenge."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "model",
+                  "input"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "example": "embeddinggemma-2"
+                  },
+                  "input": {
+                    "description": "A single text string; 1-2048 strings for legacy text models; or 1-16 ordered string/structured items for EmbeddingGemma 2. Each item produces one vector at the matching response index.",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 2048,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "description": "Legacy text-only batch."
+                      },
+                      {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 16,
+                        "items": {
+                          "oneOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "content"
+                              ],
+                              "properties": {
+                                "content": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 16,
+                                  "description": "Ordered content parts. Up to eight images, one audio part, and one video part per item.",
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "title": "Text part",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "type",
+                                          "text"
+                                        ],
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [
+                                              "text"
+                                            ]
+                                          },
+                                          "text": {
+                                            "type": "string",
+                                            "minLength": 1
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "title": "Image part",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "type",
+                                          "media"
+                                        ],
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [
+                                              "image"
+                                            ]
+                                          },
+                                          "media": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                              "encoding",
+                                              "mime_type",
+                                              "data",
+                                              "sha256"
+                                            ],
+                                            "properties": {
+                                              "encoding": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "base64"
+                                                ]
+                                              },
+                                              "mime_type": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "image/jpeg",
+                                                  "image/png",
+                                                  "image/webp"
+                                                ]
+                                              },
+                                              "data": {
+                                                "type": "string",
+                                                "description": "Canonical base64 for at most 8 MiB decoded bytes."
+                                              },
+                                              "sha256": {
+                                                "type": "string",
+                                                "pattern": "^[a-f0-9]{64}$",
+                                                "description": "SHA-256 of the decoded bytes, lowercase hexadecimal."
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "title": "Audio part",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "type",
+                                          "media",
+                                          "duration_seconds"
+                                        ],
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [
+                                              "audio"
+                                            ]
+                                          },
+                                          "duration_seconds": {
+                                            "type": "number",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 30,
+                                            "description": "Declared duration. The runtime verifies the decoded duration."
+                                          },
+                                          "media": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                              "encoding",
+                                              "mime_type",
+                                              "data",
+                                              "sha256"
+                                            ],
+                                            "properties": {
+                                              "encoding": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "base64"
+                                                ]
+                                              },
+                                              "mime_type": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "audio/wav",
+                                                  "audio/flac",
+                                                  "audio/mpeg"
+                                                ]
+                                              },
+                                              "data": {
+                                                "type": "string",
+                                                "description": "Canonical base64 for at most 8 MiB decoded bytes."
+                                              },
+                                              "sha256": {
+                                                "type": "string",
+                                                "pattern": "^[a-f0-9]{64}$"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "title": "Video part",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "type",
+                                          "media",
+                                          "duration_seconds"
+                                        ],
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [
+                                              "video"
+                                            ]
+                                          },
+                                          "duration_seconds": {
+                                            "type": "number",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 32,
+                                            "description": "Declared duration. Video is sampled at up to 1 fps and 32 frames."
+                                          },
+                                          "media": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                              "encoding",
+                                              "mime_type",
+                                              "data",
+                                              "sha256"
+                                            ],
+                                            "properties": {
+                                              "encoding": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "base64"
+                                                ]
+                                              },
+                                              "mime_type": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "video/mp4"
+                                                ]
+                                              },
+                                              "data": {
+                                                "type": "string",
+                                                "description": "Canonical base64 for at most 16 MiB decoded bytes."
+                                              },
+                                              "sha256": {
+                                                "type": "string",
+                                                "pattern": "^[a-f0-9]{64}$"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "dimensions": {
+                    "description": "Optional model-specific output dimension. Omit for the model's native dimension. Unsupported model/dimension pairs return 400.",
+                    "anyOf": [
+                      {
+                        "title": "EmbeddingGemma 2",
+                        "type": "integer",
+                        "enum": [768, 512, 256, 128]
+                      },
+                      {
+                        "title": "Nomic Embed Text v1.5",
+                        "type": "integer",
+                        "enum": [768, 512, 256, 128, 64]
+                      },
+                      {
+                        "title": "Mixedbread Embed Large v1",
+                        "type": "integer",
+                        "enum": [1024, 512, 256]
+                      },
+                      {
+                        "title": "Fixed-size text models",
+                        "type": "integer",
+                        "enum": [384, 768, 1024],
+                        "description": "The selected fixed-size model accepts only its own native value."
+                      }
+                    ]
+                  },
+                  "input_type": {
+                    "description": "Optional model-specific retrieval behavior. This schema intentionally has no global default.",
+                    "anyOf": [
+                      {
+                        "title": "Legacy text embedding models",
+                        "type": "string",
+                        "enum": ["query", "document"],
+                        "description": "Omission retains the legacy model/runtime behavior."
+                      },
+                      {
+                        "title": "EmbeddingGemma 2",
+                        "type": "string",
+                        "enum": ["query", "document", "unspecified"],
+                        "description": "Omission is sealed as query. Use unspecified only to opt out of query/document prefixing."
+                      }
+                    ]
+                  },
+                  "encoding_format": {
+                    "type": "string",
+                    "enum": [
+                      "float"
+                    ],
+                    "default": "float"
+                  },
+                  "tier": {
+                    "type": "string",
+                    "enum": [
+                      "standard",
+                      "confidential"
+                    ]
+                  },
+                  "use_credits": {
+                    "type": "boolean",
+                    "description": "Use an authenticated wallet session's credits when no API key is supplied."
+                  },
+                  "user": {
+                    "type": "string",
+                    "description": "Optional OpenAI-compatible caller identifier."
+                  }
+                }
+              },
+              "examples": {
+                "text": {
+                  "summary": "Text batch",
+                  "value": {
+                    "model": "embeddinggemma-2",
+                    "input": [
+                      "search query",
+                      "document text"
+                    ],
+                    "dimensions": 256,
+                    "input_type": "query"
+                  }
+                },
+                "mixed": {
+                  "summary": "Ordered text and image",
+                  "value": {
+                    "model": "embeddinggemma-2",
+                    "input": [
+                      {
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Product photo"
+                          },
+                          {
+                            "type": "image",
+                            "media": {
+                              "encoding": "base64",
+                              "mime_type": "image/png",
+                              "data": "iVBORw0KGgo...",
+                              "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "dimensions": 256,
+                    "input_type": "document"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "One finite, unit-normalized float vector per input item, ordered by index.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "model",
+                    "usage"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "list"
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "object",
+                          "index",
+                          "embedding"
+                        ],
+                        "properties": {
+                          "object": {
+                            "type": "string",
+                            "enum": [
+                              "embedding"
+                            ]
+                          },
+                          "index": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "embedding": {
+                            "type": "array",
+                            "items": {
+                              "type": "number",
+                              "format": "float"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "usage": {
+                      "type": "object",
+                      "required": [
+                        "prompt_tokens",
+                        "total_tokens",
+                        "cost_usd"
+                      ],
+                      "properties": {
+                        "prompt_tokens": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "total_tokens": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "description": "Equal to prompt_tokens. Embeddings have no output tokens."
+                        },
+                        "cost_usd": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "breakdown": {
+                          "type": "object",
+                          "description": "Present for EmbeddingGemma 2.",
+                          "required": [
+                            "text",
+                            "image",
+                            "audio",
+                            "video"
+                          ],
+                          "properties": {
+                            "text": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "image": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "audio": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "video": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "processor_revision": {
+                      "type": "string",
+                      "description": "Present for EmbeddingGemma 2."
+                    },
+                    "embedding_protocol": {
+                      "type": "string",
+                      "enum": [
+                        "embedding-multimodal-v1"
+                      ]
+                    },
+                    "billing_pending": {
+                      "type": "boolean",
+                      "description": "Present and true only when x402 capture succeeded but durable accounting finalization is still recovering. Do not resubmit the paid request."
+                    },
+                    "job_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Present with billing_pending so accounting recovery is correlated idempotently."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request_error`; stable EG2 codes are `embedding_input_invalid` and `embedding_context_overflow`. These input failures are not charged and do not trigger paid failover."
+          },
+          "401": {
+            "description": "`invalid_api_key` or `invalid_session`."
+          },
+          "402": {
+            "description": "`payment_required`, `insufficient_credits`, `pod_cap_reached`, or `payment_error`."
+          },
+          "403": {
+            "description": "`insufficient_scope`: the API key lacks `grid:write`."
+          },
+          "404": {
+            "description": "`model_not_found` for an unknown model id. When the entire embeddings route is disabled, the route returns plain `Not found`."
+          },
+          "413": {
+            "description": "Encoded JSON body exceeds 24 MiB."
+          },
+          "500": {
+            "description": "`server_error`: dispatch or billing infrastructure failed. Inspect the response message before retrying."
+          },
+          "502": {
+            "description": "`inference_error`: unreadable, invalid, or failed node output. Invalid vectors are never returned or billed."
+          },
+          "503": {
+            "description": "`model_not_available` when the release/capability boundary is unavailable; `node_not_available` when a claimed node loses negotiated confidential transport; or `server_error` when the payment service is not configured."
+          },
+          "504": {
+            "description": "`timeout`: inference timed out and was not charged."
+          }
+        }
+      }
+    },
     "/v1/systemone": {
       "servers": [
         {

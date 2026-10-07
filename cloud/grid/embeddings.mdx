@@ -1,141 +1,290 @@
 ---
-title: Embeddings
-description: Turn text into vectors on SGL Grid — OpenAI-compatible /v1/embeddings for semantic search, RAG, clustering and recommendations.
+title: Multimodal embeddings
+description: Create normalized text, image, audio, video, and mixed embeddings with the OpenAI-compatible SGL Grid endpoint.
 ---
 
-SGL Grid serves **embedding models** alongside chat, reasoning and coding models. An
-embedding turns a piece of text into a fixed-length vector of floats you can store in a
-vector database and compare with cosine similarity — the backbone of **semantic search**
-and **retrieval-augmented generation (RAG)**.
+SGL Grid exposes embeddings at **`POST /v1/embeddings`**. Existing text models accept
+OpenAI-compatible string and string-array input. **EmbeddingGemma 2** adds ordered text,
+image, audio, video, and mixed items while preserving the same response shape.
 
-Embeddings are a distinct modality from chat: they use the OpenAI-compatible
-**`/v1/embeddings`** endpoint (not `/v1/chat/completions`), return a vector rather than
-text, and are billed on **input tokens only** (there is no generation).
+<Warning>
+  **Release candidate:** EmbeddingGemma 2 has passed real Apple Silicon runtime tests, but
+  production discovery and traffic remain default off until the release migration, packaged
+  desktop lifecycle, and live billing/failover canaries pass. Do not assume it is available
+  unless `GET /v1/models?type=embedding` returns `embeddinggemma-2`.
+</Warning>
+
+## Grid and Local modes
+
+| Mode | Use it for | Where data is processed | How to start |
+| --- | --- | --- | --- |
+| **Grid** | Applications, agents, shared availability, credits or x402 billing | On a capability-qualified node. EmbeddingGemma 2 input is sealed to that node before dispatch. | Call `https://grid.x402compute.cc/v1/embeddings`. |
+| **Local** | Private desktop indexing and experiments on a supported Mac | On your computer through the Singularity Node app loopback runtime. | In the app, choose **Local → Embeddings → EmbeddingGemma 2**, add ordered parts, then select **Generate embedding**. |
+
+The Local candidate requires Apple Silicon and macOS 15 or later. During the release-candidate
+period it is visible only in builds made with `VITE_EMBEDDINGGEMMA2_ENABLED=true`, and its native
+runtime also requires `SGL_EMBEDDINGGEMMA2_ENABLED=true`. These developer flags do not enable
+production Grid traffic.
 
 ## Endpoint
 
-```
+```http
 POST https://grid.x402compute.cc/v1/embeddings
 ```
 
-Request body (OpenAI-compatible):
+Use a Compute/Grid API key with `grid:write` scope for prepaid credits:
+
+```bash
+curl https://grid.x402compute.cc/v1/embeddings \
+  -H "X-API-Key: $SGL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "embeddinggemma-2",
+    "input": ["The Grid creates normalized vectors."],
+    "input_type": "document",
+    "dimensions": 256
+  }'
+```
+
+Without an API key, the first request returns `402 Payment Required`. Read `accepts[]`, create
+the x402 payment, and retry with `X-Payment`. The server verifies payment before inference and
+settles only after it validates the returned vectors and usage.
+
+## Request fields
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `model` | string | An embedding model id (see the catalog below). |
-| `input` | string \| string[] | One string, or an array to embed a batch in one call. |
-| `dimensions` | number | *Optional.* Truncate a Matryoshka model to fewer dims (e.g. nomic `768→256`). |
-| `input_type` | `"query"` \| `"document"` | *Optional.* Asymmetric-retrieval hint for models that support it. |
-| `tier` | `"standard"` \| `"confidential"` | *Optional.* Route to any node, or attested nodes only. |
+| `model` | string | Use `embeddinggemma-2` for multimodal input. |
+| `input` | string, string[], or multimodal item[] | One output vector is returned for each top-level item, in the same order. |
+| `dimensions` | `768`, `512`, `256`, or `128` | Optional for EmbeddingGemma 2. Default: `768`. The truncated vector is normalized again in FP32. |
+| `input_type` | `query`, `document`, or `unspecified` | Optional. Omitted EmbeddingGemma 2 input defaults to `query`. Use `unspecified` only to opt out of a retrieval prefix. |
+| `encoding_format` | `float` | Optional. Base64-packed vectors are not supported. |
+| `tier` | `standard` or `confidential` | Optional Grid routing tier. The candidate catalog classifies EmbeddingGemma 2 as Standard; its payload transport is still sealed end to end. |
 
-The response matches OpenAI's shape:
+Legacy string and string-array input remains valid:
+
+```json
+{
+  "model": "embeddinggemma-2",
+  "input": ["first item", "second item"],
+  "input_type": "query",
+  "dimensions": 768
+}
+```
+
+For multimodal input, every top-level item has an ordered `content` array:
+
+```json
+{
+  "model": "embeddinggemma-2",
+  "input_type": "document",
+  "dimensions": 256,
+  "input": [
+    {
+      "content": [
+        { "type": "text", "text": "A product demo with narration" },
+        {
+          "type": "image",
+          "media": {
+            "encoding": "base64",
+            "mime_type": "image/png",
+            "data": "iVBORw0KGgo...",
+            "sha256": "<64 lowercase hex characters>"
+          }
+        },
+        {
+          "type": "audio",
+          "duration_seconds": 4.2,
+          "media": {
+            "encoding": "base64",
+            "mime_type": "audio/mpeg",
+            "data": "SUQzBAAAAA...",
+            "sha256": "<64 lowercase hex characters>"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+The server does not fetch media URLs. Hash the decoded file bytes, then send those same bytes as
+canonical base64. `duration_seconds` is required for audio and video; the runtime verifies the
+decoded duration and rejects an understated declaration.
+
+Omitting `input_type` is exactly equivalent to `"input_type":"query"` for EmbeddingGemma 2.
+The Grid seals that explicit value with the ordered input, so admission, quoting, and runtime
+prefixing agree. `unspecified` is an explicit opt-out and is never the default.
+
+```python
+import base64
+import hashlib
+import os
+import requests
+
+def media(path: str, mime_type: str) -> dict:
+    raw = open(path, "rb").read()
+    return {
+        "encoding": "base64",
+        "mime_type": mime_type,
+        "data": base64.b64encode(raw).decode("ascii"),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+    }
+
+body = {
+    "model": "embeddinggemma-2",
+    "dimensions": 256,
+    "input_type": "document",
+    "input": [{"content": [
+        {"type": "text", "text": "Launch demo"},
+        {"type": "image", "media": media("frame.png", "image/png")},
+        {"type": "audio", "duration_seconds": 4.2,
+         "media": media("narration.mp3", "audio/mpeg")},
+    ]}],
+}
+
+r = requests.post(
+    "https://grid.x402compute.cc/v1/embeddings",
+    headers={"X-API-Key": os.environ["SGL_API_KEY"]},
+    json=body,
+    timeout=130,
+)
+r.raise_for_status()
+print(len(r.json()["data"][0]["embedding"]))  # 256
+```
+
+## Limits
+
+| Limit | Value |
+| --- | ---: |
+| Encoded JSON body | 24 MiB |
+| Top-level items | 1-16 |
+| Ordered content parts per item | 1-16 |
+| Images per item | 8 |
+| Image types | JPEG, PNG, WebP |
+| Image bytes | 8 MiB per image and 8 MiB total image bytes per item |
+| Image pixels | 16 megapixels per image |
+| Audio | One per item; WAV, FLAC, or MP3; 8 MiB; 30 seconds |
+| Video | One per item; MP4; 16 MiB; 32 seconds; sampled at up to 1 fps and 32 frames |
+| Decoded media per request | 20 MiB |
+| Aggregate UTF-8 text | 10 MiB |
+| Processed context | 8,192 tokens per item, including prefixes, template tokens, and media expansion |
+
+Preflight uses conservative bounds before any claim or payment. The runtime then verifies media
+magic, dimensions or duration, decoded work, actual processor usage, output dimensions, finite
+values, ordering, and unit normalization.
+
+## Response
 
 ```json
 {
   "object": "list",
-  "data": [{ "object": "embedding", "index": 0, "embedding": [0.01, -0.03, ...] }],
-  "model": "nomic-embed-text-v1.5",
-  "usage": { "prompt_tokens": 6, "total_tokens": 6 }
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.014, -0.031, 0.008]
+    }
+  ],
+  "model": "embeddinggemma-2",
+  "usage": {
+    "prompt_tokens": 313,
+    "total_tokens": 313,
+    "cost_usd": 0.000001,
+    "breakdown": { "text": 32, "image": 256, "audio": 25, "video": 0 }
+  },
+  "processor_revision": "30f177f03cbcb42bc2f65496458de79f51b80c28",
+  "embedding_protocol": "embedding-multimodal-v1"
 }
 ```
 
-Vectors are returned in the same order as `input` and are **L2-normalized**, so a plain
-dot product equals cosine similarity.
+`data` is sorted by `index` and contains one vector per top-level input item. Embeddings are
+L2-normalized, so dot product is equivalent to cosine similarity. Usage is input only; there are
+no output tokens. The example shortens the `embedding` array for display; the real array contains
+exactly the requested number of floats.
 
-## Model catalog
+When x402 capture succeeds but its durable accounting finalizer still needs recovery, a successful
+response also contains `"billing_pending":true` and a `job_id`. Do not resubmit that paid
+request. The idempotent billing outbox completes accounting by job id.
 
-All models are tiny, CPU-friendly BERT encoders — great even on modest hardware.
+## Privacy and retention
 
-| Model id | Dimensions | Notes |
-| --- | --- | --- |
-| `nomic-embed-text-v1.5` | 768 (Matryoshka → 512/256/128/64) | Recommended. 8K input, strong general retrieval. |
-| `bge-small-en-v1.5` | 384 | Smallest/fastest English retriever. |
-| `bge-base-en-v1.5` | 768 | Balanced quality/size. |
-| `bge-large-en-v1.5` | 1024 | Highest-quality BGE English. |
-| `mxbai-embed-large-v1` | 1024 (→ 512/256) | Top MTEB retrieval. |
-| `all-minilm-l6-v2` | 384 | Classic lightweight sentence encoder. |
+The Grid seals the full ordered input and effective `input_type` to the selected node with
+negotiated v2/base64 X25519 transport. There is no plaintext media fallback. The job row
+temporarily persists that **encrypted input envelope**, and the node result is also stored as an
+encrypted envelope.
 
-List what's live right now (embeddings appear once at least one node serves them):
+After a job becomes terminal, `input_payload` becomes eligible for deletion at **30 minutes**
+and `encrypted_result` at **one hour**. The purge runs hourly, so the practical upper bounds are
+about **90 minutes** for input and **two hours** for results.
+
+Plaintext node errors can contain prompts, media, paths, and tracebacks. Node-supplied failure text
+is therefore classified transiently and persisted only as `embedding_input_invalid`,
+`embedding_context_overflow`, or `embedding_runtime_failed`. Orchestrator-owned validation
+paths can store bounded service reasons, but `GET /v1/jobs/{id}` normalizes every EG2 runtime
+failure to the same stable public codes.
+
+## Errors
+
+Errors use `{"error":{"message":"...","type":"...","code":"..."}}`. The `code` field is
+present only where shown.
+
+| HTTP | `type` | `code` | Meaning and retry behavior |
+| ---: | --- | --- | --- |
+| `400` | `invalid_request_error` | — | Invalid JSON, unsupported fields/MIME/base64, SHA shape, duration, batch, body contract, encoding, or dimensions. Correct the request. |
+| `400` | `invalid_request_error` | `embedding_input_invalid` | Runtime decoding rejected the media or supported input shape. Not charged and no paid failover. |
+| `400` | `invalid_request_error` | `embedding_context_overflow` | Actual processed input exceeded context. Not charged and no paid failover. |
+| `401` | `invalid_api_key` | — | API key is invalid or revoked. |
+| `401` | `invalid_session` | — | Reconnect the wallet session used with `use_credits:true`. |
+| `403` | `insufficient_scope` | — | API key lacks `grid:write`. |
+| `402` | `payment_required` | — | Retry with `X-Payment`, or use an API key backed by credits. |
+| `402` | `insufficient_credits` | — | Add credits or reduce the request. |
+| `402` | `pod_cap_reached` | — | Raise the pod's daily compute cap or wait for reset. |
+| `402` | `payment_error` | — | Payment verification or a definitively rejected settlement failed. Follow the response message. |
+| `404` | `model_not_found` | — | The model id is unknown. If the entire embeddings route is disabled, the endpoint returns a plain `Not found` response instead. |
+| `413` | `invalid_request_error` | — | Encoded request exceeds 24 MiB. |
+| `500` | `server_error` | — | Dispatch or billing infrastructure failed. Read the charge/retry statement in the message. |
+| `502` | `inference_error` | — | A node returned an unreadable or invalid result. The server may fail over; no invalid vector is billed or returned. |
+| `503` | `model_not_available` | — | Feature is disabled, confidential transport is unavailable, or no ready capability-qualified node can serve every requested modality and dimension. |
+| `503` | `node_not_available` | — | A claimed node lost negotiated confidential transport. Not charged; the Grid may fail over. |
+| `503` | `server_error` | — | The payment service is not configured in this environment. Do not retry until configuration is restored. |
+| `504` | `timeout` | — | Inference timed out and was not charged. Credit requests may fail over once. |
+
+The request endpoint returns client-safe messages. `GET /v1/jobs/{id}` can expose only the
+stable stored failure reason: `embedding_input_invalid`, `embedding_context_overflow`, or
+`embedding_runtime_failed`. Plaintext node reason text is never persisted.
+
+## Discover availability
 
 ```bash
 curl "https://grid.x402compute.cc/v1/models?type=embedding"
+curl "https://grid.x402compute.cc/v1/providers?model=embeddinggemma-2"
 ```
 
-## Quickstart
+The model appears only when release flags are on and at least one active node reports the exact
+ready protocol, runtime, processor revision, requested dimensions and modalities, sealed-input
+encoding, and model id. A remote catalog row alone cannot make it discoverable.
 
-<CodeGroup>
+## Existing text models
 
-```bash cURL
-curl https://grid.x402compute.cc/v1/embeddings \
-  -H "Authorization: Bearer x402c_your_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nomic-embed-text-v1.5",
-    "input": ["The Singularity grid serves confidential embeddings.", "Hello world"]
-  }'
-```
+The original text-only catalog remains available through the same endpoint:
 
-```python OpenAI SDK
-from openai import OpenAI
+| Model id | Dimensions | Notes |
+| --- | --- | --- |
+| `nomic-embed-text-v1.5` | 768; Matryoshka 512/256/128/64 | 8K general retrieval. |
+| `bge-small-en-v1.5` | 384 | Lightweight English retrieval. |
+| `bge-base-en-v1.5` | 768 | Balanced quality and size. |
+| `bge-large-en-v1.5` | 1024 | Larger BGE English model. |
+| `mxbai-embed-large-v1` | 1024; Matryoshka 512/256 | High-quality text retrieval. |
+| `all-minilm-l6-v2` | 384 | Compact sentence encoder. |
+| `e5-small-v2` | 384 | Compact E5 query/document retrieval. |
+| `e5-base-v2` | 768 | Mid-size E5 query/document retrieval. |
+| `e5-large-v2` | 1024 | Larger E5 query/document retrieval. |
+| `multilingual-e5-large` | 1024 | Multilingual query/document retrieval. |
+| `bge-m3` | 1024 | Multilingual 8K BGE retrieval. |
 
-client = OpenAI(base_url="https://grid.x402compute.cc/v1", api_key="x402c_your_api_key")
-r = client.embeddings.create(model="nomic-embed-text-v1.5", input=["hello world"])
-print(len(r.data[0].embedding))   # 768
-```
+These models accept string/string-array input only. Structured content is rejected instead of
+being flattened or routed through chat.
 
-```python Singularity SDK
-from singularity_grid import GridClient
-
-grid = GridClient(api_key="scg_your_api_key")
-vecs = grid.embed("nomic-embed-text-v1.5", ["hello world", "bonjour"])
-print(len(vecs), len(vecs[0]))     # 2 768
-```
-
-```ts Node SDK
-import { GridClient } from "@singularity-layer/grid";
-
-const grid = new GridClient({ apiKey: "scg_your_api_key" });
-const res = await grid.embed({ model: "nomic-embed-text-v1.5", input: ["hello world"] });
-console.log(res.data[0].embedding.length); // 768
-```
-
-</CodeGroup>
-
-## Matryoshka dimensions
-
-`nomic-embed-text-v1.5` and `mxbai-embed-large-v1` are **Matryoshka** models — you can ask
-for a shorter vector to save storage and speed up search, at a small recall cost. The
-server truncates and re-normalizes:
-
-```python
-r = client.embeddings.create(model="nomic-embed-text-v1.5", input="cat", dimensions=256)
-len(r.data[0].embedding)  # 256
-```
-
-## Query vs document
-
-Some models score asymmetric retrieval better when you tell them whether a text is a
-search **query** or a stored **document**. Pass `input_type` (Singularity SDK / raw API):
-
-```python
-grid.embed("nomic-embed-text-v1.5", "a king rules a kingdom", input_type="query")
-grid.embed("nomic-embed-text-v1.5", "a queen rules a kingdom", input_type="document")
-```
-
-## Billing
-
-Embeddings are billed on **input tokens only** at the model's per-token rate — there is no
-output/generation cost. Pay with [credits](/cloud/concepts/billing) (API key) or per-call
-with an x402 wallet, exactly like chat. A timed-out or failed request is never charged.
-
-## A minimal RAG loop
-
-1. **Index**: embed your documents and store `(id, vector, text)` in a vector DB
-   (pgvector, Pinecone, …).
-2. **Retrieve**: embed the user's question, find the nearest vectors (cosine).
-3. **Generate**: pass the top matches as context to a chat model on the grid.
-
-The embedding model is the *search index* step — not the conversation. See the
-[API guide](/cloud/grid/api) for the chat call.
-
-<Note>Run an embedding model yourself and earn from other people's search/RAG apps — see [Provide Compute](/cloud/provide/overview).</Note>
+See the complete [Embeddings API reference](/api-reference/grid-embeddings) and
+[Provide Compute](/cloud/provide/overview) to run a node.

@@ -22,7 +22,10 @@ The grid serves several kinds of model, shown as coloured categories in the dash
 - **Language** — general chat / instruct models (Llama, Qwen, Gemma, Mistral, Phi …).
 - **Code** — programming-tuned models (Qwen Coder) with OpenAI tool-calling.
 - **Reasoning** — chain-of-thought models (DeepSeek R1) that "think" before answering; their reasoning shows in a collapsible box in chat.
-- **Embeddings** — text-to-vector models for search and RAG. These use a separate endpoint and are **not** for chat — see the [Embeddings guide](/cloud/grid/embeddings).
+- **Embeddings** — text-to-vector models for search and RAG, plus release-gated
+  EmbeddingGemma 2 vectors for ordered text, image, audio, video, and mixed inputs.
+  These use `POST /v1/embeddings` and are **not** chat models — see
+  [Multimodal embeddings](/cloud/grid/embeddings).
 - **System One** — typed decision models such as Laya (`convaiinnovations/laya`). These use `POST /v1/systemone`, not chat completions — see [Laya / System One](/cloud/grid/systemone).
 
 Language, code and reasoning models are called through the same [chat completions](/cloud/grid/api)
