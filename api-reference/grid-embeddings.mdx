@@ -1,0 +1,11 @@
+---
+title: Create embeddings
+openapi: 'POST /v1/embeddings'
+---
+
+Create normalized vectors from text or an ordered batch of text, image, audio, and video parts.
+EmbeddingGemma 2 is release-gated and appears in `GET /v1/models?type=embedding` only when the
+production flag and a capability-qualified node are ready.
+
+For payload construction, limits, Local mode, and error handling, see
+[Multimodal embeddings](/cloud/grid/embeddings).
