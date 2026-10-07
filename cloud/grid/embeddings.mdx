@@ -214,11 +214,15 @@ negotiated v2/base64 X25519 transport. There is no plaintext media fallback. The
 temporarily persists that **encrypted input envelope**, and the node result is also stored as an
 encrypted envelope.
 
-After a job becomes terminal, the existing retention migration purges `input_payload` after
-**30 minutes** and `encrypted_result` after **one hour**. Plaintext node errors can contain
-prompts, media, paths, and tracebacks, so they are classified transiently and never persisted.
-Stored `failure_reason` is limited to `embedding_input_invalid`,
-`embedding_context_overflow`, or `embedding_runtime_failed`.
+After a job becomes terminal, `input_payload` becomes eligible for deletion at **30 minutes**
+and `encrypted_result` at **one hour**. The purge runs hourly, so the practical upper bounds are
+about **90 minutes** for input and **two hours** for results.
+
+Plaintext node errors can contain prompts, media, paths, and tracebacks. Node-supplied failure text
+is therefore classified transiently and persisted only as `embedding_input_invalid`,
+`embedding_context_overflow`, or `embedding_runtime_failed`. Orchestrator-owned validation
+paths can store bounded service reasons, but `GET /v1/jobs/{id}` normalizes every EG2 runtime
+failure to the same stable public codes.
 
 ## Errors
 
@@ -243,6 +247,7 @@ present only where shown.
 | `502` | `inference_error` | — | A node returned an unreadable or invalid result. The server may fail over; no invalid vector is billed or returned. |
 | `503` | `model_not_available` | — | Feature is disabled, confidential transport is unavailable, or no ready capability-qualified node can serve every requested modality and dimension. |
 | `503` | `node_not_available` | — | A claimed node lost negotiated confidential transport. Not charged; the Grid may fail over. |
+| `503` | `server_error` | — | The payment service is not configured in this environment. Do not retry until configuration is restored. |
 | `504` | `timeout` | — | Inference timed out and was not charged. Credit requests may fail over once. |
 
 The request endpoint returns client-safe messages. `GET /v1/jobs/{id}` can expose only the
@@ -272,6 +277,11 @@ The original text-only catalog remains available through the same endpoint:
 | `bge-large-en-v1.5` | 1024 | Larger BGE English model. |
 | `mxbai-embed-large-v1` | 1024; Matryoshka 512/256 | High-quality text retrieval. |
 | `all-minilm-l6-v2` | 384 | Compact sentence encoder. |
+| `e5-small-v2` | 384 | Compact E5 query/document retrieval. |
+| `e5-base-v2` | 768 | Mid-size E5 query/document retrieval. |
+| `e5-large-v2` | 1024 | Larger E5 query/document retrieval. |
+| `multilingual-e5-large` | 1024 | Multilingual query/document retrieval. |
+| `bge-m3` | 1024 | Multilingual 8K BGE retrieval. |
 
 These models accept string/string-array input only. Structured content is rejected instead of
 being flattened or routed through chat.

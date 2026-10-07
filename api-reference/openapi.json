@@ -3003,7 +3003,7 @@
           "SGL Grid"
         ],
         "summary": "Create embeddings",
-        "description": "OpenAI-compatible embeddings with input-only billing. Existing text models accept a string or string array. `embeddinggemma-2` also accepts ordered text, image, audio, and video content parts and returns one normalized vector per top-level item. Omitted EG2 `input_type` defaults to `query`; `unspecified` explicitly opts out. The model is default off and is callable only when it appears in `GET /v1/models?type=embedding`. Authenticate with an `X-API-Key` carrying `grid:write` (prepaid credits), or omit it and retry the `402` challenge with `X-Payment`. EG2 input and results are persisted only as sealed envelopes; terminal input is purged after 30 minutes and encrypted results after one hour. Plaintext node error text is never persisted.",
+        "description": "OpenAI-compatible embeddings with input-only billing. Existing text models accept a string or string array. `embeddinggemma-2` also accepts ordered text, image, audio, and video content parts and returns one normalized vector per top-level item. Omitted EG2 `input_type` defaults to `query`; `unspecified` explicitly opts out. Legacy omission retains each model's existing behavior. The model is default off and is callable only when it appears in `GET /v1/models?type=embedding`. Authenticate with an `X-API-Key` carrying `grid:write` (prepaid credits), or omit it and retry the `402` challenge with `X-Payment`. EG2 input and results are persisted only as sealed envelopes. Terminal input becomes purge-eligible after 30 minutes and results after one hour; the hourly purge makes practical upper bounds about 90 minutes and two hours. Plaintext node error text is never persisted.",
         "parameters": [
           {
             "name": "X-API-Key",
@@ -3280,27 +3280,47 @@
                     ]
                   },
                   "dimensions": {
-                    "type": "integer",
-                    "enum": [
-                      64,
-                      128,
-                      256,
-                      384,
-                      512,
-                      768,
-                      1024
-                    ],
-                    "description": "Optional model-specific output dimension. Omit for the model's native dimension. `embeddinggemma-2`: 768/512/256/128; `nomic-embed-text-v1.5`: 768/512/256/128/64; `mxbai-embed-large-v1`: 1024/512/256; fixed-size models accept only their native 384, 768, or 1024. Unsupported model/dimension pairs return 400."
+                    "description": "Optional model-specific output dimension. Omit for the model's native dimension. Unsupported model/dimension pairs return 400.",
+                    "anyOf": [
+                      {
+                        "title": "EmbeddingGemma 2",
+                        "type": "integer",
+                        "enum": [768, 512, 256, 128]
+                      },
+                      {
+                        "title": "Nomic Embed Text v1.5",
+                        "type": "integer",
+                        "enum": [768, 512, 256, 128, 64]
+                      },
+                      {
+                        "title": "Mixedbread Embed Large v1",
+                        "type": "integer",
+                        "enum": [1024, 512, 256]
+                      },
+                      {
+                        "title": "Fixed-size text models",
+                        "type": "integer",
+                        "enum": [384, 768, 1024],
+                        "description": "The selected fixed-size model accepts only its own native value."
+                      }
+                    ]
                   },
                   "input_type": {
-                    "type": "string",
-                    "enum": [
-                      "query",
-                      "document",
-                      "unspecified"
-                    ],
-                    "default": "query",
-                    "description": "Retrieval prefix. Omitted EmbeddingGemma 2 input is sealed as `query`. `unspecified` is an explicit EmbeddingGemma 2 opt-out from query/document prefixing."
+                    "description": "Optional model-specific retrieval behavior. This schema intentionally has no global default.",
+                    "anyOf": [
+                      {
+                        "title": "Legacy text embedding models",
+                        "type": "string",
+                        "enum": ["query", "document"],
+                        "description": "Omission retains the legacy model/runtime behavior."
+                      },
+                      {
+                        "title": "EmbeddingGemma 2",
+                        "type": "string",
+                        "enum": ["query", "document", "unspecified"],
+                        "description": "Omission is sealed as query. Use unspecified only to opt out of query/document prefixing."
+                      }
+                    ]
                   },
                   "encoding_format": {
                     "type": "string",
@@ -3523,7 +3543,7 @@
             "description": "`inference_error`: unreadable, invalid, or failed node output. Invalid vectors are never returned or billed."
           },
           "503": {
-            "description": "`model_not_available` when the release/capability boundary is unavailable, or `node_not_available` when a claimed node loses negotiated confidential transport."
+            "description": "`model_not_available` when the release/capability boundary is unavailable; `node_not_available` when a claimed node loses negotiated confidential transport; or `server_error` when the payment service is not configured."
           },
           "504": {
             "description": "`timeout`: inference timed out and was not charged."
