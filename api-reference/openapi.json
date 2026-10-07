@@ -3042,11 +3042,21 @@
                     "example": "embeddinggemma-2"
                   },
                   "input": {
-                    "description": "A single text string, or 1-16 ordered input items. Each item produces one vector at the matching response index.",
-                    "oneOf": [
+                    "description": "A single text string; 1-2048 strings for legacy text models; or 1-16 ordered string/structured items for EmbeddingGemma 2. Each item produces one vector at the matching response index.",
+                    "anyOf": [
                       {
                         "type": "string",
                         "minLength": 1
+                      },
+                      {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 2048,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "description": "Legacy text-only batch."
                       },
                       {
                         "type": "array",
