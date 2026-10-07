@@ -57,7 +57,7 @@ settles only after it validates the returned vectors and usage.
 | `model` | string | Use `embeddinggemma-2` for multimodal input. |
 | `input` | string, string[], or multimodal item[] | One output vector is returned for each top-level item, in the same order. |
 | `dimensions` | `768`, `512`, `256`, or `128` | Optional for EmbeddingGemma 2. Default: `768`. The truncated vector is normalized again in FP32. |
-| `input_type` | `query`, `document`, or `unspecified` | Optional retrieval prefix. `unspecified` applies no query/document prefix. |
+| `input_type` | `query`, `document`, or `unspecified` | Optional. Omitted EmbeddingGemma 2 input defaults to `query`. Use `unspecified` only to opt out of a retrieval prefix. |
 | `encoding_format` | `float` | Optional. Base64-packed vectors are not supported. |
 | `tier` | `standard` or `confidential` | Optional Grid routing tier. The candidate catalog classifies EmbeddingGemma 2 as Standard; its payload transport is still sealed end to end. |
 
@@ -111,6 +111,10 @@ For multimodal input, every top-level item has an ordered `content` array:
 The server does not fetch media URLs. Hash the decoded file bytes, then send those same bytes as
 canonical base64. `duration_seconds` is required for audio and video; the runtime verifies the
 decoded duration and rejects an understated declaration.
+
+Omitting `input_type` is exactly equivalent to `"input_type":"query"` for EmbeddingGemma 2.
+The Grid seals that explicit value with the ordered input, so admission, quoting, and runtime
+prefixing agree. `unspecified` is an explicit opt-out and is never the default.
 
 ```python
 import base64
@@ -199,6 +203,23 @@ L2-normalized, so dot product is equivalent to cosine similarity. Usage is input
 no output tokens. The example shortens the `embedding` array for display; the real array contains
 exactly the requested number of floats.
 
+When x402 capture succeeds but its durable accounting finalizer still needs recovery, a successful
+response also contains `"billing_pending":true` and a `job_id`. Do not resubmit that paid
+request. The idempotent billing outbox completes accounting by job id.
+
+## Privacy and retention
+
+The Grid seals the full ordered input and effective `input_type` to the selected node with
+negotiated v2/base64 X25519 transport. There is no plaintext media fallback. The job row
+temporarily persists that **encrypted input envelope**, and the node result is also stored as an
+encrypted envelope.
+
+After a job becomes terminal, the existing retention migration purges `input_payload` after
+**30 minutes** and `encrypted_result` after **one hour**. Plaintext node errors can contain
+prompts, media, paths, and tracebacks, so they are classified transiently and never persisted.
+Stored `failure_reason` is limited to `embedding_input_invalid`,
+`embedding_context_overflow`, or `embedding_runtime_failed`.
+
 ## Errors
 
 Errors use `{"error":{"message":"...","type":"...","code":"..."}}`. The `code` field is
@@ -207,21 +228,26 @@ present only where shown.
 | HTTP | `type` | `code` | Meaning and retry behavior |
 | ---: | --- | --- | --- |
 | `400` | `invalid_request_error` | — | Invalid JSON, unsupported fields/MIME/base64, SHA shape, duration, batch, body contract, encoding, or dimensions. Correct the request. |
-| `400` | `invalid_request_error` | `embedding_input_invalid` | Runtime decoding rejected the media or supported input shape. The request is not charged; correct the input. |
-| `400` | `invalid_request_error` | `embedding_context_overflow` | Actual processed input exceeded the supported context. The request is not charged; reduce it. |
+| `400` | `invalid_request_error` | `embedding_input_invalid` | Runtime decoding rejected the media or supported input shape. Not charged and no paid failover. |
+| `400` | `invalid_request_error` | `embedding_context_overflow` | Actual processed input exceeded context. Not charged and no paid failover. |
 | `401` | `invalid_api_key` | — | API key is invalid or revoked. |
+| `401` | `invalid_session` | — | Reconnect the wallet session used with `use_credits:true`. |
 | `403` | `insufficient_scope` | — | API key lacks `grid:write`. |
 | `402` | `payment_required` | — | Retry with `X-Payment`, or use an API key backed by credits. |
 | `402` | `insufficient_credits` | — | Add credits or reduce the request. |
+| `402` | `pod_cap_reached` | — | Raise the pod's daily compute cap or wait for reset. |
+| `402` | `payment_error` | — | Payment verification or a definitively rejected settlement failed. Follow the response message. |
 | `404` | `model_not_found` | — | The model id is unknown. If the entire embeddings route is disabled, the endpoint returns a plain `Not found` response instead. |
 | `413` | `invalid_request_error` | — | Encoded request exceeds 24 MiB. |
+| `500` | `server_error` | — | Dispatch or billing infrastructure failed. Read the charge/retry statement in the message. |
 | `502` | `inference_error` | — | A node returned an unreadable or invalid result. The server may fail over; no invalid vector is billed or returned. |
 | `503` | `model_not_available` | — | Feature is disabled, confidential transport is unavailable, or no ready capability-qualified node can serve every requested modality and dimension. |
+| `503` | `node_not_available` | — | A claimed node lost negotiated confidential transport. Not charged; the Grid may fail over. |
 | `504` | `timeout` | — | Inference timed out and was not charged. Credit requests may fail over once. |
-| `500` | `server_error` | — | Dispatch or billing infrastructure failed. The response states whether the request was charged; retry only after checking that message. |
 
-Node tracebacks, media paths, prompts, and decoder details are never returned or persisted for
-EmbeddingGemma 2. Public failures are reduced to the bounded codes above.
+The request endpoint returns client-safe messages. `GET /v1/jobs/{id}` can expose only the
+stable stored failure reason: `embedding_input_invalid`, `embedding_context_overflow`, or
+`embedding_runtime_failed`. Plaintext node reason text is never persisted.
 
 ## Discover availability
 

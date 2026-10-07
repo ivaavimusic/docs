@@ -3003,7 +3003,7 @@
           "SGL Grid"
         ],
         "summary": "Create embeddings",
-        "description": "OpenAI-compatible embeddings with input-only billing. Existing text models accept a string or string array. `embeddinggemma-2` also accepts ordered text, image, audio, and video content parts and returns one normalized vector per top-level item. The model is default off and is callable only when it appears in `GET /v1/models?type=embedding`. Authenticate with an `X-API-Key` carrying `grid:write` (prepaid credits), or omit it and retry the `402` challenge with `X-Payment`.",
+        "description": "OpenAI-compatible embeddings with input-only billing. Existing text models accept a string or string array. `embeddinggemma-2` also accepts ordered text, image, audio, and video content parts and returns one normalized vector per top-level item. Omitted EG2 `input_type` defaults to `query`; `unspecified` explicitly opts out. The model is default off and is callable only when it appears in `GET /v1/models?type=embedding`. Authenticate with an `X-API-Key` carrying `grid:write` (prepaid credits), or omit it and retry the `402` challenge with `X-Payment`. EG2 input and results are persisted only as sealed envelopes; terminal input is purged after 30 minutes and encrypted results after one hour. Plaintext node error text is never persisted.",
         "parameters": [
           {
             "name": "X-API-Key",
@@ -3282,13 +3282,15 @@
                   "dimensions": {
                     "type": "integer",
                     "enum": [
-                      768,
-                      512,
+                      64,
+                      128,
                       256,
-                      128
+                      384,
+                      512,
+                      768,
+                      1024
                     ],
-                    "default": 768,
-                    "description": "EmbeddingGemma 2 Matryoshka output dimension."
+                    "description": "Optional model-specific output dimension. Omit for the model's native dimension. `embeddinggemma-2`: 768/512/256/128; `nomic-embed-text-v1.5`: 768/512/256/128/64; `mxbai-embed-large-v1`: 1024/512/256; fixed-size models accept only their native 384, 768, or 1024. Unsupported model/dimension pairs return 400."
                   },
                   "input_type": {
                     "type": "string",
@@ -3297,7 +3299,8 @@
                       "document",
                       "unspecified"
                     ],
-                    "description": "Retrieval prefix. `unspecified` adds no query/document prefix."
+                    "default": "query",
+                    "description": "Retrieval prefix. Omitted EmbeddingGemma 2 input is sealed as `query`. `unspecified` is an explicit EmbeddingGemma 2 opt-out from query/document prefixing."
                   },
                   "encoding_format": {
                     "type": "string",
@@ -3480,6 +3483,15 @@
                       "enum": [
                         "embedding-multimodal-v1"
                       ]
+                    },
+                    "billing_pending": {
+                      "type": "boolean",
+                      "description": "Present and true only when x402 capture succeeded but durable accounting finalization is still recovering. Do not resubmit the paid request."
+                    },
+                    "job_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Present with billing_pending so accounting recovery is correlated idempotently."
                     }
                   }
                 }
@@ -3487,13 +3499,13 @@
             }
           },
           "400": {
-            "description": "`invalid_request_error`, including optional stable codes `embedding_input_invalid` and `embedding_context_overflow`. Input failures are not charged."
+            "description": "`invalid_request_error`; stable EG2 codes are `embedding_input_invalid` and `embedding_context_overflow`. These input failures are not charged and do not trigger paid failover."
           },
           "401": {
             "description": "`invalid_api_key` or `invalid_session`."
           },
           "402": {
-            "description": "`payment_required`, `insufficient_credits`, `pod_cap_reached`, or payment settlement failure."
+            "description": "`payment_required`, `insufficient_credits`, `pod_cap_reached`, or `payment_error`."
           },
           "403": {
             "description": "`insufficient_scope`: the API key lacks `grid:write`."
@@ -3511,7 +3523,7 @@
             "description": "`inference_error`: unreadable, invalid, or failed node output. Invalid vectors are never returned or billed."
           },
           "503": {
-            "description": "`model_not_available` when the release flag, confidential transport, or an exact capability-qualified node is unavailable."
+            "description": "`model_not_available` when the release/capability boundary is unavailable, or `node_not_available` when a claimed node loses negotiated confidential transport."
           },
           "504": {
             "description": "`timeout`: inference timed out and was not charged."
