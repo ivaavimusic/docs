@@ -1,0 +1,14 @@
+---
+title: Submit a sealed transcription
+openapi: 'POST /v1/audio/transcriptions'
+---
+
+Submit a valid reservation token and the client-sealed JSON audio envelope. The endpoint rejects
+plain audio, multipart form data, paths, URLs, and legacy encryption formats.
+
+Use the TypeScript or Python SDK helper. It verifies the reserved node key binding, seals the PCM,
+checks the node signature over the encrypted result, decrypts it, and validates every result
+binding before returning the transcript.
+
+Transcription is release-gated and unavailable unless public discovery returns `whisper-1`. For
+the complete flow, see [Speech-to-text transcription](/cloud/grid/transcription).

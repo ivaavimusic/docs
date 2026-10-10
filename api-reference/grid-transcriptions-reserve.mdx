@@ -1,0 +1,11 @@
+---
+title: Reserve a transcription node
+openapi: 'POST /v1/audio/transcriptions/reserve'
+---
+
+Reserve one capability-qualified `whisper-1` node using metadata and sample count only. The audio
+must remain on the client until it validates the returned node keys and seals the PCM bytes.
+
+Transcription is release-gated and unavailable unless public discovery returns `whisper-1`. For
+the complete two-request flow, privacy boundary, pricing, and limits, see
+[Speech-to-text transcription](/cloud/grid/transcription).

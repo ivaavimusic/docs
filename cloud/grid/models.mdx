@@ -27,9 +27,13 @@ The grid serves several kinds of model, shown as coloured categories in the dash
   These use `POST /v1/embeddings` and are **not** chat models — see
   [Multimodal embeddings](/cloud/grid/embeddings).
 - **System One** — typed decision models such as Laya (`convaiinnovations/laya`). These use `POST /v1/systemone`, not chat completions — see [Laya / System One](/cloud/grid/systemone).
+- **Speech to text** — release-gated audio transcription. `whisper-1` appears only after the
+  public gates and an exact ready provider pass. It uses metadata reservation plus client-sealed
+  JSON, not Chat Completions or multipart upload — see
+  [Speech-to-text transcription](/cloud/grid/transcription).
 
 Language, code and reasoning models are called through the same [chat completions](/cloud/grid/api)
-endpoint; embeddings and System One have their own endpoints.
+endpoint; embeddings, System One, and transcription have their own endpoints.
 
 ## Choosing a model
 
@@ -41,6 +45,7 @@ endpoint; embeddings and System One have their own endpoints.
 
 ## OpenAI compatibility
 
-Model ids are passed exactly like OpenAI's `model` field. If your code already targets the OpenAI API, switching a model is just changing that string (and the base URL — see the [API guide](/cloud/grid/api)).
+Chat and embeddings use their documented OpenAI-compatible shapes. Transcription deliberately does
+not accept OpenAI multipart input; use the official SGL SDK helper. See the [API guide](/cloud/grid/api).
 
 <Note>The catalog grows as operators bring more models online. Want a model served? [Run a node](/cloud/provide/overview) and serve it, or ask the community.</Note>

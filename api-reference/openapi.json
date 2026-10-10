@@ -2992,6 +2992,542 @@
         }
       }
     },
+    "/v1/audio/transcriptions/reserve": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Reserve a transcription node",
+        "description": "Release-gated first step for `transcription-v1`. Sends bounded metadata and sample count only; audio remains on the client. A successful response returns the selected node's verified encryption/signing identity, a short-lived reservation token, and a maximum quote. The client must validate the response before sealing PCM. The route is default off and is not available until public discovery returns `whisper-1`.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Compute/Grid API key with `grid:write` scope for prepaid credits."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "model",
+                  "transcription_protocol",
+                  "request_id",
+                  "sample_rate",
+                  "channels",
+                  "bits_per_sample",
+                  "sample_count",
+                  "use_credits",
+                  "model_revision",
+                  "model_sha256"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "enum": [
+                      "whisper-1"
+                    ]
+                  },
+                  "transcription_protocol": {
+                    "type": "string",
+                    "enum": [
+                      "transcription-v1"
+                    ]
+                  },
+                  "request_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Stable canonical lowercase UUID v4 logical identity bound into reservation, sealed input, result, and billing.",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                  },
+                  "sample_rate": {
+                    "type": "integer",
+                    "enum": [
+                      16000
+                    ]
+                  },
+                  "channels": {
+                    "type": "integer",
+                    "enum": [
+                      1
+                    ]
+                  },
+                  "bits_per_sample": {
+                    "type": "integer",
+                    "enum": [
+                      16
+                    ]
+                  },
+                  "sample_count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 960000,
+                    "description": "Duration and quote authority. The submit envelope and node independently bind and verify this count."
+                  },
+                  "language": {
+                    "type": "string",
+                    "pattern": "^(auto|[a-z]{2})$",
+                    "default": "auto"
+                  },
+                  "use_credits": {
+                    "type": "boolean"
+                  },
+                  "node": {
+                    "type": "string",
+                    "description": "Optional eligible provider node id to pin.",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                  },
+                  "max_price": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Maximum accepted quote in USD."
+                  },
+                  "model_revision": {
+                    "type": "string",
+                    "enum": [
+                      "5359861c739e955e79d9a303bcbc70fb988958b1"
+                    ],
+                    "description": "Exact immutable candidate pin; mismatches are rejected before reservation."
+                  },
+                  "model_sha256": {
+                    "type": "string",
+                    "enum": [
+                      "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b"
+                    ],
+                    "description": "Exact immutable candidate pin; mismatches are rejected before reservation."
+                  }
+                }
+              },
+              "example": {
+                "model": "whisper-1",
+                "transcription_protocol": "transcription-v1",
+                "request_id": "4fc6b6d2-5d2c-4f3b-92d9-3cd1de81f883",
+                "sample_rate": 16000,
+                "channels": 1,
+                "bits_per_sample": 16,
+                "sample_count": 80000,
+                "language": "auto",
+                "use_credits": true,
+                "model_revision": "5359861c739e955e79d9a303bcbc70fb988958b1",
+                "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Short-lived reservation and maximum quote. No audio was uploaded by this step.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "reservation_token",
+                    "request_id",
+                    "model",
+                    "model_revision",
+                    "model_sha256",
+                    "transcription_protocol",
+                    "sample_count",
+                    "language",
+                    "node_id",
+                    "node_x25519_pubkey",
+                    "node_ed25519_pubkey",
+                    "node_x25519_pubkey_sig",
+                    "key_version",
+                    "expires_in_ms",
+                    "quote",
+                    "attestation_verified",
+                    "tee_type"
+                  ],
+                  "properties": {
+                    "reservation_token": {
+                      "type": "string"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "model": {
+                      "type": "string",
+                      "enum": [
+                        "whisper-1"
+                      ]
+                    },
+                    "model_revision": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{40}$",
+                      "description": "Immutable Hugging Face commit: `5359861c739e955e79d9a303bcbc70fb988958b1`."
+                    },
+                    "model_sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$",
+                      "description": "SHA-256 of the pinned model file."
+                    },
+                    "transcription_protocol": {
+                      "type": "string",
+                      "enum": [
+                        "transcription-v1"
+                      ]
+                    },
+                    "sample_count": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 960000
+                    },
+                    "language": {
+                      "type": "string",
+                      "pattern": "^(auto|[a-z]{2})$"
+                    },
+                    "node_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "node_x25519_pubkey": {
+                      "type": "string",
+                      "description": "Base58 X25519 key used by the client to seal the PCM payload."
+                    },
+                    "node_ed25519_pubkey": {
+                      "type": "string",
+                      "description": "Base58 Ed25519 identity key used to verify the sealed result signature."
+                    },
+                    "node_x25519_pubkey_sig": {
+                      "type": "string",
+                      "description": "Node identity signature binding the current versioned X25519 key."
+                    },
+                    "key_version": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "tee_type": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "attestation_verified": {
+                      "type": "boolean"
+                    },
+                    "expires_in_ms": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "quote": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "sample_count",
+                        "audio_seconds",
+                        "rate_usd_per_second",
+                        "minimum_charge_usd",
+                        "price_usd",
+                        "currency"
+                      ],
+                      "properties": {
+                        "audio_seconds": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "maximum": 60
+                        },
+                        "price_usd": {
+                          "type": "number",
+                          "minimum": 0.0001,
+                          "maximum": 0.006,
+                          "description": "Exact sample-based charge, rounded up to micro-USDC with a $0.0001 minimum: max(100, ceil(sample_count * 100 / 16000)) / 1000000. 4.2 seconds costs $0.000420."
+                        },
+                        "currency": {
+                          "type": "string",
+                          "enum": [
+                            "USDC"
+                          ]
+                        },
+                        "sample_count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 960000
+                        },
+                        "rate_usd_per_second": {
+                          "type": "number",
+                          "enum": [
+                            0.0001
+                          ]
+                        },
+                        "minimum_charge_usd": {
+                          "type": "number",
+                          "enum": [
+                            0.0001
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request_error`: malformed metadata, unsupported model/protocol/language, or sample count outside 1-960,000."
+          },
+          "401": {
+            "description": "`invalid_api_key` or `invalid_session`."
+          },
+          "402": {
+            "description": "`payment_required`, `insufficient_credits`, `pod_cap_reached`, or `payment_error`."
+          },
+          "403": {
+            "description": "`insufficient_scope`: the API key lacks `grid:write`."
+          },
+          "404": {
+            "description": "Plain `Not found` while the guarded route is off or a private-canary credential is absent."
+          },
+          "503": {
+            "description": "`model_not_available`, `node_not_available`, `e2e_unavailable`, or `server_error`: ready capacity or reservation transport is unavailable."
+          },
+          "409": {
+            "description": "`price_cap_unmet`: quote exceeds max_price."
+          },
+          "413": {
+            "description": "Reserve metadata JSON body exceeds 16 KiB."
+          }
+        }
+      }
+    },
+    "/v1/audio/transcriptions": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Submit a sealed transcription",
+        "description": "Submit a valid reservation token and one client-sealed JSON envelope. This route never accepts multipart form data, plaintext audio, filenames, URLs, containers, streaming chunks, or legacy/base58 ciphertext. The client must verify the reserved node's key binding before sealing and verify its signature over the sealed result before decryption. Transcription is default off and unavailable until public discovery returns `whisper-1`.",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Use the same credit/payment identity as the reservation."
+          },
+          {
+            "name": "X-Payment",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "x402 payment payload bound to the reserved request."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "reservation_token",
+                  "enc"
+                ],
+                "properties": {
+                  "reservation_token": {
+                    "type": "string"
+                  },
+                  "enc": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "ciphertext",
+                      "client_ephemeral_pubkey",
+                      "client_response_pubkey",
+                      "algorithm",
+                      "encoding"
+                    ],
+                    "properties": {
+                      "ciphertext": {
+                        "type": "string",
+                        "description": "Canonical base64 of nonce, ciphertext, and AEAD tag. The decrypted payload contains the bound raw PCM."
+                      },
+                      "client_ephemeral_pubkey": {
+                        "type": "string",
+                        "description": "Base58 X25519 ephemeral public key."
+                      },
+                      "client_response_pubkey": {
+                        "type": "string",
+                        "description": "Base58 X25519 response key bound into input AEAD and used by the node to seal its result."
+                      },
+                      "algorithm": {
+                        "type": "string",
+                        "enum": [
+                          "x25519-xchacha20poly1305-hkdf-v2"
+                        ]
+                      },
+                      "encoding": {
+                        "type": "string",
+                        "enum": [
+                          "base64"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A node-signed encrypted result plus validated usage. SDKs verify the signature before decrypting and expose the final typed transcript only after all bindings validate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "job_id",
+                    "sealed_result",
+                    "result_envelope_signature",
+                    "result_envelope_version",
+                    "usage"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string"
+                    },
+                    "job_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "sealed_result": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "algorithm",
+                        "encoding",
+                        "ephemeral_public_key",
+                        "ciphertext"
+                      ],
+                      "properties": {
+                        "algorithm": {
+                          "type": "string",
+                          "enum": [
+                            "x25519-xchacha20poly1305-hkdf-v2"
+                          ]
+                        },
+                        "encoding": {
+                          "type": "string",
+                          "enum": [
+                            "base64"
+                          ]
+                        },
+                        "ephemeral_public_key": {
+                          "type": "string",
+                          "description": "Base58 node X25519 ephemeral public key."
+                        },
+                        "ciphertext": {
+                          "type": "string",
+                          "description": "Canonical base64 sealed result."
+                        }
+                      }
+                    },
+                    "result_envelope_signature": {
+                      "type": "string",
+                      "description": "Base58 Ed25519 signature by the reserved node over the public result envelope."
+                    },
+                    "result_envelope_version": {
+                      "type": "string",
+                      "enum": [
+                        "v1"
+                      ]
+                    },
+                    "usage": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "audio_seconds",
+                        "cost_usd"
+                      ],
+                      "properties": {
+                        "audio_seconds": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 60,
+                          "description": "Exact duration derived from authenticated PCM sample count / 16000; never rounded to whole seconds."
+                        },
+                        "cost_usd": {
+                          "type": "number",
+                          "minimum": 0.0001,
+                          "maximum": 0.006
+                        }
+                      }
+                    },
+                    "billing_pending": {
+                      "type": "boolean",
+                      "description": "Payment settlement or accounting needs reconciliation, including an unknown settlement outcome. Do not resubmit; reconcile by job/payment identity."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request_error` or `transcription_input_invalid`; malformed audio is not charged."
+          },
+          "401": {
+            "description": "`invalid_api_key` or `invalid_session`."
+          },
+          "402": {
+            "description": "`payment_required`, `insufficient_credits`, `pod_cap_reached`, or a definitive `payment_error`."
+          },
+          "403": {
+            "description": "`insufficient_scope`: the API key lacks `grid:write`."
+          },
+          "404": {
+            "description": "Plain `Not found` while the guarded route is off."
+          },
+          "409": {
+            "description": "Reservation or payment state cannot be safely retried. Reconcile the returned request/job/payment identity."
+          },
+          "413": {
+            "description": "Encoded JSON body exceeds 8 MiB."
+          },
+          "500": {
+            "description": "`server_error`: dispatch or billing finalization failed. Follow the response's charge/retry statement."
+          },
+          "502": {
+            "description": "`inference_error`: a node failed or returned an unreadable, unsigned, or invalid result. No invalid transcript is returned or billed."
+          },
+          "503": {
+            "description": "`model_not_available` or `node_not_available`: release/capability/confidential transport is unavailable."
+          },
+          "504": {
+            "description": "`timeout`: transcription timed out. Reconcile the job state before creating a new reservation; there is no automatic submit retry."
+          }
+        }
+      }
+    },
     "/v1/embeddings": {
       "servers": [
         {
@@ -3285,22 +3821,41 @@
                       {
                         "title": "EmbeddingGemma 2",
                         "type": "integer",
-                        "enum": [768, 512, 256, 128]
+                        "enum": [
+                          768,
+                          512,
+                          256,
+                          128
+                        ]
                       },
                       {
                         "title": "Nomic Embed Text v1.5",
                         "type": "integer",
-                        "enum": [768, 512, 256, 128, 64]
+                        "enum": [
+                          768,
+                          512,
+                          256,
+                          128,
+                          64
+                        ]
                       },
                       {
                         "title": "Mixedbread Embed Large v1",
                         "type": "integer",
-                        "enum": [1024, 512, 256]
+                        "enum": [
+                          1024,
+                          512,
+                          256
+                        ]
                       },
                       {
                         "title": "Fixed-size text models",
                         "type": "integer",
-                        "enum": [384, 768, 1024],
+                        "enum": [
+                          384,
+                          768,
+                          1024
+                        ],
                         "description": "The selected fixed-size model accepts only its own native value."
                       }
                     ]
@@ -3311,13 +3866,20 @@
                       {
                         "title": "Legacy text embedding models",
                         "type": "string",
-                        "enum": ["query", "document"],
+                        "enum": [
+                          "query",
+                          "document"
+                        ],
                         "description": "Omission retains the legacy model/runtime behavior."
                       },
                       {
                         "title": "EmbeddingGemma 2",
                         "type": "string",
-                        "enum": ["query", "document", "unspecified"],
+                        "enum": [
+                          "query",
+                          "document",
+                          "unspecified"
+                        ],
                         "description": "Omission is sealed as query. Use unspecified only to opt out of query/document prefixing."
                       }
                     ]

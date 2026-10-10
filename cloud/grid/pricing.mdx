@@ -1,15 +1,22 @@
 ---
 title: Pricing
-description: How SGL Grid inference is priced — per-token, per-model, pay only for what you use.
+description: How SGL Grid inference is priced by workload, model, and validated usage.
 ---
 
-SGL Grid is **usage-based**: you pay per request, priced by the model and the tokens it processes. No subscription, no minimums.
+SGL Grid is **usage-based**: you pay per request, using the model's documented billing unit. There
+is no subscription. Chat and embedding workloads use token/input units. Release-gated
+transcription uses exact sample-derived audio duration and has a $0.0001 minimum.
 
 ## How cost is calculated
 
 - Each model has a **per-token price** (input and output).
 - Cost for a request = `tokens × the model's rate`.
 - **Credits** are charged the **exact** amount after inference (on real token usage). **x402** charges at request time based on the model and your `max_tokens`.
+
+For the transcription candidate, cost is `max(100, ceil(sample_count × 100 / 16000)) / 1000000`
+USD, using integer micro-USDC arithmetic and a $0.0001 minimum. A 4.2-second clip costs $0.000420.
+Duration stays exact; only the charge rounds up to micro-USDC. The quote comes from the authenticated sample count, not a declared or node-reported
+duration. See [Speech-to-text transcription](/cloud/grid/transcription).
 
 The live per-model price is shown in the [Models](/cloud/grid/models) view and the models API:
 

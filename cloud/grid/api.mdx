@@ -74,6 +74,13 @@ curl -X POST https://grid.x402compute.cc/v1/systemone \
 
 Use `GET /v1/models?type=systemone` to list System One models. See [Laya / System One](/cloud/grid/systemone).
 
+## Speech-to-text
+
+The release-gated transcription API is separate from Chat Completions and OpenAI multipart audio.
+It reserves a capability-qualified node with metadata/sample count, then accepts a client-sealed
+JSON envelope at `POST /v1/audio/transcriptions`. Use the official TypeScript or Python SGL SDK
+helper. See [Speech-to-text transcription](/cloud/grid/transcription).
+
 ## Paying
 
 - **API key / credits** — billed to the key's wallet at exact token cost.
@@ -83,6 +90,7 @@ Use `GET /v1/models?type=systemone` to list System One models. See [Laya / Syste
 
 - Request/response shapes match OpenAI Chat Completions (`model`, `messages`, `max_tokens`, `temperature`, `usage`).
 - Laya/System One uses `POST /v1/systemone`; it is intentionally not a chat-completions model.
+- Speech-to-text uses a two-step sealed JSON contract and is intentionally not OpenAI multipart-compatible.
 - For maximum privacy (browser-side end-to-end encryption), use the dashboard/SDK confidential path — see [Confidential inference](/cloud/grid/confidential-inference).
 - **Streaming** (`stream: true`) is on the roadmap; today set `stream: false`.
 
