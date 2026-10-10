@@ -1,0 +1,214 @@
+---
+title: Speech-to-text transcription
+description: Transcribe bounded PCM audio locally or through the client-sealed SGL Grid transcription API.
+---
+
+SGL transcription turns one short utterance into final text. The first candidate model is
+**`whisper-1`**, a pinned multilingual Whisper Small model running on a pinned whisper.cpp
+runtime. Dictation does not interpret the transcript as an instruction, call tools, or press
+Enter for you.
+
+<Warning>
+  **Release candidate:** transcription is default off. The Grid route, model catalogue,
+  discovery, rankings, and provider listing remain unavailable until private canary tests pass
+  and a released capability-qualified node is ready. The desktop Dictation workspace is also
+  unavailable in public builds until its release gates pass. Do not assume `whisper-1` is
+  available unless `GET /v1/models?type=transcription` returns it.
+</Warning>
+
+## Choose Local or Grid
+
+| Mode | Where audio is processed | Network and payment | Availability |
+| --- | --- | --- | --- |
+| **Local** | On your computer in the managed desktop runtime. Audio and transcript stay on the device. | No wallet, internet, credits, or Grid provider is required after the verified model is installed. | The default dictation mode. It remains release-gated until signed macOS and real Windows runtime tests pass. |
+| **Grid** | On a selected capability-qualified provider node. The client seals audio to that node before the Grid receives the request. | Requires explicit selection plus prepaid credits or an x402 payment. The app shows the quote before the first paid request. | Available only when public feature gates are on and discovery returns a ready provider for `whisper-1`. There is no automatic fallback from Local to Grid. |
+
+Local and Grid share the final `transcription-v1` result contract. Local inference does not use
+the Grid API. Grid availability does not imply that a local Voice Engine is installed, and local
+model availability does not imply that the same engine is served on Grid.
+
+## Grid request flow
+
+Grid transcription uses two JSON requests:
+
+1. `POST /v1/audio/transcriptions/reserve` sends metadata only: the model, protocol, language
+   hint, request identity, exact `model_revision` and `model_sha256` pins, and PCM sample count. A successful response identifies a ready node,
+   returns its verified encryption and signing keys, and quotes the maximum price.
+2. The client validates the reservation, seals the bounded PCM bytes to that node, and sends the
+   reservation token plus encrypted envelope to `POST /v1/audio/transcriptions`.
+3. The client verifies the node signature over the sealed result before decrypting it. It then
+   checks the request, model, immutable revision, sample count, duration, language, segment order,
+   and quote binding before returning text.
+
+The wire format is **client-sealed JSON**. It is not OpenAI multipart form data, and there is no
+plain-audio or legacy fallback. Use the TypeScript or Python SDK helper so reservation binding,
+key verification, sealing, signature verification, and result validation stay consistent.
+
+<Note>
+  The familiar final fields such as `text`, `language`, `duration_seconds`, and `segments` do not
+  make the request OpenAI wire-compatible. Sending `multipart/form-data`, a filename, URL, WAV,
+  MP3, or FLAC directly to this endpoint is rejected.
+</Note>
+
+### TypeScript SDK
+
+Read or capture raw PCM bytes, then pass them to the bounded helper:
+
+```typescript
+import { readFile } from "node:fs/promises";
+import { GridClient } from "@singularity-layer/grid";
+
+const grid = new GridClient({ apiKey: process.env.SGL_API_KEY! });
+const pcm = new Uint8Array(await readFile("utterance.pcm"));
+
+const result = await grid.transcribePcm(pcm, {
+  model: "whisper-1",
+  language: "auto",
+  useCredits: true,
+});
+
+console.log(result.text);
+console.log(result.usage?.cost_usd);
+```
+
+In a browser, `transcribePcmFile(file)` accepts a `Blob` whose bytes are already raw PCM. It does
+not decode a WAV or compressed audio container.
+
+### Python SDK
+
+```python
+import os
+from singularity_grid import GridClient
+
+grid = GridClient(api_key=os.environ["SGL_API_KEY"])
+result = grid.transcribe_pcm_file(
+    "utterance.pcm",
+    model="whisper-1",
+    language="auto",
+    use_credits=True,
+)
+
+print(result["text"])
+print(result.get("usage", {}).get("cost_usd"))
+```
+
+Use `transcribe_pcm(pcm_bytes, ...)` when audio is already in memory. Both SDKs reject empty,
+odd-length, oversized, or incorrectly configured input before reserving a node or sending audio.
+
+## Audio contract and limits
+
+Convert audio on the client before reservation:
+
+| Property | Required value |
+| --- | --- |
+| Encoding | Raw signed 16-bit little-endian PCM |
+| Sample rate | 16,000 Hz |
+| Channels | 1 (mono) |
+| Utterances | One per request |
+| PCM samples | 1-960,000 |
+| Decoded PCM bytes | 2-1,920,000, always an even count |
+| Duration | At most 60 seconds |
+| Reserve metadata body | At most 16 KiB |
+| Encoded submit body | At most 8 MiB |
+| Final transcript | At most 64 KiB UTF-8 |
+| Segments | At most 256, ordered with monotonic timestamps |
+
+The sample count is the duration and billing authority. The reserve request never trusts a
+filename, MIME type, container duration, or caller-supplied seconds. The encrypted envelope binds
+the same sample count, and the node checks the decrypted byte length again.
+
+Longer dictation sessions must be split into separate bounded utterances on the client. v1 does
+not provide live word streaming, diarization, translation, speaker identity, or word-level
+timestamps. A desktop preview, when shown, is provisional; only the validated final transcript
+is eligible for insertion.
+
+## Language hints
+
+Use `auto` to let the model detect the language, or pass a lowercase two-letter language hint such
+as `en`, `fr`, or `de`. A hint narrows transcription behavior; it does not request translation.
+The final `language` field can be `null` when the runtime cannot provide a validated detected
+language.
+
+## Pricing and payment
+
+The candidate price is **$0.0001 per exact audio second**, equal to **$0.006 per minute**.
+The minimum charge is **$0.0001**. A 4.2-second utterance costs **$0.000420**.
+Compute the charge in integer micro-USDC: `max(100, ceil(sample_count × 100 / 16000)) / 1000000`.
+Only the charge rounds up to the next micro-USDC; audio duration never rounds to whole seconds.
+
+The quote derives from the authenticated PCM sample count. The Grid does not use node-reported
+duration for billing. A successful request is charged at most once after the final transcript and
+node signature validate. Invalid audio, unavailable nodes, terminal timeouts, and invalid node results are not billed.
+Cancellation before submit sends no audio and incurs no charge. If submit has already started,
+cancellation or a lost response does not prove a no-charge outcome; reconcile the job first. There is no transparent server failover: after a confirmed terminal failure with no charge,
+create a new reservation and seal the PCM again to the new node. SDKs do not automatically retry
+a submit with an ambiguous result or payment outcome. Never blindly resubmit an x402 request whose result says billing is pending or its
+settlement outcome is unknown; reconcile the returned job/payment identity first.
+
+Use an `X-API-Key` with `grid:write` for prepaid credits. Set `use_credits=false` for the direct x402 contract: reservation returns the quote and submit
+returns the payment challenge. The TypeScript and Python transcription helpers currently use
+prepaid credits and do not sign x402 payments. A missing key with `use_credits=true` requires a
+valid session or returns 401. Do not attach an audio file to a generic x402 client.
+
+## Privacy and retention
+
+The client seals PCM to the reserved node before sending the submit request. The selected
+provider decrypts the audio to run inference; encryption does not hide audio from that provider. The orchestrator
+receives only the reservation metadata and encrypted envelope. It has no plaintext fallback and
+must not log or persist raw audio or transcripts.
+
+The handler clears encrypted input and result on terminal response paths. The hourly purge is a
+backup for residual or abandoned payloads: terminal input becomes eligible after 30 minutes and
+result after one hour. Under a healthy hourly scheduler, expected cleanup is about 90 minutes
+for residual input and two hours for results. These are expected cleanup windows, not guaranteed
+maximum retention; scheduler failures can delay removal. Accounting keeps only bounded metadata such as model, duration, price, node, and status.
+
+Local mode keeps audio and transcripts in memory by default. It does not upload them or create a local transcript history.
+
+Treat every transcript as untrusted text. Render it as text, do not interpret it as markup or a
+tool instruction, and never submit it as a terminal command. The desktop app rechecks the original
+editable, nonsecure target before insertion. If focus changed or the target cannot be proved safe,
+it leaves existing text untouched and offers Copy.
+
+## Discover availability
+
+```bash
+curl "https://grid.x402compute.cc/v1/models?type=transcription"
+curl "https://grid.x402compute.cc/v1/providers?model=whisper-1"
+```
+
+An empty model list or a missing `whisper-1` means public Grid transcription is unavailable. A
+catalogue row alone is not enough. The route requires literal public feature gates and at least one
+active node with the exact model/runtime revisions, `transcription-v1`, 16 kHz PCM capability,
+current verified encryption-key binding, available slot, and a successful real-audio startup smoke.
+
+The release controls are independent: `STT_ENABLED=true` admits only the guarded route,
+`STT_PUBLIC=true` permits public discovery and routing, and the `whisper-1` catalogue row must have
+both `enabled` and `transcription_enabled` set after canary approval. Private canaries additionally
+require an exact secret and explicit node allowlist. All controls default off; setting one does not
+implicitly set another.
+
+## Candidate pins
+
+These pins describe the candidate under test. They do not announce a public release:
+
+| Component | Immutable candidate |
+| --- | --- |
+| Model id | `whisper-1` |
+| Model | Whisper Small multilingual, `ggml-small.bin` |
+| Model revision | Hugging Face commit `5359861c739e955e79d9a303bcbc70fb988958b1` |
+| Model SHA-256 | `1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b` |
+| Model size | 487,601,967 bytes |
+| Model license | Apache-2.0 |
+| Grid runtime | whisper.cpp v1.9.5, commit `d1be6fde11ac6e0407606b4e42fe72d34add8037` |
+| Runtime license | MIT |
+| Protocol | `transcription-v1` |
+
+Other local speech engines are not supported or advertised by this candidate. The candidate
+has not completed the quality bake-off, packaged runtime, or supported-platform release tests;
+pins and license labels alone do not prove release readiness. A future Voice
+Engine catalogue must pass its own immutable-pin, license, platform, quality, and packaging gates
+before it appears.
+
+See [Reserve a transcription node](/api-reference/grid-transcriptions-reserve) and
+[Submit a sealed transcription](/api-reference/grid-transcriptions) for the wire reference.
