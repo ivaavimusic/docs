@@ -1,0 +1,100 @@
+---
+title: Training Lab API
+description: Upload a dataset, start a fine-tune, follow it, and download the result with an API key.
+---
+
+Everything the dashboard does is available over HTTPS at
+`https://compute.x402layer.cc/training`. Authenticate with an API key in the
+`X-API-Key` header (create one under **Settings → API keys** in Singularity
+Cloud), or with a wallet signature.
+
+## Scopes
+
+Training runs rent GPUs, so they have their own scope. A key that can manage
+datasets cannot start a GPU unless you also grant `training:write`.
+
+| Scope | Allows |
+| --- | --- |
+| `datasets:read` | List datasets, check their status, download |
+| `datasets:write` | Upload, generate and approve datasets (spends credits) |
+| `training:read` | View runs and progress |
+| `training:write` | Start, extend and cancel runs, and get download links (rents GPUs, spends credits) |
+
+Scoped keys created before October 21, 2026 keep the training access their
+`datasets` scope gave them. Keys with no scopes (full access) are unchanged.
+
+## 1. Read the catalog
+
+```bash
+curl https://compute.x402layer.cc/training/catalog -H "X-API-Key: $SGL_API_KEY"
+```
+
+The catalog lists base models, GPUs with their hourly training price and stock,
+and the limits that apply.
+
+## 2. Upload a dataset
+
+A dataset is JSONL, one chat example per line:
+
+```json
+{"messages":[{"role":"user","content":"Where is my order?"},{"role":"assistant","content":"It ships within 2 days."}]}
+```
+
+Ask for an upload URL, `PUT` the file to it, then approve the dataset. Approval
+checks every line and refuses a file that would not train.
+
+```bash
+# 1. get a presigned upload URL (declare the file size in bytes)
+curl -X POST https://compute.x402layer.cc/training/datasets/presign \
+  -H "X-API-Key: $SGL_API_KEY" -H "Content-Type: application/json" \
+  -d '{"bytes": '$(wc -c < support.jsonl)'}'
+# → { "dataset_id": "…", "upload_url": "https://…", "expires_in": 900, "max_bytes": … }
+
+# 2. upload the file
+curl -X PUT "$UPLOAD_URL" --data-binary @support.jsonl
+
+# 3. approve it
+curl -X POST https://compute.x402layer.cc/training/datasets/$DATASET_ID/approve \
+  -H "X-API-Key: $SGL_API_KEY"
+```
+
+You can also generate a dataset instead of uploading one: see
+[Datasets for agents](/cloud/datasets/agents).
+
+## 3. Check the price (optional)
+
+```bash
+curl -X POST https://compute.x402layer.cc/training/estimate \
+  -H "X-API-Key: $SGL_API_KEY" -H "Content-Type: application/json" \
+  -d '{"dataset_id":"'$DATASET_ID'","base_model":"qwen2.5-0.5b-instruct","gpu_plan_id":"'$GPU_PLAN_ID'","budget_hours":1}'
+```
+
+## 4. Start a run
+
+```bash
+curl -X POST https://compute.x402layer.cc/training/runs \
+  -H "X-API-Key: $SGL_API_KEY" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: support-bot-run-1" \
+  -d '{"dataset_id":"'$DATASET_ID'","base_model":"qwen2.5-0.5b-instruct","gpu_plan_id":"'$GPU_PLAN_ID'","budget_hours":1}'
+# → 201 { "run_id": "…", "status": "provisioning", "charged": 0.42, "billed_hours": 1 }
+```
+
+The run is charged from your credits when it starts. Send an `Idempotency-Key`
+so a retried request can never start a second run.
+
+## 5. Follow it and get the model
+
+```bash
+curl https://compute.x402layer.cc/training/runs/$RUN_ID -H "X-API-Key: $SGL_API_KEY"
+curl -X POST https://compute.x402layer.cc/training/runs/$RUN_ID/deploy -H "X-API-Key: $SGL_API_KEY"
+```
+
+`deploy` (needs `training:write`) returns short-lived download links (`urls`) for
+the adapter and the score report once the run finished successfully, plus the GGUF
+when `gguf_available` is true. `POST /training/runs/$RUN_ID/cancel` stops a run (the block is not
+refunded).
+
+## No account at all?
+
+An agent with only a wallet can pay for a run per request over x402. See
+[Training over x402](/cloud/training/agents).

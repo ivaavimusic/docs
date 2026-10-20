@@ -1,0 +1,62 @@
+---
+title: Training Lab
+description: Teach a small open model your task. Pick your data, pick a model, pay once, and get the model back with a score report. From the dashboard, with an API key, or over x402 with nothing but a wallet.
+---
+
+Training Lab fine-tunes a small open model on your own examples and gives it
+back to you: a LoRA adapter, a score report that shows how much it learned, and
+a downloadable GGUF when the conversion succeeds (`gguf_available`). You choose the data, the base model and a GPU block. We
+rent the GPU, run the job, and shut it down when it finishes.
+
+Singularity xMESH 0.8B was trained and evaluated in Training Lab.
+
+## Three ways in
+
+<CardGroup cols={3}>
+  <Card title="Dashboard" icon="browser" href="https://cloud.x402compute.cc/network/training">
+    Pick a dataset and a model in Singularity Cloud, review the price, start.
+  </Card>
+  <Card title="API key" icon="key" href="/cloud/training/api">
+    Upload datasets and start runs from code with an `X-API-Key`.
+  </Card>
+  <Card title="x402 (agents)" icon="robot" href="/cloud/training/agents">
+    No account: get a 402 with the exact price, pay in stablecoin, poll.
+  </Card>
+</CardGroup>
+
+## How a run works
+
+1. **Data.** Upload a JSONL file of chat examples, or describe the behaviour you
+   want and have Training Lab generate a dataset. A dataset must be approved
+   (schema-checked) before it can be trained on.
+2. **Model.** Choose a base model from the catalog (today Qwen 2.5 0.5B Instruct
+   and Qwen 2.5 1.5B Instruct).
+3. **GPU block.** Choose a GPU and a number of hours. The price is fixed before
+   you pay: hours x the GPU's hourly training price.
+4. **Training.** The run reports progress while it trains. Every run keeps an
+   evaluation split so the score report is measured, not guessed.
+5. **Results.** Download the adapter (and the GGUF when available), or deploy the model as a private
+   AI Machine.
+
+## Pricing and refunds
+
+You pay for a **prepaid block**: the GPU hours you chose, at the hourly price in
+the catalog. Finishing early or cancelling does not refund the rest of the
+block.
+
+If something on our side stops a run before it trains (the GPU cannot start,
+the provider fails, the run never reports in), the charge is refunded to your
+credits automatically.
+
+Payments made over x402 are refunded the same way: as credits on the paying
+wallet's account, never on-chain.
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Longest block | 48 hours |
+| Base models | Qwen 2.5 0.5B Instruct, Qwen 2.5 1.5B Instruct |
+| x402 order size | Up to $500 per run |
+| x402 runs per wallet | 3 per 24 hours |
+| x402 networks | Robinhood Chain (USDG) today. Base (USDC) and Solana are next; `GET /training/x402/catalog` lists what is live. |

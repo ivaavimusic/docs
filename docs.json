@@ -178,6 +178,14 @@
                 ]
               },
               {
+                "group": "Training Lab",
+                "pages": [
+                  "cloud/training/overview",
+                  "cloud/training/api",
+                  "cloud/training/agents"
+                ]
+              },
+              {
                 "group": "SGL Processors",
                 "pages": [
                   "cloud/processors/overview",
