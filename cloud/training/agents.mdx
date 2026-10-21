@@ -1,6 +1,6 @@
 ---
 title: Training over x402
-description: Start a fine-tune with a wallet and no account. Quote, get a 402 with the exact price, pay in USDG on Robinhood Chain, and poll.
+description: Start a fine-tune with a wallet and no account. Quote, get a 402 with the exact price, pay in USDC on Base or Solana, or USDG on Robinhood Chain, and poll.
 ---
 
 An agent can train a model with nothing but a wallet. There is no signup and
@@ -32,7 +32,7 @@ price, the networks you can pay on, and the limits.
 ```bash
 curl -X POST https://compute.x402layer.cc/training/x402/runs \
   -H "Content-Type: application/json" \
-  -H "X-Auth-Address: 0xYourWallet" -H "X-Auth-Chain: robinhood" \
+  -H "X-Auth-Address: 0xYourWallet" -H "X-Auth-Chain: base" \
   -H "X-Auth-Signature: …" -H "X-Auth-Timestamp: …" -H "X-Auth-Nonce: …" \
   -d '{
     "owner_wallet": "0xYourWallet",
@@ -40,7 +40,7 @@ curl -X POST https://compute.x402layer.cc/training/x402/runs \
     "base_model": "qwen2.5-0.5b-instruct",
     "gpu_plan_id": "…",
     "budget_hours": 1,
-    "network": "robinhood"
+    "network": "base"
   }'
 ```
 
@@ -50,7 +50,7 @@ The response is a `402` with an x402 `accepts` entry for the exact amount, and a
 ```json
 {
   "x402Version": 1,
-  "accepts": [{ "scheme": "exact", "network": "robinhood", "maxAmountRequired": "421200", "payTo": "0x…", "asset": "0x…" }],
+  "accepts": [{ "scheme": "exact", "network": "base", "maxAmountRequired": "421200", "payTo": "0x…", "asset": "0x…" }],
   "singularity": {
     "product": "train_run",
     "quote_id": "…",
@@ -81,8 +81,10 @@ A quote is valid for 10 minutes.
 
 Send the same body plus `quote_id`, with your signed payment in `X-Payment` (no
 auth headers needed: the payment identifies the payer). The signed amount must
-equal `maxAmountRequired` exactly, and `validBefore` must be within
-`maxTimeoutSeconds` (one hour) of now. Standard x402 signers already do both.
+equal `maxAmountRequired` exactly. On Base and Robinhood Chain (EIP-3009),
+`validBefore` must be within `maxTimeoutSeconds` (one hour) of now. On Solana the
+payment is a signed SPL transfer transaction, which expires with its recent
+blockhash. Standard x402 signers already do all of this.
 
 ```bash
 curl -X POST https://compute.x402layer.cc/training/x402/runs \
@@ -142,6 +144,6 @@ and the results with `POST /training/runs/:run_id/deploy`.
 
 ## Limits
 
-Up to $500 per order, 3 paid runs per wallet per 24 hours, Robinhood
-Chain today (Base and Solana are next; the catalog lists what is live). Auto-tune and resume are not sold over x402 yet; use the
+Up to $500 per order, 3 paid runs per wallet per 24 hours. Networks: Base (USDC),
+Solana (USDC) and Robinhood Chain (USDG); the catalog lists what is live. Auto-tune and resume are not sold over x402 yet; use the
 [API](/cloud/training/api) with credits for those.
