@@ -1,0 +1,147 @@
+---
+title: Training over x402
+description: Start a fine-tune with a wallet and no account. Quote, get a 402 with the exact price, pay in USDG on Robinhood Chain, and poll.
+---
+
+An agent can train a model with nothing but a wallet. There is no signup and
+no prepaid balance: you ask for a run, receive an HTTP 402 with the exact price,
+pay it, and follow the run with a claim token.
+
+## Before you pay: a dataset you own
+
+The wallet that pays must own an **approved** dataset. Two ways to get one, also
+with no account:
+
+- **Generate it over x402**: `POST /datasets/x402/synth`, see
+  [Datasets for agents](/cloud/datasets/agents). Then approve it with a
+  wallet-signed `POST /training/datasets/:id/approve`.
+- **Upload your own**: wallet-signed `POST /training/datasets/presign`, `PUT`
+  the JSONL, then wallet-signed `POST /training/datasets/:id/approve`.
+
+## 1. Read the catalog
+
+```bash
+curl https://compute.x402layer.cc/training/x402/catalog
+```
+
+No authentication. Returns the base models, the GPUs with their hourly training
+price, the networks you can pay on, and the limits.
+
+## 2. Ask for a quote
+
+```bash
+curl -X POST https://compute.x402layer.cc/training/x402/runs \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Address: 0xYourWallet" -H "X-Auth-Chain: robinhood" \
+  -H "X-Auth-Signature: …" -H "X-Auth-Timestamp: …" -H "X-Auth-Nonce: …" \
+  -d '{
+    "owner_wallet": "0xYourWallet",
+    "dataset_id": "…",
+    "base_model": "qwen2.5-0.5b-instruct",
+    "gpu_plan_id": "…",
+    "budget_hours": 1,
+    "network": "robinhood"
+  }'
+```
+
+The response is a `402` with an x402 `accepts` entry for the exact amount, and a
+`singularity` block you can read without knowing our pricing:
+
+```json
+{
+  "x402Version": 1,
+  "accepts": [{ "scheme": "exact", "network": "robinhood", "maxAmountRequired": "421200", "payTo": "0x…", "asset": "0x…" }],
+  "singularity": {
+    "product": "train_run",
+    "quote_id": "…",
+    "price_usd": 0.4212,
+    "billed_hours": 1,
+    "gpu": "RTX A5000",
+    "quote_expires_at": "…"
+  }
+}
+```
+
+**Sign the quote request with `owner_wallet`.** The quote is bound to that wallet,
+so it must prove control: send the wallet-signature headers
+(`X-Auth-Address`, `X-Auth-Chain`, `X-Auth-Signature`, `X-Auth-Timestamp`,
+`X-Auth-Nonce`, the same scheme as the rest of the compute API) or an API key that
+belongs to that wallet. No account is needed for a wallet signature.
+
+`owner_wallet` must be the wallet that owns the dataset **and** the wallet that
+pays. The request is checked before the 402 (dataset approved and owned, GPU in
+stock, block within the limits) and checked again before the payment settles.
+Pick a block long enough for your data: `POST /training/estimate` suggests one,
+and a run that runs out of time stops at the end of its block. A quote
+is not a reservation: the daily limit and GPU stock are confirmed when you pay,
+and a GPU can still fail to start (you then get credits, see below).
+A quote is valid for 10 minutes.
+
+## 3. Pay
+
+Send the same body plus `quote_id`, with your signed payment in `X-Payment` (no
+auth headers needed: the payment identifies the payer). The signed amount must
+equal `maxAmountRequired` exactly, and `validBefore` must be within
+`maxTimeoutSeconds` (one hour) of now. Standard x402 signers already do both.
+
+```bash
+curl -X POST https://compute.x402layer.cc/training/x402/runs \
+  -H "Content-Type: application/json" -H "X-Payment: $SIGNED_PAYMENT" \
+  -d '{ …same body…, "quote_id": "…" }'
+```
+
+`run_id` is present once the run exists. While payment is being confirmed or
+the GPU is starting it can be absent: poll `status_url` with the claim token.
+
+```json
+{
+  "run_id": "…",
+  "status": "provisioning",
+  "status_url": "/training/x402/orders/…",
+  "claim_token": "…",
+  "price_paid_usd": 0.4212,
+  "tx_hash": "0x…"
+}
+```
+
+**Keep the `claim_token`.** It is shown once and is the only credential the
+status URL accepts.
+
+## 4. Follow the run
+
+```bash
+curl https://compute.x402layer.cc/training/x402/orders/$QUOTE_ID \
+  -H "Authorization: Bearer $CLAIM_TOKEN"
+```
+
+The `state` field tells you where it is:
+
+| state | Meaning |
+| --- | --- |
+| `payment_pending` | The payment is being confirmed. **Do not pay again.** |
+| `starting` | Paid; the GPU is being started. |
+| `run` | The run exists; `run` shows its status and progress. |
+| `not_paid` | The payment did not go through and no money moved. Request a fresh quote. |
+| `credited_not_started` | Paid, but the GPU could not start. The payment becomes credits on your wallet's account. Spend them only once `refund` is `returned` or `not_charged`; while it is `returning` or `unknown`, keep polling (usually minutes). |
+
+The same run is also readable with a wallet-signed `GET /training/runs/:run_id`,
+and the results with `POST /training/runs/:run_id/deploy`.
+
+## What happens to your money
+
+- **The price is the quote.** What you sign is exactly what you are charged.
+- **One payment, at most one run.** Resubmitting the same payment never charges
+  again; it returns the same order outcome (pending, starting, the run, or credits).
+- **If the outcome is unclear**, you get `409 settlement_pending` with your claim
+  token. Do not pay again; poll the status URL.
+- **If the GPU cannot start**, the payment becomes credits on the paying
+  wallet's account (`credited_not_started`). Once `refund` is `returned` or
+  `not_charged`, start a run with them using a wallet-signed `POST /training/runs`.
+  Nothing is refunded on-chain.
+- **A prepaid block**: finishing early or cancelling does not refund the rest.
+
+## Limits
+
+Up to $500 per order, 3 paid runs per wallet per 24 hours, Robinhood
+Chain today (Base and Solana are next; the catalog lists what is live). Auto-tune and resume are not sold over x402 yet; use the
+[API](/cloud/training/api) with credits for those.
