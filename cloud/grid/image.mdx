@@ -14,14 +14,14 @@ back to you, so the Grid never sees either in plaintext. See the [content rules]
 | --- | --- |
 | Model | `flux2-klein-4b-q4` |
 | Payment | Prepaid credits only (`use_credits: true`). There is no x402 rail. |
-| Price | 0.001 USD per megapixel-step. 1024x1024 costs `0.004195` USD. Minimum 0.002 USD. |
+| Price | 0.0015 USD per megapixel-step. 1024x1024 costs `0.006292` USD; 1152x768 and 768x1152 cost `0.005309`; 1280x720 and 720x1280 cost `0.005530`. Minimum 0.002 USD. |
 | Sizes | 1024x1024, 1152x768, 768x1152, 1280x720, 720x1280 |
 | Prompt | Up to 2000 bytes (UTF-8) |
 | Mode | Asynchronous: submit returns 202, then poll every 5 seconds |
 | Typical time | About 60 to 75 seconds |
 | Result lifetime | At most 30 minutes. Purged 5 minutes after the first fetch. |
 
-The quote is `max(0.002, ceil6(width * height / 1e6 * 4 * 0.001))` in USD.
+The quote is `max(0.002, ceil6(width * height / 1e6 * 4 * 0.0015))` in USD.
 
 ## Request flow
 
@@ -126,7 +126,7 @@ A successful submit returns `202`:
   "job_id": "6b1f2f0e-3f7a-4c52-9b8e-2a6f4f0d9c11",
   "request_id": "6b1f2f0e-3f7a-4c52-9b8e-2a6f4f0d9c11",
   "status": "queued",
-  "quote_usd": 0.004195,
+  "quote_usd": 0.006292,
   "poll_url": "/v1/images/generations/6b1f2f0e-3f7a-4c52-9b8e-2a6f4f0d9c11",
   "estimated_seconds": 300,
   "poll_interval_seconds": 5
