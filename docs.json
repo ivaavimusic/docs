@@ -212,6 +212,7 @@
                   "cloud/provide/overview",
                   "cloud/provide/requirements",
                   "cloud/provide/node-setup",
+                  "cloud/provide/desktop-app",
                   "cloud/provide/cli",
                   "cloud/provide/staking",
                   "cloud/provide/earnings"

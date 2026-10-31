@@ -1,0 +1,73 @@
+---
+title: Singularity Node desktop app
+description: The Singularity Node desktop app for Mac. Run models and make images locally, chat, dictate, and serve the Singularity Layer Grid.
+---
+
+Singularity Node is the desktop app for running AI on your own computer and, optionally, serving the
+Singularity Layer Grid. It bundles local chat, voice, and image generation with the node service
+described in [Node setup](/cloud/provide/node-setup). This page covers version 1.11.
+
+## Image & Video
+
+The Image & Video tab makes images on your own Mac (Apple silicon). Everything is generated and stored
+locally.
+
+- **Create.** Pick a model, type a prompt, and the image appears in a chat-style thread.
+- **Edit with words.** Edit any picture by describing the change. Drag a picture in from Finder or paste one to start from it.
+- **Upscale.** 2x, 4x, 2K, 4K, or 8K.
+- **Remove background.** Cut-out and upscale can run while another image is being made.
+- **Save as.** PNG, JPG, HEIC, or transparent PNG.
+- **Model pills.** Choose the model and aspect ratio. Under advanced: images at once (1 to 4), steps, and seed.
+- **Stop.** Stopping a generation keeps your prompt and marks it "Stopped".
+
+The first use asks you to accept responsibility for local generation.
+
+### Library
+
+Every image is kept in a Library on your Mac. It has search, filters, and favourites (star). You can
+select and delete several images at once. Hover actions on each image: edit, upscale, remove
+background, and save.
+
+### Models
+
+Models are listed by what your Mac can run, and new models can arrive without an app update. Choose
+**Keep the model ready** (also in Settings) to keep it loaded so the next image starts right away.
+
+Windows and Linux with NVIDIA GPUs are coming soon. Video is next.
+
+## Serve images on the Grid
+
+Any Mac that can run the image model can serve pictures on the Grid. The model's own memory
+requirement is the only limit. Providers keep 80% of what a job earns. The default price is
+0.0015 USD per megapixel-step, so a 1024x1024 image is about 0.0063 USD.
+
+Buyers use the [Grid image API](/cloud/grid/image), and all generation is subject to the
+[content rules](/cloud/grid/image-policy). Provider setup and earnings work as described in
+[Earnings](/cloud/provide/earnings).
+
+## Recents
+
+Recents holds your text and image chats. Image chats show an image icon and reopen where you left off.
+
+- **Pin** chats to keep them at the top.
+- **Groups.** Use **Move to group** or **New group** to organise chats into your own groups, and collapse groups you are not using.
+- **Reorder.** Drag chats to reorder them or move them between groups.
+
+## Pictures in chat
+
+Vision models (Qwen2.5-VL 3B) accept pictures. Attach one with the picture button, paste it, or drop
+it into the chat. The picture is sent downscaled, and saved chats keep only a thumbnail.
+
+## Models and voice
+
+Switching models runs in the background. Progress shows in the model pill, and a status indicator
+appears on every tab and on the Overview.
+
+Voice models added in 1.11: MOSS-TTS Nano, LongCat-AudioDiT 1B, VoxCPM2 2B, and Rumik 3B. Rumik 3B
+covers Hindi and 21 more Indian languages. It is for non-commercial personal use only and is never
+served to the Grid. Soprano 80M now appears in the model list as intended. For dictation, see
+[Speech-to-text transcription](/cloud/grid/transcription).
+
+## Window behaviour
+
+Closing the window hides it. Click the Dock icon to bring it back.
