@@ -129,6 +129,8 @@
                   "cloud/grid/models",
                   "cloud/grid/embeddings",
                   "cloud/grid/transcription",
+                  "cloud/grid/image",
+                  "cloud/grid/image-policy",
                   "cloud/grid/systemone",
                   "cloud/grid/playground",
                   "cloud/grid/api",

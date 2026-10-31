@@ -1,0 +1,312 @@
+---
+title: Image generation
+description: Generate images with the client-sealed Singularity Layer Grid image API.
+---
+
+Singularity Layer Grid image generation turns a text prompt into one PNG. It runs the pinned
+**`flux2-klein-4b-q4`** model (FLUX.2 klein 4B, 4-bit, Apache-2.0) on a capability-qualified,
+attested provider node. The prompt is sealed to that node on your side, and the result is sealed
+back to you, so the Grid never sees either in plaintext. See the [content rules](/cloud/grid/image-policy) for what you can and cannot generate.
+
+## At a glance
+
+| Item | Value |
+| --- | --- |
+| Model | `flux2-klein-4b-q4` |
+| Payment | Prepaid credits only (`use_credits: true`). There is no x402 rail. |
+| Price | 0.0015 USD per megapixel-step. 1024x1024 costs `0.006292` USD; 1152x768 and 768x1152 cost `0.005309`; 1280x720 and 720x1280 cost `0.005530`. Minimum 0.002 USD. |
+| Sizes | 1024x1024, 1152x768, 768x1152, 1280x720, 720x1280 |
+| Prompt | Up to 2000 bytes (UTF-8) |
+| Mode | Asynchronous: submit returns 202, then poll every 5 seconds |
+| Typical time | About 60 to 75 seconds |
+| Result lifetime | At most 30 minutes. Purged 5 minutes after the first fetch. |
+
+The quote is `max(0.002, ceil6(width * height / 1e6 * 4 * 0.0015))` in USD.
+
+## Request flow
+
+Image generation uses three requests: reserve, submit, poll.
+
+1. `POST /v1/images/reserve` sends metadata only. It returns a ready node, the node's verified
+   keys, a quote, and a `reservation_token`.
+2. The client verifies the node key binding, seals the prompt to the node, and sends
+   `POST /v1/images/generations` with the token and the sealed envelope. The response is
+   `202` with a `job_id` and a `poll_url`.
+3. `GET /v1/images/generations/<job_id>` every 5 seconds until `status` is `completed`. The sealed
+   PNG is returned once, along with the node's signature over the ciphertext. The client verifies
+   the signature, then opens the result locally.
+
+Authenticate every request with your API key (`X-API-Key: x402c_...`) or a session token
+(`Authorization: Bearer sgl_sess...`). 
+
+### 1. Reserve
+
+`POST /v1/images/reserve` (JSON body, 16 KiB cap).
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `model` | yes | `flux2-klein-4b-q4` |
+| `width`, `height` | yes | One of the five supported size pairs |
+| `prompt_bytes` | yes | Exact UTF-8 byte length of the prompt, 1 to 2000 |
+| `request_id` | yes | A lowercase UUIDv4 you generate. It becomes the job id. |
+| `use_credits` | yes | Must be `true` |
+| `seed` | no | Integer 0 to 4294967295 |
+| `max_price` | no | Reject the reservation if the quote exceeds this many USD |
+
+```json
+{
+  "model": "flux2-klein-4b-q4",
+  "width": 1024,
+  "height": 1024,
+  "seed": 1234,
+  "prompt_bytes": 43,
+  "request_id": "6b1f2f0e-3f7a-4c52-9b8e-2a6f4f0d9c11",
+  "use_credits": true,
+  "max_price": 0.01
+}
+```
+
+The response echoes your request and pins (`model_revision`, `model_sha256`, `image_protocol`),
+and adds `reservation_token`, `node_id`, `node_ed25519_pubkey`, `node_x25519_pubkey`,
+`node_x25519_pubkey_sig`, `key_version`, `attestation_verified`, and a `quote` object with
+`price_usd`.
+
+<Warning>
+  Before sealing, verify that `node_x25519_pubkey_sig` is a valid Ed25519 signature by
+  `node_ed25519_pubkey` over the key binding (`node_id`, `key_version`, and the X25519 key), and
+  that the echoed fields match what you asked for. Refuse to seal if either check fails.
+</Warning>
+
+### 2. Seal and submit
+
+Build this plaintext JSON with the keys in exactly this order:
+
+```json
+{
+  "protocol": "image-v1",
+  "request_id": "<request_id>",
+  "model": "flux2-klein-4b-q4",
+  "model_revision": "<from reserve>",
+  "model_sha256": "<from reserve>",
+  "width": 1024,
+  "height": 1024,
+  "seed": 1234,
+  "prompt": { "encoding": "base64", "bytes": 43, "data": "<base64 of the UTF-8 prompt>" }
+}
+```
+
+`seed` is `null` when you did not send one. `prompt.bytes` is the UTF-8 byte count, not the
+character count.
+
+Generate a fresh X25519 response keypair, then seal the plaintext to `node_x25519_pubkey` with
+the `x25519-xchacha20poly1305-hkdf-v2` algorithm. The ciphertext must decode to exactly
+`len(canonical JSON with data = "") + 4 * ceil(bytes / 3) + 40` bytes, or the orchestrator rejects
+it. Use the SDK helper where available so the canonical form and sealing stay consistent.
+
+`POST /v1/images/generations` (JSON body, 64 KiB cap) takes exactly two fields:
+
+```json
+{
+  "reservation_token": "<from reserve>",
+  "enc": {
+    "ciphertext": "<base64>",
+    "client_ephemeral_pubkey": "<base58>",
+    "client_response_pubkey": "<base58 response public key>",
+    "algorithm": "x25519-xchacha20poly1305-hkdf-v2",
+    "encoding": "base64"
+  }
+}
+```
+
+A successful submit returns `202`:
+
+```json
+{
+  "object": "image.job",
+  "job_id": "6b1f2f0e-3f7a-4c52-9b8e-2a6f4f0d9c11",
+  "request_id": "6b1f2f0e-3f7a-4c52-9b8e-2a6f4f0d9c11",
+  "status": "queued",
+  "quote_usd": 0.006292,
+  "poll_url": "/v1/images/generations/6b1f2f0e-3f7a-4c52-9b8e-2a6f4f0d9c11",
+  "estimated_seconds": 300,
+  "poll_interval_seconds": 5
+}
+```
+
+`estimated_seconds` is a conservative upper bound. Typical jobs finish in about 60 to 75 seconds.
+Credits are held at submit and settled only when the image is delivered. A failed job refunds the
+hold.
+
+### 3. Poll and open
+
+`GET /v1/images/generations/<job_id>` returns `status` of `queued`, `running`, `completed`,
+`failed`, or `expired`. Only the same account and the same API key that submitted the job can
+read it; anything else returns 404.
+
+When `status` is `completed`, the response includes `sealed_result`
+(`algorithm`, `encoding`, `ciphertext`, `ephemeral_public_key`), `result_envelope_signature`,
+`node_id`, and `usage.cost_usd`. Then:
+
+1. Check `node_id` matches the reserved node.
+2. Verify `result_envelope_signature` with the reserved `node_ed25519_pubkey` over
+   `sgl-result-v1\n<job_id>\nimage\n<sha256 hex of the ciphertext string>`.
+3. Open the ciphertext with your response secret key and `ephemeral_public_key`.
+4. The plaintext is one JSON header line, a newline, then the PNG bytes. Check the header
+   (`protocol`, `request_id`, `job_id`, `model`, `model_revision`, `model_sha256`, `width`,
+   `height`, `prompt_bytes`, `image.sha256`, `image.bytes`) against what you sent, and check the
+   PNG magic and dimensions.
+
+Fetch and save the result promptly. It is purged 5 minutes after the first delivery and 30
+minutes after completion at the latest. After that, polling returns `expired`.
+
+## Complete client
+
+A minimal Node 20+ client for the whole flow. It uses only published packages
+(`@noble/curves`, `@noble/ciphers`, `@noble/hashes`, `bs58`). Save it as `image-client.mjs`, then run
+`SGL_API_KEY=x402c_... node image-client.mjs`. It writes `out.png`.
+
+```javascript
+// Node 20+. npm i @noble/curves@1 @noble/ciphers@1 @noble/hashes@1 bs58@5
+import { createHash, randomUUID } from "node:crypto";
+import { writeFileSync } from "node:fs";
+import { ed25519, x25519 } from "@noble/curves/ed25519";
+import { xchacha20poly1305 } from "@noble/ciphers/chacha";
+import { sha256 } from "@noble/hashes/sha256";
+import { hkdf } from "@noble/hashes/hkdf";
+import bs58 from "bs58";
+
+const BASE = "https://grid.x402compute.cc";
+const MODEL = "flux2-klein-4b-q4";
+const ALGO = "x25519-xchacha20poly1305-hkdf-v2";
+const te = new TextEncoder();
+
+// ---- sealing (x25519 + HKDF-SHA256 + XChaCha20-Poly1305, response key bound in the AAD) ----
+const deriveKey = (shared, info) => hkdf(sha256, shared, te.encode("sgl-e2e-v2-salt"), te.encode(info), 32);
+
+export function sealPrompt(reserve, { requestId, width, height, seed, prompt }) {
+  const promptBytes = Buffer.byteLength(prompt, "utf8");
+  // Exact plaintext: key order is fixed, no whitespace.
+  const plaintext = te.encode(JSON.stringify({
+    protocol: "image-v1",
+    request_id: requestId,
+    model: MODEL,
+    model_revision: reserve.model_revision,
+    model_sha256: reserve.model_sha256,
+    width,
+    height,
+    seed,
+    prompt: { encoding: "base64", bytes: promptBytes, data: Buffer.from(prompt, "utf8").toString("base64") },
+  }));
+  const resp = x25519.utils.randomPrivateKey(); // opens the result later
+  const respPub = bs58.encode(x25519.getPublicKey(resp));
+  const eph = x25519.utils.randomPrivateKey();
+  const ephPub = bs58.encode(x25519.getPublicKey(eph));
+  const nodePub = reserve.node_x25519_pubkey;
+  const key = deriveKey(x25519.getSharedSecret(eph, bs58.decode(nodePub)), "sgl-e2e-v2-input");
+  const aad = te.encode(`sgl-aad/v2/input|node=${nodePub}|eph=${ephPub}|resp=${respPub}`);
+  const nonce = crypto.getRandomValues(new Uint8Array(24));
+  const sealed = Buffer.concat([nonce, xchacha20poly1305(key, nonce, aad).encrypt(plaintext)]);
+  return {
+    respSecret: resp,
+    enc: {
+      ciphertext: sealed.toString("base64"),
+      client_ephemeral_pubkey: ephPub,
+      client_response_pubkey: respPub,
+      algorithm: ALGO,
+      encoding: "base64",
+    },
+  };
+}
+
+export function openResult(respSecret, sealedResult) {
+  const respPub = bs58.encode(x25519.getPublicKey(respSecret));
+  const nodeEph = sealedResult.ephemeral_public_key;
+  const key = deriveKey(x25519.getSharedSecret(respSecret, bs58.decode(nodeEph)), "sgl-e2e-v2-output");
+  const aad = te.encode(`sgl-aad/v2/output|resp=${respPub}|eph=${nodeEph}`);
+  const blob = Buffer.from(sealedResult.ciphertext, "base64");
+  const plain = Buffer.from(xchacha20poly1305(key, blob.subarray(0, 24), aad).decrypt(blob.subarray(24)));
+  const nl = plain.indexOf(0x0a); // JSON header line, newline, then PNG bytes
+  return { header: JSON.parse(plain.subarray(0, nl).toString("utf8")), png: plain.subarray(nl + 1) };
+}
+
+// ---- node signature checks ----
+export function verifyKeybind(r) {
+  // "SGL-NODE-KEYBIND-v1" 0x00 node_id(16) ed25519(32) x25519(32) key_version(u32 LE)
+  const kv = Buffer.alloc(4);
+  kv.writeUInt32LE(r.key_version);
+  const blob = Buffer.concat([
+    te.encode("SGL-NODE-KEYBIND-v1"), Buffer.from([0]),
+    Buffer.from(r.node_id.replace(/-/g, ""), "hex"),
+    bs58.decode(r.node_ed25519_pubkey), bs58.decode(r.node_x25519_pubkey), kv,
+  ]);
+  return ed25519.verify(bs58.decode(r.node_x25519_pubkey_sig), blob, bs58.decode(r.node_ed25519_pubkey));
+}
+
+export function verifyResultSignature(r, jobId, poll) {
+  const digest = createHash("sha256").update(poll.sealed_result.ciphertext).digest("hex");
+  const msg = te.encode(`sgl-result-v1\n${jobId}\nimage\n${digest}`);
+  return ed25519.verify(bs58.decode(poll.result_envelope_signature), msg, bs58.decode(r.node_ed25519_pubkey));
+}
+
+// ---- the three requests ----
+async function main() {
+  const headers = { "X-API-Key": process.env.SGL_API_KEY, "Content-Type": "application/json" };
+  const prompt = "A red hot-air balloon over a calm mountain lake at sunrise, photographic";
+  const [width, height, seed] = [1024, 1024, null];
+  const requestId = randomUUID(); // lowercase UUIDv4, becomes the job id
+
+  // 1. Reserve (metadata only, the prompt never leaves your machine unsealed)
+  const res = await fetch(`${BASE}/v1/images/reserve`, {
+    method: "POST", headers,
+    body: JSON.stringify({
+      model: MODEL, width, height, prompt_bytes: Buffer.byteLength(prompt, "utf8"),
+      request_id: requestId, use_credits: true, max_price: 0.01,
+    }),
+  });
+  if (!res.ok) throw new Error(`reserve ${res.status}: ${await res.text()}`);
+  const reserve = await res.json();
+  if (!verifyKeybind(reserve)) throw new Error("node key binding invalid, refusing to seal");
+
+  // 2. Seal and submit
+  const { enc, respSecret } = sealPrompt(reserve, { requestId, width, height, seed, prompt });
+  const sub = await fetch(`${BASE}/v1/images/generations`, {
+    method: "POST", headers, body: JSON.stringify({ reservation_token: reserve.reservation_token, enc }),
+  });
+  if (sub.status !== 202) throw new Error(`submit ${sub.status}: ${await sub.text()}`);
+  const job = await sub.json();
+
+  // 3. Poll every 5 seconds, verify, open
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const poll = await (await fetch(BASE + job.poll_url, { headers })).json();
+    if (poll.status === "failed" || poll.status === "expired") throw new Error(`job ${poll.status}`);
+    if (poll.status !== "completed") continue;
+    if (poll.node_id !== reserve.node_id) throw new Error("completed by a different node");
+    if (!verifyResultSignature(reserve, job.job_id, poll)) throw new Error("result signature invalid");
+    const { header, png } = openResult(respSecret, poll.sealed_result);
+    if (header.image.sha256 !== createHash("sha256").update(png).digest("hex")) throw new Error("image hash mismatch");
+    writeFileSync("out.png", png);
+    console.log(`saved out.png (${png.length} bytes), cost ${poll.usage?.cost_usd} USD`);
+    return;
+  }
+}
+
+if (process.env.SGL_API_KEY) await main();
+```
+
+The seal key is `HKDF-SHA256(x25519 shared secret, salt "sgl-e2e-v2-salt", info "sgl-e2e-v2-input")`
+and the output key uses info `sgl-e2e-v2-output`. The AAD binds the node key, your ephemeral key
+and your response key, so a sealed prompt cannot be replayed against another key.
+
+## Errors
+
+| Status | Meaning |
+| --- | --- |
+| 402 | A pod API key is over its daily spend cap. The reservation is released immediately. |
+| 404 | The lane is not public, the job does not exist, or you do not own it. |
+| 429 | Rate limited. Back off and retry. |
+| 503 `model_not_available` | No ready node is available for the model. Retry later. |
+| 503 `image_unavailable` | Image generation is not available right now. Retry later. |
+
+A failed job reports `failure_reason` such as `image_input_invalid` or `image_runtime_failed`,
+and the credit hold is refunded.
