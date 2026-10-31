@@ -37,8 +37,7 @@ Image generation uses three requests: reserve, submit, poll.
    the signature, then opens the result locally.
 
 Authenticate every request with your API key (`X-API-Key: x402c_...`) or a session token
-(`Authorization: Bearer sgl_sess...`). While the lane is private, canary callers also send the
-`X-SGL-IMG-Canary` header.
+(`Authorization: Bearer sgl_sess...`). 
 
 ### 1. Reserve
 
@@ -306,8 +305,8 @@ and your response key, so a sealed prompt cannot be replayed against another key
 | 402 | A pod API key is over its daily spend cap. The reservation is released immediately. |
 | 404 | The lane is not public, the job does not exist, or you do not own it. |
 | 429 | Rate limited. Back off and retry. |
-| 503 `model_not_available` | No ready node or the model is not enabled. |
-| 503 `image_unavailable` | The lane is temporarily switched off. |
+| 503 `model_not_available` | No ready node is available for the model. Retry later. |
+| 503 `image_unavailable` | Image generation is not available right now. Retry later. |
 
 A failed job reports `failure_reason` such as `image_input_invalid` or `image_runtime_failed`,
 and the credit hold is refunded.
