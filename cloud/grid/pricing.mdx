@@ -26,7 +26,7 @@ curl https://grid.x402compute.cc/grid/models
 
 ## Per-provider pricing
 
-Most nodes serve at the platform suggested rate, but operators may set their **own** per-token price within a band (suggested × 0.5 to × 5). You can compare the nodes serving a model — each with its effective price, cheapest first — and optionally pin one:
+Most nodes serve at the platform suggested rate, but operators may set their **own** per-token price within a band (suggested × 0.5 to × 5). Image, speech and transcription models use a band of × 0.5 to × 2, see below. You can compare the nodes serving a model — each with its effective price, cheapest first — and optionally pin one:
 
 ```bash
 curl "https://grid.x402compute.cc/v1/providers?model=llama-3.2-3b"
@@ -46,6 +46,25 @@ curl -X POST https://grid.x402compute.cc/v1/reserve \
 ```
 
 If no node qualifies under the cap, the request returns `price_cap_unmet` instead of overcharging you.
+
+## Image, speech and transcription prices
+
+Providers can set their own price for **image, text to speech and transcription** models too. A provider
+picks a multiplier from **0.5× to 2×** of the suggested rate, and the price you see is always the exact price
+you pay: it is quoted when you reserve, locked in for that request, and charged to the micro-dollar. A provider
+changing their price mid-request never changes what you owe. The provider keeps 80%.
+
+- The reserve response shows the quote. When a provider has set a custom price it also carries `price_mult_ppm`
+  (parts per million, `1000000` is the suggested rate) and `reference_price_usd`.
+- Compare providers with `GET /v1/providers?model=<id>`: image, speech and transcription entries list each node's price
+  (`price_per_mp_step`, `price_per_byte` or `price_per_audio_second`), cheapest first.
+- Use **`max_price`** (USD for the whole request) on image, speech and transcription reserves. If the node you are
+  given costs more, you get `price_cap_unmet` and nothing is charged.
+
+```bash
+# the 1024 x 1024 image price today: $0.006292 at the suggested rate, $0.003146 to $0.012584 across providers
+curl "https://grid.x402compute.cc/v1/providers?model=flux2-klein-4b-q4"
+```
 
 ## Where the money goes
 

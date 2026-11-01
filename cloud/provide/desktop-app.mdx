@@ -41,6 +41,12 @@ Any Mac that can run the image model can serve pictures on the Grid. The model's
 requirement is the only limit. Providers keep 80% of what a job earns. The default price is
 0.0015 USD per megapixel-step, so a 1024x1024 image is about 0.0063 USD.
 
+You can set your own price. Open **Pricing**, pick the image model, and move the slider between half and
+double the default (0.5× to 2×). The app shows the price in dollars, such as about 0.0079 USD for a 1024x1024
+picture at 1.25×, and what you keep. **Reset** goes back to the default. Changes can be made once a minute.
+Speech and transcription models can be priced the same way with the [CLI](/cloud/provide/cli) or from the
+operator dashboard in Cloud.
+
 Buyers use the [Grid image API](/cloud/grid/image), and all generation is subject to the
 [content rules](/cloud/grid/image-policy). Provider setup and earnings work as described in
 [Earnings](/cloud/provide/earnings).

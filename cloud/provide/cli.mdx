@@ -76,12 +76,14 @@ View or set your **per-token price**. By default your node bills the platform su
 sgl price show                                              # your prices + the suggested rate + the band
 sgl price set --model llama-3.2-3b --input 0.004 --output 0.004   # undercut to win more jobs
 sgl price reset --model llama-3.2-3b                        # back to the suggested price
+sgl price set --model flux2-klein-4b-q4 --multiplier 1.25   # image, speech or transcription model: 1.25x the suggested rate
 ```
 
 | Subcommand | Flags | Description |
 |---|---|---|
 | `show` | — | Show each served model's price, the suggested rate, and the band |
 | `set` | `--model`, `--input`, `--output` | Set a custom price (USD per 1M tokens; must be in-band and for a model you advertise) |
+| `set` | `--model`, `--multiplier` | For an image, speech or transcription model: a multiplier from 0.5 to 2.0 on the suggested rate (1.0 is the suggested rate) |
 | `reset` | `--model` | Revert a model to the platform suggested price |
 
 <Note>The server enforces the band and a short cooldown between changes. You can also manage prices from the operator dashboard, and callers compare nodes at `GET /v1/providers?model=…`.</Note>
