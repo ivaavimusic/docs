@@ -112,7 +112,7 @@ curl -s -X POST https://compute.x402layer.cc/pods \
        "use_credits":true}'
 ```
 
-See the public catalog at `GET https://compute.x402layer.cc/pods/catalog` for agents, tiers, models and plans, and the [API reference](/api-reference/pods-deploy) for every endpoint and field.
+`agent_id` picks the engine: `openclaw` (ClawPod), `hermes` (HermPod) or `pi` ([Pi pod](/cloud/pods/pi)). On the [Pods API](/cloud/pods/api) the same choice is `engine`: `clawpod`, `hermpod` or `pipod`. See the public catalog at `GET https://compute.x402layer.cc/pods/catalog` for agents, tiers, models and plans, and the [API reference](/api-reference/pods-deploy) for every endpoint and field.
 
 ## Related
 

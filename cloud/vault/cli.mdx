@@ -12,8 +12,10 @@ agentvault login            # opens your browser — connect wallet, approve, do
 agentvault login --api-key  # headless machines: paste a compute API key instead
 ```
 
-The browser flow mints a scoped API key for this machine automatically. For
-`--api-key`, create one under **Settings → API Keys** in the dashboard.
+The browser flow mints a scoped API key for this machine automatically. It signs
+with a Solana wallet. Signed in with email or a social account instead? Use
+`--api-key`: create a key under **Settings → API Keys** in the dashboard and paste
+it.
 
 ## Back up
 
