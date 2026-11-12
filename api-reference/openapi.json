@@ -15510,7 +15510,7 @@
         "type": "apiKey",
         "in": "header",
         "name": "X-API-Key",
-        "description": "A compute API key (`x402c_...`). Mint one in the dashboard under Settings -> API Keys. This is the ONLY auth `/pods/v1/*` accepts - wallet signatures are bound to method+path+body and do not survive the internal hop, so signature callers must use the dashboard routes instead. Two extra scopes gate the dangerous powers: `pods:wallet:write` (pod wallet money, backup passphrase) and `pods:control:write` (connectors, full-power control socket)."
+        "description": "A compute API key (`x402c_...`). Mint one in the dashboard under Settings -> API Keys. A signed-in compute session also works. Wallet signatures do not: they are bound to method+path+body and do not survive the internal hop, so signature callers must use the dashboard routes instead. Two extra scopes gate the dangerous powers: `pods:wallet:write` (pod wallet money, backup passphrase) and `pods:control:write` (connectors, full-power control socket)."
       }
     },
     "responses": {
