@@ -1,0 +1,46 @@
+---
+title: Pi pod
+description: Pi is a lightweight coding agent you can run as an Agent Pod, next to ClawPod and HermPod. Small, fast, and yours to extend with skills and MCP tools.
+---
+
+A **Pi pod** runs the [Pi](https://pi.dev) coding agent 24/7 on its own machine. Pi is small and fast, and you extend it with skills and MCP tools. It is the third Agent Pod engine, next to **ClawPod** (OpenClaw) and **HermPod** (Hermes).
+
+## What you get
+
+- **The Pi coding agent**, always on, in your own pod.
+- **Its own crypto wallet** (Base and Solana), available to the agent as native tools, under the same spend controls as every pod. See [Pod Wallet](/cloud/pods/wallet).
+- **Preinstalled skills**: `x402-compute` and `x402-layer`, plus Singularity marketplace tools, wired to your account with capped, revocable credentials.
+- **Chat anywhere**: from the dashboard, over the [OpenAI-compatible API](/cloud/pods/openai-adapter), or in your Telegram DMs.
+- **Optional headless browser** for reading and using web pages.
+- **Sandbox access**: run commands, edit files and open ports with the [Sandbox API](/cloud/pods/sandbox), the same as other engines.
+
+## Choosing an engine
+
+| Engine | Public API name | Best for |
+| --- | --- | --- |
+| **ClawPod** (OpenClaw) | `clawpod` | Full-featured agent: chat apps, browser, Telegram groups, 50+ skills. |
+| **HermPod** (Hermes) | `hermpod` | Self-improving agent that writes its own skills and keeps long-term memory. |
+| **Pi pod** (Pi) | `pipod` | Lightweight coding agent you extend with skills and MCP tools. |
+
+ClawPod is the default when you do not name an engine.
+
+## Deploy a Pi pod
+
+In the dashboard, open **Agent Pods → Deploy a Pod** and pick **Pi pod**. The rest of the flow is the same as any pod: see [Deploy a Pod](/cloud/pods/deploy).
+
+With the [Pods API](/cloud/pods/api), set `engine` to `pipod`:
+
+```bash
+curl -s -X POST https://compute.x402layer.cc/pods/v1/pods \
+  -H "X-API-Key: $SGL_API_KEY" \
+  -H "Idempotency-Key: pi-pod-001" \
+  -H 'content-type: application/json' \
+  -d '{"engine": "pipod", "tier": "starter", "name": "my pi agent"}'
+```
+
+## Limits today
+
+- **Singularity Layer models on a BYOK pod** and **BYOK fallback providers** are ClawPod only for now. A BYOK Pi pod uses one provider: yours. A managed Pi pod runs Singularity Layer models as usual.
+- Pi chats in Telegram DMs. Running Telegram groups is a ClawPod feature.
+
+The live list of engines, their status and features is in the pod catalog: `GET https://compute.x402layer.cc/pods/catalog`.

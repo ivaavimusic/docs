@@ -134,6 +134,8 @@
                   "cloud/grid/systemone",
                   "cloud/grid/playground",
                   "cloud/grid/api",
+                  "cloud/grid/anthropic-api",
+                  "cloud/grid/claude-code",
                   "cloud/grid/confidential-inference",
                   "cloud/grid/pricing",
                   "api-reference/grid-staking-metrics",
@@ -156,12 +158,14 @@
                 "pages": [
                   "cloud/pods/overview",
                   "cloud/pods/deploy",
+                  "cloud/pods/pi",
                   "cloud/pods/manage",
                   "cloud/pods/models",
                   "cloud/pods/wallet",
                   "cloud/pods/memory",
                   "cloud/pods/scheduler",
                   "cloud/pods/openai-adapter",
+                  "cloud/pods/sandbox",
                   "cloud/pods/api"
                 ]
               },
@@ -342,6 +346,9 @@
             "pages": [
               "api-reference/grid-models",
               "api-reference/grid-chat-completions",
+              "api-reference/grid-messages",
+              "api-reference/grid-messages-count-tokens",
+              "api-reference/grid-models-get",
               "api-reference/grid-embeddings",
               "api-reference/grid-transcriptions-reserve",
               "api-reference/grid-transcriptions",
@@ -437,7 +444,15 @@
               "api-reference/pods-v1-webhooks-create",
               "api-reference/pods-v1-webhooks-list",
               "api-reference/pods-v1-webhooks-patch",
-              "api-reference/pods-v1-webhooks-delete"
+              "api-reference/pods-v1-webhooks-delete",
+              "api-reference/pods-v1-exec",
+              "api-reference/pods-v1-files-get",
+              "api-reference/pods-v1-files-put",
+              "api-reference/pods-v1-ports-open",
+              "api-reference/pods-v1-ports-list",
+              "api-reference/pods-v1-ports-close",
+              "api-reference/pods-v1-clone",
+              "api-reference/pods-v1-clone-status"
             ]
           },
           {

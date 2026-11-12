@@ -1,0 +1,58 @@
+---
+title: Claude Code on the Grid
+description: Point Claude Code at SGL Grid with two environment variables and run it on open models, paid from your Singularity Layer credits.
+---
+
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code) talks to the Anthropic Messages API. The Grid [speaks that API](/cloud/grid/anthropic-api), so you can run Claude Code on Grid models by changing where it sends requests.
+
+<Warning>
+  Claude Code's own system prompt and tools are about **13k tokens** before you type anything. Only models with a large context window fit. Today that is `qwen-2.5-32b` (32k). Smaller models answer with a `400` that names the context limit.
+</Warning>
+
+## Setup
+
+<Steps>
+  <Step title="Get a key">
+    Create a compute API key in the dashboard under **Settings → API keys** and add credits. Requests are billed from those credits.
+  </Step>
+  <Step title="Pick a model that fits">
+    List the models and their context sizes:
+
+    ```bash
+    curl -s https://grid.x402compute.cc/v1/models \
+      -H "anthropic-version: 2023-06-01" | jq '.data[] | {id, max_input_tokens}'
+    ```
+
+    Use one whose `max_input_tokens` is well above 13k.
+  </Step>
+  <Step title="Point Claude Code at the Grid">
+    ```bash
+    export ANTHROPIC_BASE_URL=https://grid.x402compute.cc
+    export ANTHROPIC_API_KEY=x402c_...        # your Singularity Layer compute API key
+    claude --model qwen-2.5-32b
+    ```
+
+    The key goes out as `x-api-key`. If you prefer a Bearer header, set `ANTHROPIC_AUTH_TOKEN` instead of `ANTHROPIC_API_KEY`. The Grid accepts both.
+  </Step>
+</Steps>
+
+<Tip>
+  Claude Code also uses a smaller "fast" model for some background tasks. If those requests fail because the default name is not a Grid model, point it at a Grid model too. The variable name depends on your Claude Code version (for example `ANTHROPIC_DEFAULT_HAIKU_MODEL`, or `ANTHROPIC_SMALL_FAST_MODEL` on older versions), so check the Claude Code settings docs for yours.
+</Tip>
+
+## What to expect
+
+- **Grid models, not Claude.** You get open models served by Singularity Layer nodes. They are smaller than Claude, so expect simpler answers and less reliable multi-step tool use.
+- **Streaming works.** Claude Code always streams, which also avoids the timeout on long non-streaming replies.
+- **Your own tools work.** File edits, shell commands and other Claude Code tools are defined by the client, so they run normally.
+- **Some features do not.** Extended thinking with a budget, web search, web fetch and other server tools, PDF and document input, and prompt caching are not available on the Grid. Claude Code keeps working, but features that need them fail or are skipped.
+- **Cost.** Each turn is billed per token from your credits, like any Grid call. `usage.cost_usd` on each reply shows the charge.
+
+## Troubleshooting
+
+| You see | Do this |
+| --- | --- |
+| `400` about the context limit | Pick a model with a larger `max_input_tokens`, or start a fresh session. |
+| `402` / `billing_error` | Add credits, or check the key is set and has Grid access. |
+| `400` naming a field or tool | That feature is not supported on the Grid. See [What does not work](/cloud/grid/anthropic-api#what-does-not-work). |
+| `404 not_found_error` for a model | The model name is not served right now. List models again. |
