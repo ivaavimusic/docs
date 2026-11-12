@@ -25,6 +25,10 @@ rather than clicking them in a dashboard.
   fastest way to a confusing `403`.
 </Note>
 
+## Pick an engine
+
+`engine` on create picks the agent: `clawpod` (OpenClaw, the default), `hermpod` (Hermes) or `pipod` ([Pi](/cloud/pods/pi)). The live list is in `GET https://compute.x402layer.cc/pods/catalog`.
+
 ## Two rules that cost money if you skip them
 
 ### 1. Create is idempotent, and `Idempotency-Key` is required
@@ -192,7 +196,7 @@ See [OpenAI-compatible access](/cloud/pods/openai-adapter) for what a turn does 
 | `POST` | `/pods` | **`Idempotency-Key` required.** `201`, `status: provisioning` |
 | `GET` | `/pods` | Newest first. `?external_ref=`, `?cursor=`, `?limit=` |
 | `GET` | `/pods/{id}` | |
-| `PATCH` | `/pods/{id}` | `name`, `model`, `slug`, `auto_renew`, `ai.*` (BYOK rotation), `agent_identity`, `agent_instructions`, `heartbeat_prompt`, `agent_heartbeat_minutes` |
+| `PATCH` | `/pods/{id}` | `name`, `model`, `slug`, `auto_renew`, `ai.*` (BYOK key rotation, `ai.providers`, `ai.managed_models`), `agent_identity`, `agent_instructions`, `heartbeat_prompt`, `agent_heartbeat_minutes` |
 | `DELETE` | `/pods/{id}` | `200 destroyed` or `202 destroying`, see above |
 
 ### Endpoint keys
@@ -216,6 +220,18 @@ See [OpenAI-compatible access](/cloud/pods/openai-adapter) for what a turn does 
 | `GET` `PATCH` | `/pods/{id}/backups` | Agent Vault settings |
 | `POST` | `/pods/{id}/chat-ticket` | Short-lived ticket for the streaming socket |
 | `POST` `GET` | `/pods/{id}/channels/telegram/join-code` | POST mints, GET polls |
+
+### Sandbox
+
+Needs `pods:control:write` (or a signed-in session). A pod's own key is refused. See [Sandbox API](/cloud/pods/sandbox).
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/pods/{id}/exec` | Run a shell command as the `pod` user. Timeout 1 to 300 s |
+| `GET` `PUT` | `/pods/{id}/files` | List, read (`?path=`) or write workspace files |
+| `POST` `GET` | `/pods/{id}/ports` | Open a public or private URL to a pod port, or list them |
+| `DELETE` | `/pods/{id}/ports/{port}` | Close a port |
+| `POST` `GET` | `/pods/{id}/clone` | New pod from the latest Vault backup (**`Idempotency-Key` required**), or its restore status |
 
 ### Events and webhooks
 
@@ -244,7 +260,7 @@ general-purpose key cannot use them.
 | Scope | Grants |
 | --- | --- |
 | `pods:wallet:write` | Send from a pod wallet, raise its cap, set the backup passphrase |
-| `pods:control:write` | Add and remove connectors, and a full-power control socket (pod files, skills, backups) |
+| `pods:control:write` | Add and remove connectors, the [Sandbox API](/cloud/pods/sandbox) (exec, files, ports), and a full-power control socket (pod files, skills, backups) |
 
 Without `pods:control:write`, a chat ticket is issued at **`chat`** scope: the socket accepts
 conversation and nothing else. That is the intended default. Ask for the scope only when you

@@ -1,0 +1,139 @@
+---
+title: API (Anthropic-compatible)
+description: Call SGL Grid with the Anthropic Messages API. Point the official Anthropic SDKs, Claude Code or any Anthropic-format client at the Grid by changing the base URL and key.
+---
+
+The Grid speaks the **Anthropic Messages API** next to the [OpenAI one](/cloud/grid/api). If your code uses the Anthropic SDK, change the base URL and the key, and it runs on Grid models.
+
+**Base URL:** `https://grid.x402compute.cc` (the SDK adds `/v1/messages` itself)
+
+<Note>
+  You call **Grid models** (`qwen-2.5-32b`, `qwen-2.5-7b`, ...), never Claude models. List what is served right now with `GET /v1/models` and an `anthropic-version` header.
+</Note>
+
+## Quickstart (cURL)
+
+```bash
+curl https://grid.x402compute.cc/v1/messages \
+  -H "x-api-key: $SGL_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d '{
+    "model": "qwen-2.5-32b",
+    "max_tokens": 256,
+    "messages": [{"role": "user", "content": "Explain confidential compute in one line."}]
+  }'
+```
+
+## With the Anthropic SDKs
+
+<CodeGroup>
+
+```python Python
+# pip install anthropic
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://grid.x402compute.cc",
+    api_key=os.environ["SGL_API_KEY"],   # a Singularity Layer compute API key (x402c_...)
+)
+
+msg = client.messages.create(
+    model="qwen-2.5-32b",
+    max_tokens=512,
+    messages=[{"role": "user", "content": "Hello from the Grid"}],
+)
+print(msg.content[0].text)
+print(msg.usage)  # input_tokens, output_tokens, plus cost_usd
+```
+
+```ts TypeScript
+// npm i @anthropic-ai/sdk
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  baseURL: "https://grid.x402compute.cc",
+  apiKey: process.env.SGL_API_KEY, // a Singularity Layer compute API key (x402c_...)
+});
+
+const msg = await client.messages.create({
+  model: "qwen-2.5-32b",
+  max_tokens: 512,
+  messages: [{ role: "user", content: "Hello from the Grid" }],
+});
+console.log(msg.content);
+```
+
+</CodeGroup>
+
+### Streaming
+
+```python
+with client.messages.stream(
+    model="qwen-2.5-32b",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a haiku about GPUs."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+Events arrive in the usual Anthropic order: `message_start`, `content_block_start`, `content_block_delta`, `content_block_stop`, `message_delta`, `message_stop`, with `ping` while the node works and an `error` event if the stream fails after it started.
+
+## Endpoints
+
+| Endpoint | What it does |
+| --- | --- |
+| `POST /v1/messages` | Create a message, streaming or not. [Reference](/api-reference/grid-messages) |
+| `POST /v1/messages/count_tokens` | Returns `{"input_tokens": N}`. An estimate, free, no auth needed, rate-limited per IP. [Reference](/api-reference/grid-messages-count-tokens) |
+| `GET /v1/models` | Anthropic shape when you send an `anthropic-version` header (OpenAI shape otherwise). Chat models only. Supports `limit`, `after_id`, `before_id`. [Reference](/api-reference/grid-models) |
+| `GET /v1/models/{model_id}` | One model, same shape. |
+
+## Authentication and payment
+
+The same three ways as the OpenAI endpoint:
+
+- `x-api-key: x402c_...` or `Authorization: Bearer x402c_...`: billed to the key owner's credits.
+- `Authorization: Bearer <session token>`: billed to the signed-in account.
+- `X-Payment: <x402 payload>`: pay per request. Without auth, the `402` body is an Anthropic error (`billing_error`) that also carries the x402 fields (`x402Version`, `accepts`, `price_usd`), so x402 clients work unchanged.
+
+Get a key in the dashboard under **Settings → API keys**.
+
+## What works
+
+- `model`, `messages`, `max_tokens`, `system` (string or text blocks), `stop_sequences`, `stream`, `temperature`, `tools`, `tool_choice` (`auto`, `any`, `tool`, `none`).
+- Content blocks: `text`, `image` (base64, vision models only, one image per request, non-streaming), `tool_use`, `tool_result` (text, with `is_error`).
+- Stop reasons: `end_turn`, `max_tokens`, `stop_sequence`, `tool_use`, `refusal`.
+- `usage.input_tokens` and `usage.output_tokens`. Cache token counts are always 0. `usage.cost_usd` is an extra field with the charge.
+- Errors use the Anthropic shape (`{"type":"error","error":{...},"request_id":...}`) with a `request-id` header.
+
+These are accepted so clients like Claude Code work, but change nothing: `thinking` of type `adaptive`, `disabled` or `between_tools`, `output_config.effort`, `metadata`, `service_tier`, `cache_control` (there is no prompt caching), and `context_management` edits that clear thinking. Earlier `thinking` blocks in a conversation are dropped, so a chat started on Claude can continue on the Grid.
+
+## What does not work
+
+These return a clean `400 invalid_request_error`:
+
+- Extended thinking with a budget, structured outputs (`output_config.format`), strict tools.
+- Server tools and Anthropic-defined tools: web search, web fetch, code execution, bash, text editor, computer use, memory, tool search. Define your own tool with an `input_schema` instead.
+- `document` blocks (PDF or text), search results and citations.
+- Image URLs and Files API images (send base64), images inside `tool_result`.
+- `mcp_servers`, `container`, `top_p`, `top_k`, assistant prefill, `max_tokens: 0`, `disable_parallel_tool_use: true`.
+- Any other unknown top-level field. The Grid names it in the error instead of ignoring it.
+
+## Good to know
+
+- **Context windows are small.** Each model serves the context its nodes run, often 4k to 16k tokens. Check `max_input_tokens` in `/v1/models`. A prompt that leaves no room for a reply gets a `400` with the limit. A `max_tokens` above the room left is lowered to fit (the `x-sgl-max-tokens-*` headers report it), and output is capped at 8192 tokens.
+- **Long replies: stream them.** A non-streaming reply that runs past the sync window returns `504 timeout_error` with the `job_id` and `x-should-retry: false`, because a retry would start a second, separately billed job.
+- **Stop sequences** are applied by the Grid, not the node. The reply is cut at the first match, but the node keeps generating until it stops, and those tokens are billed.
+- **Tool call input** arrives as one `input_json_delta` per call, once the call is complete and valid JSON.
+- **Retries.** The SDKs retry `429` and `5xx` by default, which is safe: nothing is charged on those. Payment errors are sent with `x-should-retry: false`.
+- **Privacy.** `/v1/messages` uses the API path where the Grid seals your prompt to the node. The browser path where your own client seals the prompt has no Anthropic equivalent; see [Confidential inference](/cloud/grid/confidential-inference).
+
+## Related
+
+<CardGroup cols={3}>
+  <Card title="Claude Code on the Grid" icon="terminal" href="/cloud/grid/claude-code">Run Claude Code against Grid models.</Card>
+  <Card title="OpenAI-compatible API" icon="code" href="/cloud/grid/api">The other API shape.</Card>
+  <Card title="Models" icon="cubes" href="/cloud/grid/models">What is served and how to choose.</Card>
+</CardGroup>

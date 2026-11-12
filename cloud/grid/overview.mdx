@@ -8,6 +8,7 @@ description: Decentralized, confidential AI inference. OpenAI-compatible, pay-pe
 ## Why the Grid
 
 - **OpenAI-compatible** — `/v1/chat/completions`; existing SDKs work by changing the base URL.
+- **Anthropic-compatible**: `/v1/messages`, so the Anthropic SDKs and Claude Code work by changing the base URL. See [Anthropic API](/cloud/grid/anthropic-api).
 - **Confidential** — prompts are end-to-end encrypted and run inside a TEE; responses carry an attestation. See [Confidential inference](/cloud/grid/confidential-inference).
 - **Pay-per-call** — credits or x402 USDC, no subscription. See [Pricing](/cloud/grid/pricing).
 - **Decentralized** — served by staked operators, not one provider.
@@ -27,6 +28,8 @@ description: Decentralized, confidential AI inference. OpenAI-compatible, pay-pe
   <Card title="Models" icon="cubes" href="/cloud/grid/models">What's served, and how to choose.</Card>
   <Card title="Playground" icon="message" href="/cloud/grid/playground">Try models in the browser.</Card>
   <Card title="API" icon="code" href="/cloud/grid/api">OpenAI-compatible quickstart.</Card>
+  <Card title="Anthropic API" icon="code" href="/cloud/grid/anthropic-api">Anthropic Messages API, for the Anthropic SDKs.</Card>
+  <Card title="Claude Code" icon="terminal" href="/cloud/grid/claude-code">Run Claude Code on Grid models.</Card>
   <Card title="Confidential inference" icon="shield-halved" href="/cloud/grid/confidential-inference">E2E encryption + attestation.</Card>
   <Card title="Pricing" icon="credit-card" href="/cloud/grid/pricing">How cost is calculated.</Card>
 </CardGroup>

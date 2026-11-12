@@ -2677,7 +2677,7 @@
           "SGL Grid"
         ],
         "summary": "List models",
-        "description": "List the models currently served by active attested nodes. OpenAI-compatible shape. Each model includes `context_window` — the maximum prompt + output tokens the grid will accept for it right now (the largest live node's context). A request whose `prompt + max_tokens` exceeds this is rejected with a `400 context_length_exceeded` before any charge, and the router only dispatches a request to a node whose context actually fits it.",
+        "description": "List the models currently served by active attested nodes. OpenAI-compatible shape. Each model includes `context_window`: the maximum prompt + output tokens the grid will accept for it right now (the largest live node's context). A request whose `prompt + max_tokens` exceeds this is rejected with a `400 context_length_exceeded` before any charge, and the router only dispatches a request to a node whose context actually fits it.\n\n**Anthropic shape.** Send an `anthropic-version` header and the response uses the Anthropic Models API shape instead (`data[]` with `type`, `id`, `display_name`, `created_at`, `max_input_tokens`, `max_tokens`, plus `first_id`, `last_id`, `has_more`). Chat models only. Supports `limit`, `after_id` and `before_id`. Without the header the response is the OpenAI shape, unchanged.",
         "parameters": [
           {
             "name": "X-API-Key",
@@ -2703,6 +2703,43 @@
               "example": "systemone"
             },
             "description": "Optional modality filter. Use `systemone` to list Laya/System One models such as `convaiinnovations/laya`."
+          },
+          {
+            "name": "anthropic-version",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "2023-06-01"
+            },
+            "description": "Send it to get the Anthropic shape."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Anthropic shape only. Page size."
+          },
+          {
+            "name": "after_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Anthropic shape only."
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Anthropic shape only."
           }
         ],
         "responses": {
@@ -2711,38 +2748,64 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "object": {
-                      "type": "string",
-                      "example": "list"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "example": "llama-3.2-3b"
-                          },
-                          "object": {
-                            "type": "string",
-                            "example": "model"
-                          },
-                          "owned_by": {
-                            "type": "string",
-                            "example": "singularity-grid"
-                          },
-                          "context_window": {
-                            "type": "integer",
-                            "example": 16384,
-                            "description": "Maximum prompt + output tokens accepted for this model right now (the largest live node's context window). Size requests against this; exceeding it returns `400 context_length_exceeded` before any charge."
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "object": {
+                          "type": "string",
+                          "example": "list"
+                        },
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "llama-3.2-3b"
+                              },
+                              "object": {
+                                "type": "string",
+                                "example": "model"
+                              },
+                              "owned_by": {
+                                "type": "string",
+                                "example": "singularity-grid"
+                              },
+                              "context_window": {
+                                "type": "integer",
+                                "example": 16384,
+                                "description": "Maximum prompt + output tokens accepted for this model right now (the largest live node's context window). Size requests against this; exceeding it returns `400 context_length_exceeded` before any charge."
+                              }
+                            }
                           }
+                        }
+                      },
+                      "title": "OpenAI shape"
+                    },
+                    {
+                      "title": "Anthropic shape (anthropic-version header)",
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AnthropicModel"
+                          }
+                        },
+                        "first_id": {
+                          "type": "string"
+                        },
+                        "last_id": {
+                          "type": "string"
+                        },
+                        "has_more": {
+                          "type": "boolean"
                         }
                       }
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -6692,6 +6755,16 @@
                 "type": "object",
                 "description": "Only these fields are read. Anything else is ignored - internal pricing and provisioning fields are deliberately not forwardable from a public caller.",
                 "properties": {
+                  "engine": {
+                    "type": "string",
+                    "enum": [
+                      "clawpod",
+                      "hermpod",
+                      "pipod"
+                    ],
+                    "default": "clawpod",
+                    "description": "The agent engine: `clawpod` (OpenClaw), `hermpod` (Hermes) or `pipod` (Pi). `openclaw`, `hermes` and `pi` are accepted too."
+                  },
                   "tier": {
                     "type": "string",
                     "example": "starter",
@@ -6726,7 +6799,7 @@
                   },
                   "ai": {
                     "type": "object",
-                    "description": "`managed` = we run and meter the LLM. `byok` = the pod calls your own OpenAI-compatible endpoint.",
+                    "description": "`managed` = we run and meter the LLM. `byok` = the pod calls your own provider with your key.",
                     "properties": {
                       "mode": {
                         "type": "string",
@@ -6738,15 +6811,49 @@
                       },
                       "api_key": {
                         "type": "string",
-                        "description": "BYOK only. Your provider key, stored encrypted."
+                        "description": "BYOK only. Your primary provider key, stored encrypted."
+                      },
+                      "preset": {
+                        "type": "string",
+                        "enum": [
+                          "openrouter",
+                          "openai",
+                          "venice",
+                          "0g",
+                          "custom"
+                        ],
+                        "description": "BYOK only. Primary provider preset. A preset fixes the base URL; `custom` uses `base_url`."
                       },
                       "base_url": {
                         "type": "string",
-                        "description": "BYOK only. Your OpenAI-compatible base URL."
+                        "description": "BYOK only. Base URL for a `custom` primary. Ignored when a preset fixes it."
                       },
                       "api": {
                         "type": "string",
-                        "description": "BYOK only. Provider API type."
+                        "enum": [
+                          "openai-completions",
+                          "openai-responses",
+                          "anthropic-messages",
+                          "google-generative"
+                        ],
+                        "description": "BYOK only. API format of a custom primary."
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "description": "BYOK only. Your label for the primary provider."
+                      },
+                      "fallbacks": {
+                        "type": "array",
+                        "maxItems": 4,
+                        "items": {
+                          "$ref": "#/components/schemas/PodV1AiProvider"
+                        },
+                        "description": "BYOK, ClawPod only. Up to 3 fallback providers tried in order when the one before fails, plus optionally one `{preset: \"singularity\", model}` entry. Each new provider needs its `api_key`. Validated before anything is charged."
+                      },
+                      "managed_models": {
+                        "type": "boolean",
+                        "description": "BYOK, ClawPod only. Also allow Singularity Layer models, billed per call from your credits at managed prices with no included allowance. On by default for a BYOK ClawPod; costs nothing unless used. Pick one with `model: \"singularity/<id>\"` or `/model singularity/<id>` in chat."
                       }
                     }
                   },
@@ -7261,13 +7368,24 @@
                     "properties": {
                       "api_key": {
                         "type": "string",
-                        "description": "BYOK provider rotation."
+                        "description": "Rotate the primary key."
                       },
                       "base_url": {
                         "type": "string"
                       },
                       "api": {
                         "type": "string"
+                      },
+                      "providers": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/PodV1AiProvider"
+                        },
+                        "description": "ClawPod only. The WHOLE ordered provider list, primary first, then up to 3 fallbacks and optionally one `singularity` entry. Entries with an `id` and no `api_key` keep their stored key. Do not combine with `base_url`/`api`/`api_key`."
+                      },
+                      "managed_models": {
+                        "type": "boolean",
+                        "description": "Turn Singularity Layer models (billed from credits) on or off for this BYOK ClawPod."
                       }
                     }
                   }
@@ -11737,6 +11855,1757 @@
           }
         }
       }
+    },
+    "/v1/messages": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Create a message (Anthropic)",
+        "description": "Anthropic Messages API on Grid models. Works with the official Anthropic SDKs and Claude Code by setting the base URL to `https://grid.x402compute.cc`. Same auth, x402 payment, routing and billing as `/v1/chat/completions`. `?beta=true` is accepted. Unsupported features (extended thinking with a budget, structured outputs, server tools, documents, image URLs, `top_p`, `top_k`, prefill, unknown fields) return `400 invalid_request_error`. See the [Anthropic API guide](/cloud/grid/anthropic-api).",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "x402c_..."
+            },
+            "description": "Singularity Layer compute API key, billed to credits. `Authorization: Bearer x402c_...` or a session token also work. Omit to pay per request with x402 `X-Payment`."
+          },
+          {
+            "name": "anthropic-version",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "2023-06-01"
+            },
+            "description": "Accepted, not enforced."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model",
+                  "messages",
+                  "max_tokens"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "example": "qwen-2.5-32b",
+                    "description": "A Grid model id from `GET /v1/models`, never a Claude model id."
+                  },
+                  "max_tokens": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 512,
+                    "description": "Lowered to fit the room left in the model's context. Output is capped at 8192."
+                  },
+                  "messages": {
+                    "type": "array",
+                    "description": "Conversation turns, `user` and `assistant`. Must not end with an assistant message (no prefill). A mid-conversation `system` message is folded into the user turn it follows.",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "role",
+                        "content"
+                      ],
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "assistant"
+                          ]
+                        },
+                        "content": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "description": "A content block. Supported types: `text`, `image` (base64 source, vision models only), `tool_use`, `tool_result` (text content, optional `is_error`).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "text",
+                                      "image",
+                                      "tool_use",
+                                      "tool_result"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  },
+                                  "source": {
+                                    "type": "object",
+                                    "description": "For `image`: `{type: \"base64\", media_type, data}`. URLs and Files API images are not supported."
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "input": {
+                                    "type": "object"
+                                  },
+                                  "tool_use_id": {
+                                    "type": "string"
+                                  },
+                                  "content": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "is_error": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "example": [
+                      {
+                        "role": "user",
+                        "content": "Hello"
+                      }
+                    ]
+                  },
+                  "system": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    ],
+                    "description": "System prompt, as a string or text blocks."
+                  },
+                  "stream": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Server-sent events in Anthropic order. Use it for long replies."
+                  },
+                  "temperature": {
+                    "type": "number"
+                  },
+                  "stop_sequences": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Applied by the Grid. Tokens the node generated past the match are still billed."
+                  },
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "input_schema": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "description": "Your own tools with an `input_schema`. Server tools and Anthropic-defined tools are refused."
+                  },
+                  "tool_choice": {
+                    "type": "object",
+                    "description": "`{type: auto | any | tool | none}`. `disable_parallel_tool_use: true` is refused."
+                  },
+                  "thinking": {
+                    "type": "object",
+                    "description": "Accepted as a no-op for `adaptive`, `disabled`, `between_tools`. `enabled` with `budget_tokens` is refused."
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Accepted, no effect."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The message, or an SSE stream when `stream` is true.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "example": "message"
+                    },
+                    "role": {
+                      "type": "string",
+                      "example": "assistant"
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "A content block. Supported types: `text`, `image` (base64 source, vision models only), `tool_use`, `tool_result` (text content, optional `is_error`).",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "image",
+                              "tool_use",
+                              "tool_result"
+                            ]
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "object",
+                            "description": "For `image`: `{type: \"base64\", media_type, data}`. URLs and Files API images are not supported."
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "input": {
+                            "type": "object"
+                          },
+                          "tool_use_id": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object"
+                                }
+                              }
+                            ]
+                          },
+                          "is_error": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "stop_reason": {
+                      "type": "string",
+                      "enum": [
+                        "end_turn",
+                        "max_tokens",
+                        "stop_sequence",
+                        "tool_use",
+                        "refusal"
+                      ]
+                    },
+                    "stop_sequence": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "usage": {
+                      "type": "object",
+                      "properties": {
+                        "input_tokens": {
+                          "type": "integer"
+                        },
+                        "output_tokens": {
+                          "type": "integer"
+                        },
+                        "cache_creation_input_tokens": {
+                          "type": "integer",
+                          "example": 0
+                        },
+                        "cache_read_input_tokens": {
+                          "type": "integer",
+                          "example": 0
+                        },
+                        "cost_usd": {
+                          "type": "number",
+                          "description": "Extra field: what this call was charged."
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Events: message_start, content_block_start, content_block_delta (text_delta, input_json_delta), content_block_stop, message_delta, message_stop, ping, error."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request_error`: unsupported field or feature, or the prompt does not fit the model's context.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "`billing_error`. Also carries the x402 fields (`x402Version`, `accepts`, `price_usd`) at the top level and a `WWW-Authenticate` header, so x402 clients can pay and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found_error`: the model is not served right now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limit_error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicError"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "`timeout_error`: a non-streaming reply ran past the sync window. The job continues and is billed; `job_id` is included and `x-should-retry: false` is set. Use `stream: true` for long replies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/messages/count_tokens": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Count message tokens (Anthropic)",
+        "description": "Estimate the input tokens of a Messages request, including tool definitions. Uses the same estimator the Grid uses for its context check and price quote, not a model tokenizer. Free, no auth needed, rate-limited per IP.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model",
+                  "messages"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "example": "qwen-2.5-32b",
+                    "description": "A Grid model id from `GET /v1/models`, never a Claude model id."
+                  },
+                  "messages": {
+                    "type": "array",
+                    "description": "Conversation turns, `user` and `assistant`. Must not end with an assistant message (no prefill). A mid-conversation `system` message is folded into the user turn it follows.",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "role",
+                        "content"
+                      ],
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "assistant"
+                          ]
+                        },
+                        "content": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "description": "A content block. Supported types: `text`, `image` (base64 source, vision models only), `tool_use`, `tool_result` (text content, optional `is_error`).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "text",
+                                      "image",
+                                      "tool_use",
+                                      "tool_result"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  },
+                                  "source": {
+                                    "type": "object",
+                                    "description": "For `image`: `{type: \"base64\", media_type, data}`. URLs and Files API images are not supported."
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "input": {
+                                    "type": "object"
+                                  },
+                                  "tool_use_id": {
+                                    "type": "string"
+                                  },
+                                  "content": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "is_error": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "example": [
+                      {
+                        "role": "user",
+                        "content": "Hello"
+                      }
+                    ]
+                  },
+                  "system": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    ],
+                    "description": "System prompt, as a string or text blocks."
+                  },
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "input_schema": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "description": "Your own tools with an `input_schema`. Server tools and Anthropic-defined tools are refused."
+                  },
+                  "tool_choice": {
+                    "type": "object",
+                    "description": "`{type: auto | any | tool | none}`. `disable_parallel_tool_use: true` is refused."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token estimate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "input_tokens": {
+                      "type": "integer",
+                      "example": 4
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request_error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limit_error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/models/{model_id}": {
+      "servers": [
+        {
+          "url": "https://grid.x402compute.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "SGL Grid"
+        ],
+        "summary": "Get a model (Anthropic)",
+        "description": "One chat model in the Anthropic shape. Send an `anthropic-version` header.",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "qwen-2.5-32b"
+            }
+          },
+          {
+            "name": "anthropic-version",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "2023-06-01"
+            },
+            "description": "Accepted, not enforced."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The model.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicModel"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found_error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pods/v1/pods/{id}/exec": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "summary": "Run a command",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Needs an `X-API-Key` with the `pods:control:write` scope, or a signed-in session. A pod's own key is refused (`403`). See the [Sandbox API guide](/cloud/pods/sandbox).\n\nRuns a shell command on the pod as the unprivileged `pod` user, in `/opt/pod/workspace`, with a clean environment. Output is capped at 1 MB per stream. Rate limit: 120 per minute per account.",
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Command result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exec": {
+                      "type": "object",
+                      "properties": {
+                        "exit_code": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "timed_out": {
+                          "type": "boolean"
+                        },
+                        "duration_ms": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "stdout": {
+                          "type": "string"
+                        },
+                        "stderr": {
+                          "type": "string"
+                        },
+                        "truncated": {
+                          "type": "boolean"
+                        },
+                        "cwd": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "/opt/pod/workspace"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthorized`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: a pod key, or a key without `pods:control:write` (`details.required_scope`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: no such pod on your account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`conflict`: the pod is offline. Right after a pod first shows `online` this can last about a minute.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "The pod took too long to answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "command"
+                ],
+                "properties": {
+                  "command": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20000,
+                    "example": "echo hi && uname -a"
+                  },
+                  "timeout_seconds": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 300,
+                    "default": 60
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pods/v1/pods/{id}/files": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "summary": "List or read files",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Needs an `X-API-Key` with the `pods:control:write` scope, or a signed-in session. A pod's own key is refused (`403`). See the [Sandbox API guide](/cloud/pods/sandbox).\n\nWithout `path`, lists the workspace files. With `?path=`, reads one text file. Rate limit: 240 per minute per account.",
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "File to read, relative to the workspace."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A file list, or one file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "title": "List",
+                      "type": "object",
+                      "properties": {
+                        "files": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "root": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    {
+                      "title": "Read",
+                      "type": "object",
+                      "properties": {
+                        "file": {
+                          "type": "object",
+                          "properties": {
+                            "path": {
+                              "type": "string"
+                            },
+                            "content": {
+                              "type": "string"
+                            },
+                            "modified": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "managed": {
+                              "type": "boolean",
+                              "description": "True for a file the platform manages for the agent."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthorized`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: a pod key, or a key without `pods:control:write` (`details.required_scope`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: no such pod on your account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`conflict`: the pod is offline. Right after a pod first shows `online` this can last about a minute.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "The pod took too long to answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "summary": "Write a file",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Needs an `X-API-Key` with the `pods:control:write` scope, or a signed-in session. A pod's own key is refused (`403`). See the [Sandbox API guide](/cloud/pods/sandbox).\n\nWrites a text file in the workspace. Rate limit: 240 per minute per account.",
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Written.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "file": {
+                      "type": "object",
+                      "properties": {
+                        "path": {
+                          "type": "string"
+                        },
+                        "size": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "modified": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthorized`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: a pod key, or a key without `pods:control:write` (`details.required_scope`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: no such pod on your account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`conflict`: the pod is offline. Right after a pod first shows `online` this can last about a minute.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "The pod took too long to answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "path",
+                  "content"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "example": "notes/todo.md"
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pods/v1/pods/{id}/ports": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "summary": "Open a port",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Needs an `X-API-Key` with the `pods:control:write` scope, or a signed-in session. A pod's own key is refused (`403`). See the [Sandbox API guide](/cloud/pods/sandbox).\n\nPublishes a URL that proxies HTTP to a port on the pod. Ports 1024 to 65535, except 8642, 8787 and 18780 to 18799, which the platform uses. Up to 5 open per pod. The URL (and a private port's token) is returned only once; opening the same port again rotates them and returns `200` with `rotated: true`. Each proxied request carries up to 5 MB and must finish within 30 seconds. Rate limit: 30 per minute per account.",
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Opened (rotated: `200`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "port": {
+                      "type": "object",
+                      "properties": {
+                        "port": {
+                          "type": "integer"
+                        },
+                        "visibility": {
+                          "type": "string",
+                          "enum": [
+                            "public",
+                            "private"
+                          ]
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "Shown only on open. Proxies HTTP to 127.0.0.1:<port> on the pod."
+                        },
+                        "token": {
+                          "type": "string",
+                          "description": "Private ports only, shown once. Send it as `x-pod-port-token`."
+                        },
+                        "token_header": {
+                          "type": "string",
+                          "example": "x-pod-port-token"
+                        },
+                        "note": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "rotated": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthorized`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: a pod key, or a key without `pods:control:write` (`details.required_scope`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: no such pod on your account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request`: a blocked or out-of-range port, or a bad `visibility`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`conflict` (the pod is not running) or `limit_exceeded` (5 ports already open).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "port"
+                ],
+                "properties": {
+                  "port": {
+                    "type": "integer",
+                    "minimum": 1024,
+                    "maximum": 65535,
+                    "example": 8080
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "private"
+                    ],
+                    "default": "public"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "summary": "List open ports",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Needs an `X-API-Key` with the `pods:control:write` scope, or a signed-in session. A pod's own key is refused (`403`). See the [Sandbox API guide](/cloud/pods/sandbox).\n\nLists open ports. URLs and tokens are never shown again.",
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Open ports.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ports": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthorized`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: a pod key, or a key without `pods:control:write` (`details.required_scope`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: no such pod on your account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pods/v1/pods/{id}/ports/{port}": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "summary": "Close a port",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. Needs an `X-API-Key` with the `pods:control:write` scope, or a signed-in session. A pod's own key is refused (`403`). See the [Sandbox API guide](/cloud/pods/sandbox).\n\nCloses the port and retires its URL.",
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          },
+          {
+            "name": "port",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Closed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "closed": {
+                      "type": "boolean"
+                    },
+                    "port": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthorized`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: a pod key, or a key without `pods:control:write` (`details.required_scope`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: no such pod on your account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pods/v1/pods/{id}/clone": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "summary": "Clone a pod",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. See the [Sandbox API guide](/cloud/pods/sandbox).\n\nCreates a NEW pod, billed exactly like `POST /pods` (same payment, caps and Idempotency-Key ledger), and restores the source pod's latest completed Agent Vault backup (or `backup_id`) once it is online, usually 5 to 10 minutes. Copies engine, tier, managed model, template, custom instructions and identity, heartbeat settings and capabilities. Does NOT copy channel tokens, a BYOK key, the slug, wallet, keys, webhooks or ports. The passphrase is never logged and is not part of the idempotency hash. Needs only an ordinary write key (a pod's own key is refused). Rate limit: the create bucket, 60 per hour.",
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "clone-4471",
+            "description": "REQUIRED, so a retried clone never charges twice."
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Pod created (replay: `200`). Same body as create, plus `clone: {source_pod_id, backup_id, restore: {status, message}}`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pod": {
+                      "$ref": "#/components/schemas/PodV1"
+                    },
+                    "clone": {
+                      "type": "object",
+                      "properties": {
+                        "source_pod_id": {
+                          "type": "string"
+                        },
+                        "backup_id": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "restore": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "pending",
+                                "not_scheduled"
+                              ]
+                            },
+                            "message": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthorized`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: a pod's own key cannot clone pods.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: no such pod on your account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_request`: missing passphrase or Idempotency-Key, bad `backup_id`, or a BYOK source without `ai`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`conflict` with `details.code = no_backup`: the source has no completed backup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "passphrase"
+                ],
+                "properties": {
+                  "passphrase": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 1024,
+                    "description": "Your Agent Vault backup passphrase for the source pod."
+                  },
+                  "backup_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "A specific completed backup of this pod. Default: the newest."
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "description": "Default: the source name plus \" (clone)\"."
+                  },
+                  "term_hours": {
+                    "type": "integer",
+                    "minimum": 24
+                  },
+                  "region": {
+                    "type": "string"
+                  },
+                  "max_total_usd": {
+                    "type": "number"
+                  },
+                  "channels": {
+                    "type": "object",
+                    "description": "Channel tokens for the new pod. Not copied from the source."
+                  },
+                  "ai": {
+                    "type": "object",
+                    "description": "Required when the source uses its own key: `{mode: \"byok\", api_key, base_url, api}`."
+                  },
+                  "external_ref": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Agent Pods API"
+        ],
+        "summary": "Clone restore status",
+        "description": "Base URL `https://compute.x402layer.cc/pods/v1`. A pod's own key is refused.\n\nCall it on the NEW pod. Shows the restore job of a pod created as a clone. Returns `404` if the pod was not created as a clone.",
+        "security": [
+          {
+            "podsApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Pod id, as returned by create/list."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restore job.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clone": {
+                      "type": "object",
+                      "description": "Source pod, backup, restore status (for example `pending`, `restored`, `failed`), attempts."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthorized`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: a pod key, or a key without `pods:control:write` (`details.required_scope`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: no such pod on your account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`rate_limited`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodV1Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -13505,6 +15374,122 @@
           "heartbeat_prompt": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "AnthropicError": {
+        "type": "object",
+        "description": "Anthropic-shaped error. The Grid's own detail (for example `code`, `context_limit`, `job_id`) rides along inside `error`.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "error"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "invalid_request_error",
+                  "authentication_error",
+                  "billing_error",
+                  "permission_error",
+                  "not_found_error",
+                  "rate_limit_error",
+                  "timeout_error",
+                  "api_error",
+                  "overloaded_error"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          },
+          "request_id": {
+            "type": "string"
+          }
+        }
+      },
+      "AnthropicModel": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "model"
+          },
+          "id": {
+            "type": "string",
+            "example": "qwen-2.5-32b"
+          },
+          "display_name": {
+            "type": "string",
+            "example": "qwen-2.5-32b"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "max_input_tokens": {
+            "type": "integer",
+            "example": 32768,
+            "description": "Largest prompt the Grid accepts for this model right now."
+          },
+          "max_tokens": {
+            "type": "integer",
+            "example": 8192,
+            "description": "Largest reply."
+          }
+        }
+      },
+      "PodV1AiProvider": {
+        "type": "object",
+        "description": "One BYOK provider.",
+        "properties": {
+          "preset": {
+            "type": "string",
+            "enum": [
+              "openrouter",
+              "openai",
+              "venice",
+              "0g",
+              "custom",
+              "singularity"
+            ],
+            "description": "A preset fixes the base URL. `custom` needs `base_url`. `singularity` with a `model` adds one of our models (needs `managed_models` on; one per pod)."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "description": "Your label for it."
+          },
+          "base_url": {
+            "type": "string",
+            "description": "`custom` only. HTTPS, no credentials in the URL."
+          },
+          "api": {
+            "type": "string",
+            "enum": [
+              "openai-completions",
+              "openai-responses",
+              "anthropic-messages",
+              "google-generative"
+            ],
+            "default": "openai-completions",
+            "description": "`custom` only."
+          },
+          "model": {
+            "type": "string",
+            "description": "The model id your provider uses."
+          },
+          "api_key": {
+            "type": "string",
+            "description": "Required for a new provider. On PATCH, omit it to keep the stored key."
+          },
+          "id": {
+            "type": "string",
+            "description": "PATCH `ai.providers` only: the id of an existing entry (`primary` or a fallback id from the pod's `ai.providers`), to keep its stored key."
           }
         }
       }

@@ -58,6 +58,20 @@ For a durable change that applies **everywhere**, use **Settings → Model**. En
   The Model setting accepts any valid `provider/model` slug — not just the tier menu — so you can pin an exact model. A **Redeploy** resets the active model back to the tier default; re-apply the Model setting if you want to keep a custom slug.
 </Note>
 
+## Bring your own key (BYOK)
+
+A BYOK pod calls your own AI provider with your own key. You pay the provider directly; the pod bills only the machine and a small service fee.
+
+- **Provider presets.** Pick **OpenRouter**, **OpenAI**, **Venice** or **0G** and the base URL is filled in for you. You paste a key and pick a model. **Custom** takes any HTTPS endpoint plus its API format: `openai-completions`, `openai-responses`, `anthropic-messages` or `google-generative`.
+- **Fallbacks.** Add up to **3 fallback providers**. If the primary fails, the pod tries each fallback in order. Each can be a different provider with its own key.
+- **Singularity Layer models.** Turn on **Singularity Layer models** to also use our managed models from a BYOK pod, billed per call from your credits at managed prices (no included allowance). It is on by default for a BYOK ClawPod and costs nothing unless used. Pick one with `/model singularity/<model-id>`, or add it as a fallback.
+
+<Note>
+  Fallbacks and Singularity Layer models on BYOK pods are **ClawPod only** for now. A BYOK HermPod or Pi pod uses one provider.
+</Note>
+
+From the API, set these under `ai` when you [create a pod](/api-reference/pods-v1-create), and change the whole provider list later with `ai.providers` on [update](/api-reference/pods-v1-patch).
+
 ## Related
 
 <CardGroup cols={3}>

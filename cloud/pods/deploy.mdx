@@ -9,7 +9,7 @@ Deploying a pod takes a couple of minutes. Do it from the dashboard under **Agen
 
 <Steps>
   <Step title="Pick an agent">
-    Choose an agent from the catalog. Today that's the **ClawPod** ([OpenClaw](https://openclaw.ai)); the **HermPod** (Hermes) is coming soon. Each card shows the agent's supported channels and its minimum machine size.
+    Choose an engine from the catalog: **ClawPod** ([OpenClaw](https://openclaw.ai)), **HermPod** (Hermes) or **[Pi pod](/cloud/pods/pi)** (the Pi coding agent). Each card shows the agent's supported channels and its minimum machine size.
   </Step>
   <Step title="Choose how it gets its AI">
     **Managed** — we run the LLM and bill usage from your platform credits. **BYOK** — bring your own OpenAI-compatible key and model. See [AI mode](#ai-mode-managed-vs-byok) below.
@@ -60,7 +60,9 @@ On the tier step you also pick a **starting model** from that tier's included me
 
 ### BYOK provider + model
 
-Pick a provider (OpenRouter, OpenAI, Google, the Singularity Grid, and more) to pre-fill its base URL and API dialect, then choose a model or type any slug. For a fully custom endpoint, choose **Custom**, paste your **base URL**, and select the **API format**. Finally paste your **API key** (stored for the pod, used to call your model).
+Pick a provider (OpenRouter, OpenAI, Venice, 0G, the Singularity Grid, and more) to pre-fill its base URL and API format, then choose a model or type any id. For a fully custom endpoint, choose **Custom**, paste your **base URL**, and select the **API format**. Finally paste your **API key** (stored encrypted for the pod, used to call your model).
+
+On a ClawPod you can also add up to **3 fallback providers**, tried in order when the one before fails, and turn on **Singularity Layer models** (paid from your credits) next to your own. See [Models](/cloud/pods/models#bring-your-own-key-byok).
 
 <Note>
   Choosing the **Singularity Grid** as your BYOK provider runs on confidential compute — use a Grid API key (**Settings → API keys**, `grid:inference` scope); requests draw from your Grid credit balance.

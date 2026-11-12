@@ -1,0 +1,97 @@
+---
+title: Sandbox API
+description: Run commands, read and write files, open ports and clone pods you own. A pod is also a sandbox you can drive from code.
+---
+
+Every Agent Pod is a real machine. The Sandbox API lets you use it like one: run a shell command, read and write files in the agent's workspace, publish a port to the internet, and clone a pod into a new one. It works on every engine (ClawPod, HermPod, Pi pod).
+
+**Base URL:** `https://compute.x402layer.cc/pods/v1`
+
+| Route | What it does |
+| --- | --- |
+| `POST /pods/{id}/exec` | Run a shell command. [Reference](/api-reference/pods-v1-exec) |
+| `GET /pods/{id}/files` | List workspace files, or read one with `?path=`. [Reference](/api-reference/pods-v1-files-get) |
+| `PUT /pods/{id}/files` | Write a file. [Reference](/api-reference/pods-v1-files-put) |
+| `POST /pods/{id}/ports` | Open a public URL to a port on the pod. [Reference](/api-reference/pods-v1-ports-open) |
+| `GET /pods/{id}/ports` | List open ports. [Reference](/api-reference/pods-v1-ports-list) |
+| `DELETE /pods/{id}/ports/{port}` | Close a port. [Reference](/api-reference/pods-v1-ports-close) |
+| `POST /pods/{id}/clone` | Create a new pod from this pod's latest backup. [Reference](/api-reference/pods-v1-clone) |
+| `GET /pods/{id}/clone` | Restore status of a cloned pod. [Reference](/api-reference/pods-v1-clone-status) |
+
+## Who can use it
+
+Only the pod's owner: signed in to the dashboard, or with a compute API key that has the **`pods:control:write`** scope. A pod's own key (the one the agent holds) is always refused, so an agent cannot get a shell on itself through the platform. A key without the scope gets `403` with `details.required_scope`.
+
+## Run a command
+
+```bash
+curl -s -X POST https://compute.x402layer.cc/pods/v1/pods/$POD/exec \
+  -H "X-API-Key: $SGL_API_KEY" -H 'content-type: application/json' \
+  -d '{"command": "echo hi && uname -a", "timeout_seconds": 30}'
+```
+
+```json
+{ "exec": { "exit_code": 0, "timed_out": false, "duration_ms": 41,
+            "stdout": "hi\nLinux ...", "stderr": "", "truncated": false,
+            "cwd": "/opt/pod/workspace" } }
+```
+
+- Commands run as the unprivileged `pod` user in `/opt/pod/workspace`, with a clean environment (no agent secrets).
+- `timeout_seconds` is 1 to 300, default 60. A command that runs out of time returns `timed_out: true`.
+- `command` is up to 20,000 characters. Output is capped at 1 MB per stream; `truncated: true` tells you it was cut.
+
+## Read and write files
+
+```bash
+# List the workspace
+curl -s "https://compute.x402layer.cc/pods/v1/pods/$POD/files" -H "X-API-Key: $SGL_API_KEY"
+
+# Write a file
+curl -s -X PUT "https://compute.x402layer.cc/pods/v1/pods/$POD/files" \
+  -H "X-API-Key: $SGL_API_KEY" -H 'content-type: application/json' \
+  -d '{"path": "notes/todo.md", "content": "- ship it\n"}'
+
+# Read it back
+curl -s "https://compute.x402layer.cc/pods/v1/pods/$POD/files?path=notes/todo.md" -H "X-API-Key: $SGL_API_KEY"
+```
+
+Files are text. A file the platform manages for the agent comes back with `managed: true`.
+
+## Open a port
+
+Start a server on the pod (for example with `exec`), then publish it:
+
+```bash
+curl -s -X POST https://compute.x402layer.cc/pods/v1/pods/$POD/ports \
+  -H "X-API-Key: $SGL_API_KEY" -H 'content-type: application/json' \
+  -d '{"port": 8080, "visibility": "public"}'
+```
+
+The response holds a URL like `https://compute.x402layer.cc/pods/port/<id>/` that proxies HTTP to `127.0.0.1:8080` on the pod.
+
+- **Save the URL now.** It is shown only once. Opening the same port again gives a new URL and retires the old one.
+- **Private ports** (`"visibility": "private"`) also return a token, shown once. Callers must send it in the `x-pod-port-token` header.
+- Ports 1024 to 65535 can be opened, except ones the platform uses on the pod (8642, 8787 and 18780 to 18799).
+- Up to 5 open ports per pod. Each proxied request can carry up to 5 MB and must finish within 30 seconds.
+
+## Clone a pod
+
+A clone is a **new pod**, billed exactly like creating one, that restores the source pod's latest [Agent Vault](/cloud/vault/overview) backup once it is online.
+
+```bash
+curl -s -X POST https://compute.x402layer.cc/pods/v1/pods/$POD/clone \
+  -H "X-API-Key: $SGL_API_KEY" -H "Idempotency-Key: clone-$POD-1" \
+  -H 'content-type: application/json' \
+  -d '{"passphrase": "your vault backup passphrase", "name": "worker 2"}'
+```
+
+- The source pod needs at least one completed backup. Turn on backups in its **Backups** tab or with `PATCH /pods/{id}/backups`.
+- `Idempotency-Key` is required, as on create, so a retry never charges twice.
+- Copied: engine, tier, managed model, template, custom instructions and identity, heartbeat settings, capabilities.
+- Not copied: channel tokens (pass `channels` to set them), a BYOK key (pass `ai` if the source uses its own key), the vanity slug, wallet, keys, webhooks and ports.
+- The restore runs once the new pod is online, usually 5 to 10 minutes. Check it with `GET /pods/{id}/clone` on the **new** pod.
+
+## Good to know
+
+- Right after a pod first shows `online`, file and exec calls can return `409` ("the pod is offline") for about a minute while it finishes starting. Retry after a short wait.
+- Rate limits per account: exec 120 per minute, files 240 per minute, opening and closing ports 30 per minute.

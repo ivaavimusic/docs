@@ -3,7 +3,7 @@ title: Agent Pods — Overview
 description: Deploy an always-on hosted AI agent on the Singularity network — its own machine, wallet, memory, skills, and chat channels. Pay in credits or crypto.
 ---
 
-**Agent Pods** are always-on hosted AI agents. Deploy one in a couple of minutes and it stays online 24/7 — you chat with it from the dashboard **and** on Telegram or Discord. Today you deploy a **ClawPod** (the [OpenClaw](https://openclaw.ai) agent) on its own dedicated CPU machine. A **HermPod** (the Hermes self-improving agent) is **coming soon**.
+**Agent Pods** are always-on hosted AI agents. Deploy one in a couple of minutes and it stays online 24/7. You chat with it from the dashboard **and** on Telegram or Discord. Each pod runs one of three engines on its own dedicated CPU machine: **ClawPod** (the [OpenClaw](https://openclaw.ai) agent), **HermPod** (the Hermes self-improving agent) or **Pi pod** (the [Pi](https://pi.dev) coding agent).
 
 Each pod comes with its **own crypto wallet**, **memory**, the `x402-compute` + `x402-layer` skills, and the native **Singularity MCP** preinstalled — so the agent is economically active out of the box: it can buy confidential compute, use the marketplace, and pay any x402 endpoint itself, all under caps you control.
 
@@ -17,6 +17,8 @@ Each pod comes with its **own crypto wallet**, **memory**, the `x402-compute` + 
   <Card title="Memory" icon="layers" href="/cloud/pods/memory">Raw, Lossless Context, semantic memory.</Card>
   <Card title="Scheduler" icon="clock" href="/cloud/pods/scheduler">Scheduled tasks, delivery to a channel.</Card>
   <Card title="OpenAI access" icon="plug" href="/cloud/pods/openai-adapter">Call the agent from any OpenAI client.</Card>
+  <Card title="Pi pod" icon="code" href="/cloud/pods/pi">The lightweight coding agent engine.</Card>
+  <Card title="Sandbox API" icon="terminal" href="/cloud/pods/sandbox">Run commands, edit files, open ports, clone pods.</Card>
   <Card title="API reference" icon="code" href="/api-reference/pods-catalog">For developers & agents — every endpoint, auth, and schema.</Card>
 </CardGroup>
 
@@ -30,10 +32,11 @@ Each pod comes with its **own crypto wallet**, **memory**, the `x402-compute` + 
 
 ## Agents
 
-| Agent | Framework | Status |
-| --- | --- | --- |
-| **ClawPod** | OpenClaw | Available now |
-| **HermPod** | Hermes (self-improving, grows its own skills) | Coming soon |
+| Agent | Framework | API name | Status |
+| --- | --- | --- | --- |
+| **ClawPod** | OpenClaw | `clawpod` | Available |
+| **HermPod** | Hermes (self-improving, grows its own skills) | `hermpod` | Available (beta) |
+| **Pi pod** | [Pi](/cloud/pods/pi) (lightweight coding agent) | `pipod` | Available (beta) |
 
 ## Deploy
 
@@ -41,7 +44,7 @@ Each pod comes with its **own crypto wallet**, **memory**, the `x402-compute` + 
   <Step title="Pick an agent + AI mode">
     **Managed** — we run the LLM. Choose a tier: **Starter** (chat), **Pro** or **Max** (add computer-use + memory). Each tier bundles a matched machine and a curated menu of models the agent can switch between with `/model`.
 
-    **BYOK** — bring your own OpenAI-compatible key and model, and pick any machine. You pay for the machine + a small service fee; your AI runs on your key.
+    **BYOK**: bring your own key and model, and pick any machine. You pay for the machine plus a small service fee; your AI runs on your key. Pick a provider preset (OpenRouter, OpenAI, Venice, 0G) or any compatible endpoint, add up to 3 fallback providers, and optionally use Singularity Layer models paid from credits. See [Models](/cloud/pods/models#bring-your-own-key-byok).
   </Step>
   <Step title="Add channels (optional)">
     Paste a **Telegram** or **Discord** bot token to reach your agent there. (Slack, WhatsApp and Signal are coming soon.) You can add or change channels anytime after deploy — or just use the in-dashboard **Chat**.

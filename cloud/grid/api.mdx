@@ -92,6 +92,7 @@ helper. See [Speech-to-text transcription](/cloud/grid/transcription).
 - Laya/System One uses `POST /v1/systemone`; it is intentionally not a chat-completions model.
 - Speech-to-text uses a two-step sealed JSON contract and is intentionally not OpenAI multipart-compatible.
 - For maximum privacy (browser-side end-to-end encryption), use the dashboard/SDK confidential path — see [Confidential inference](/cloud/grid/confidential-inference).
-- **Streaming** (`stream: true`) is on the roadmap; today set `stream: false`.
+- **Streaming** (`stream: true`) is supported. Tokens arrive as server-sent events.
+- Prefer the Anthropic SDK or Claude Code? The Grid also speaks the [Anthropic Messages API](/cloud/grid/anthropic-api).
 
 <Note>List available models with `GET https://grid.x402compute.cc/grid/models` — see [Models](/cloud/grid/models).</Note>
