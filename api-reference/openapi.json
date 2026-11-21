@@ -5501,6 +5501,68 @@
         }
       }
     },
+    "/pods/{id}/coding/terminal": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Open a Coding sandbox terminal",
+        "description": "Mints a single-use ticket for the terminal of a Coding sandbox (an Agent Pod running Claude Code, Codex, OpenCode or Pi). It is the same path the browser terminal uses: the WebSocket is relayed through the sandbox's own outbound connection, with no SSH and no open port.\n\nOpen `wss://compute.x402layer.cc` + `path` within `ttl_seconds` (60). The ticket works once. On the socket, send a text frame `{\"cols\": N, \"rows\": M}` to set the terminal size; binary frames you send are keystrokes and binary frames you receive are terminal output. Close code `4006` means the terminal closed after 10 idle minutes.\n\nAuth: a compute API key (`X-API-Key`) with `pods:control:write`, or a wallet signature, same as `/compute/*`. Keys from a Google, GitHub or X login work here. A sleeping sandbox wakes when you connect.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Coding sandbox (pod) id."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ticket": {
+                      "type": "string",
+                      "description": "Single-use ticket."
+                    },
+                    "ttl_seconds": {
+                      "type": "integer",
+                      "example": 60
+                    },
+                    "path": {
+                      "type": "string",
+                      "example": "/pods/screen/<ticket>",
+                      "description": "Append to wss://compute.x402layer.cc to open the terminal."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credential."
+          },
+          "403": {
+            "description": "The key lacks pods:control:write."
+          },
+          "404": {
+            "description": "Not a Coding sandbox on this account."
+          }
+        }
+      }
+    },
     "/pods/{id}/v1/models": {
       "servers": [
         {

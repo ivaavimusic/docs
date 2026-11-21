@@ -1,0 +1,132 @@
+---
+title: Coding sandbox from anywhere
+description: Use your Coding sandbox from your own terminal, from scripts, and from any app that speaks the OpenAI API.
+---
+
+A **Coding sandbox** is a coding agent (Claude Code, Codex, OpenCode or Pi) on its own private computer, run by Singularity Layer. It is an Agent Pod with `agent_id` `coding`. It sleeps after 15 idle minutes and wakes when you use it.
+
+Besides the browser, you can:
+
+- open its terminal from your own machine with `singularity sandbox connect`,
+- run commands and move files from a script,
+- talk to its coding agent from any OpenAI client.
+
+## What you need
+
+A compute API key from **Settings > API keys** with the Agent Pods permission **Read and write pod files, install skills, create and restore backups** (`pods:control:write`), or a Solana keypair.
+
+| Credential | Can use |
+| --- | --- |
+| API key from a wallet login | Terminal, exec, files and keys |
+| API key from a Google, GitHub or X login | Terminal and keys. Not exec or files |
+| Solana keypair | Terminal, exec, files and keys |
+
+## From your terminal
+
+<Note>The `sandbox` command is available from CLI 0.5.0.</Note>
+
+```bash
+npm i -g @singularity-layer/cli
+export SGL_API_KEY=x402c_...
+
+singularity sandbox list
+singularity sandbox connect               # a full shell here. Type ~. on a new line to leave
+singularity sandbox exec -- npm test      # one command; exits with its exit code
+singularity sandbox files                 # list the workspace
+singularity sandbox get src/app.ts ./app.ts
+singularity sandbox put ./notes.md        # upload a text file (up to 100 KB)
+singularity sandbox key --name my-app     # an OpenAI-compatible key for the coding agent
+```
+
+| Command | What it does |
+| --- | --- |
+| `list` | Your Coding sandboxes |
+| `status [sandbox]` | State, coding agent, awake hours this month |
+| `connect [sandbox]` | Open the sandbox terminal here. Type `~.` at the start of a line to leave |
+| `exec [sandbox] -- <command>` | Run one command and exit with its exit code. `--timeout` 1 to 300 seconds |
+| `files [sandbox]` | List the workspace |
+| `get [sandbox] <path> [local]` | Print a file, or save it to `local` |
+| `put [sandbox] <local> [path]` | Upload a text file |
+| `wake` / `sleep [sandbox]` | Wake it now, or put it to sleep |
+| `key [sandbox] [--name <n>]` | Create an OpenAI-compatible key |
+| `keys [sandbox]` | List those keys |
+| `revoke-key [sandbox] <key-id>` | Turn a key off |
+
+- `connect` needs Node 22 or newer.
+- With more than one sandbox, name it: its id, the first few characters of the id, or its name (`singularity sandbox connect 99a7`).
+- `--keypair <path>` signs with a Solana keypair instead of a key. `--json` gives machine-readable output.
+
+## Terminal over WebSocket
+
+The same path the browser terminal uses. The connection is relayed through the sandbox's own outbound link: no SSH, no open port.
+
+```bash
+curl -s -X POST https://compute.x402layer.cc/pods/$POD/coding/terminal -H "X-API-Key: $SGL_API_KEY"
+```
+
+```json
+{ "ticket": "...", "ttl_seconds": 60, "path": "/pods/screen/<ticket>" }
+```
+
+- Open `wss://compute.x402layer.cc` followed by `path`. The ticket works once, within 60 seconds.
+- Send a text frame `{"cols": 120, "rows": 40}` to set the terminal size.
+- Binary frames you send are keystrokes. Binary frames you receive are terminal output.
+- Close code `4006` means the terminal closed after 10 idle minutes.
+
+[Reference](/api-reference/pods-coding-terminal)
+
+## Run a command, read and write files
+
+The [Sandbox API](/cloud/pods/sandbox) works on a Coding sandbox. A sleeping sandbox wakes for these calls.
+
+```bash
+# Run one command (timeout_seconds 1 to 300)
+curl -s -X POST https://compute.x402layer.cc/pods/v1/pods/$POD/exec \
+  -H "X-API-Key: $SGL_API_KEY" -H 'content-type: application/json' \
+  -d '{"command": "npm test", "timeout_seconds": 120}'
+
+# Read a file (leave out ?path= to list the workspace)
+curl -s "https://compute.x402layer.cc/pods/v1/pods/$POD/files?path=src/app.ts" -H "X-API-Key: $SGL_API_KEY"
+
+# Write a text file
+curl -s -X PUT https://compute.x402layer.cc/pods/v1/pods/$POD/files \
+  -H "X-API-Key: $SGL_API_KEY" -H 'content-type: application/json' \
+  -d '{"path": "notes.md", "content": "hello"}'
+```
+
+Text files up to 256 KB, with at most 128 KB per request. See [Run a command](/api-reference/pods-v1-exec), [Read files](/api-reference/pods-v1-files-get) and [Write a file](/api-reference/pods-v1-files-put).
+
+## An OpenAI-compatible address
+
+Create a key for the sandbox. It is shown once.
+
+```bash
+curl -s -X POST https://compute.x402layer.cc/pods/v1/pods/$POD/keys \
+  -H "X-API-Key: $SGL_API_KEY" -H 'content-type: application/json' -d '{"name": "my-app"}'
+```
+
+```json
+{ "key": { "id": "...", "secret": "sk-sglpod-int-..." },
+  "endpoint": { "base_url": "https://compute.x402layer.cc/pods/<id>/v1", "model": "agent-pod" } }
+```
+
+Then point any OpenAI client at the base URL with model `agent-pod`:
+
+```bash
+curl -s https://compute.x402layer.cc/pods/$POD/v1/chat/completions \
+  -H "Authorization: Bearer $POD_KEY" -H 'content-type: application/json' \
+  -d '{"model": "agent-pod", "stream": true, "messages": [{"role": "user", "content": "Run the tests and fix what fails"}]}'
+```
+
+- `GET /v1/models` and `POST /v1/chat/completions`. With `"stream": true` you get `chat.completion.chunk` events ending with `data: [DONE]`.
+- Each request is one turn of the sandbox's coding agent. Up to 1000 requests per key per day.
+- OpenCode and Pi on Singularity Layer models use your credits. Claude Code runs only on your own Claude login or Anthropic key.
+
+<Warning>The coding agent can edit files and run commands in the sandbox. Treat the key like a password. Revoke it with `singularity sandbox revoke-key` or [`DELETE /pods/v1/pods/{id}/keys/{keyId}`](/api-reference/pods-v1-keys-revoke).</Warning>
+
+See also [OpenAI-compatible adapter](/cloud/pods/openai-adapter) and [Create a pod key](/api-reference/pods-v1-keys-create).
+
+## Other ways in
+
+- **MCP**: `cloud_pod_exec`, `cloud_pod_files` and `cloud_pod_write_file` on the [Singularity MCP](/agentic-access/mcp-server) work on a Coding sandbox.
+- **Skills**: `references/coding-sandbox.md` in the [x402-compute skill](/agentic-access/x402-compute).

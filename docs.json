@@ -166,6 +166,7 @@
                   "cloud/pods/scheduler",
                   "cloud/pods/openai-adapter",
                   "cloud/pods/sandbox",
+                  "cloud/pods/coding-sandbox",
                   "cloud/pods/api"
                 ]
               },
@@ -405,6 +406,7 @@
               "api-reference/pods-api-keys-list",
               "api-reference/pods-api-keys-create",
               "api-reference/pods-api-keys-revoke",
+              "api-reference/pods-coding-terminal",
               "api-reference/pods-adapter-models",
               "api-reference/pods-adapter-chat"
             ]
