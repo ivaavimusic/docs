@@ -156,6 +156,16 @@ MCP can now request payment challenges and complete endpoint creation, endpoint 
 >
 > Contract note: product tools only wrap `/p/:slug-or-id` and credit purchase tools only wrap `/e/:slug?action=purchase`. Some current credit endpoints still include `purchase_url` and `credit_package` with an informational `Missing x-wallet-address header` field because that is the current upstream worker contract.
 
+## Flow Planner Tools
+
+Describe a job, get an ordered, priced flow of x402 services ($0.02 per plan, no charge when nothing fits). See [Flow Planner API](/agentic-access/flow-planner-api).
+
+| Tool | Description | Key Parameters | Auth |
+|------|-------------|----------------|------|
+| `request_flow_plan_payment` | The 402 challenge: USDC on Base or Solana, $0.02 | goal | none |
+| `plan_flow_with_payment` | Plan a flow, paid with a signed `X-Payment` payload. Settled only after a plan is produced | goal, paymentPayload, maxSteps, networks | none |
+| `plan_flow_with_credits` | Plan a flow, paid with $0.02 of platform credits | goal, accessToken or computeApiKey, idempotencyKey | full-access PAT or Cloud key with `compute:write` + `spend` |
+
 ## Phase 4 Agent Registry Tools
 
 MCP now exposes the worker wallet-session flows for ERC-8004 and Solana-8004 agent registration and management.
