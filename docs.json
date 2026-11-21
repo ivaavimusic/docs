@@ -48,6 +48,7 @@
               "agentic-access/pay-per-request",
               "agentic-access/credit-based",
               "agentic-access/marketplace",
+              "agentic-access/flow-planner-api",
               "agentic-access/agent-management",
               "agentic-access/mcp-server"
             ]
