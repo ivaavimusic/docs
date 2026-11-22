@@ -76,6 +76,28 @@ curl -X GET https://api.x402layer.cc/e/super-ai-trader \
   -H "X-Payment: eyJ4NDAyVmVyc2lvbiI6MSwic2NoZW1lIjoiZXhhY3QiLi4ufQ=="
 ```
 
+### x402 v2
+
+Singularity Layer accepts both x402 v1 and x402 v2. v1 stays supported during the transition.
+
+| | x402 v1 | x402 v2 |
+|---|---|---|
+| Payment request | JSON body of the `402` (`accepts`, `maxAmountRequired`) | `PAYMENT-REQUIRED` response header (base64 JSON, `accepts`, `amount`) |
+| Your payment | `X-Payment` request header | `PAYMENT-SIGNATURE` request header |
+| Network names | `base`, `solana` | CAIP-2: `eip155:8453`, `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` |
+| Settlement result | `X-PAYMENT-RESPONSE` | `PAYMENT-RESPONSE` |
+
+How to pick:
+
+- If the `402` carries a `PAYMENT-REQUIRED` header, you can pay with v2: choose one entry of its `accepts`, sign the same payment you would sign for v1, and send `{"x402Version":2,"resource":...,"accepted":<the entry, unchanged>,"payload":<signed payment>}` as base64 in `PAYMENT-SIGNATURE`.
+- Otherwise pay with v1 exactly as above.
+- Send one payment header, never both.
+- Official x402 v2 clients (`@x402/fetch`, `@x402/axios`, `x402` for Python) handle this for you. Our skills (`x402-layer` 1.17.0+, `x402-compute` 1.39.0+), the Singularity MCP (1.18.0+) and Studio do too.
+
+<Warning>
+After you send a payment, a `202`, a `5xx` or a timeout means the outcome is not known yet. The money may have moved. Do not sign a second payment: resend the same header, or check your wallet history first.
+</Warning>
+
 ## Transaction Construction
 
 The critical step is building the correct transaction. The format differs strictly between EVM (Base) and Solana.
