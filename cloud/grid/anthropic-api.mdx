@@ -96,7 +96,7 @@ The same three ways as the OpenAI endpoint:
 
 - `x-api-key: x402c_...` or `Authorization: Bearer x402c_...`: billed to the key owner's credits.
 - `Authorization: Bearer <session token>`: billed to the signed-in account.
-- `X-Payment: <x402 payload>`: pay per request. Without auth, the `402` body is an Anthropic error (`billing_error`) that also carries the x402 fields (`x402Version`, `accepts`, `price_usd`), so x402 clients work unchanged.
+- `X-Payment: <x402 payload>` (x402 v1) or `PAYMENT-SIGNATURE: <payload>` (x402 v2): pay per request. Without auth, the `402` body is an Anthropic error (`billing_error`) that also carries the x402 fields (`x402Version`, `accepts`, `price_usd`), so x402 clients work unchanged.
 
 Get a key in the dashboard under **Settings → API keys**.
 
