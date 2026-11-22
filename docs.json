@@ -168,6 +168,7 @@
                   "cloud/pods/openai-adapter",
                   "cloud/pods/sandbox",
                   "cloud/pods/coding-sandbox",
+                  "cloud/pods/sandboxes-for-platforms",
                   "cloud/pods/api"
                 ]
               },
