@@ -439,8 +439,12 @@
         "responses": {
           "200": {
             "description": "Ratings list"
+          },
+          "400": {
+            "description": "endpoint_id or product_id is required"
           }
-        }
+        },
+        "description": "Public. Lists up to 200 ratings (stars and comment) of one endpoint or product, newest first. Give endpoint_id or product_id."
       },
       "post": {
         "tags": [
@@ -465,10 +469,12 @@
                   "rating": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 5
+                    "maximum": 5,
+                    "description": "Whole stars, 1 to 5"
                   },
                   "review": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500
                   }
                 },
                 "required": [
@@ -479,13 +485,26 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Your existing rating was updated"
+          },
           "201": {
             "description": "Rating created"
           },
+          "400": {
+            "description": "Invalid rating, comment, or listing id"
+          },
           "401": {
             "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Not allowed: you have not paid for this listing, or it is your own listing. The body's error says which."
+          },
+          "429": {
+            "description": "Too many ratings in a minute"
           }
-        }
+        },
+        "description": "Rate a marketplace endpoint or product (1-5 stars, optional comment up to 500 characters). Only buyers can rate: the signed-in account needs a settled payment for that listing, either a call or purchase paid through Studio Run with its Singularity Layer wallet, or a confirmed payment from a wallet linked to the account. Nobody can rate their own listing, and a payment from the listing's own payout wallet does not count. The rule is enforced by the database; a refusal returns 403 with the reason. Sending again updates your existing rating."
       },
       "delete": {
         "tags": [
