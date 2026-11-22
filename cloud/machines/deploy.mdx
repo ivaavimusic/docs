@@ -10,7 +10,7 @@ Deploying a machine takes a minute. Do it from the dashboard under **Machines â†
 <Steps>
   <Step title="Pick a plan + OS">Choose a server plan and OS image from the [catalog](/cloud/machines/catalog).</Step>
   <Step title="Add an SSH key">Bring your own public key (BYOK) or generate a new keypair in the browser. You'll use this to SSH in.</Step>
-  <Step title="Choose how long">From 1 hour up. You pay for that time up front.</Step>
+  <Step title="Choose how long">Machines from 1 hour, GPUs from 2 hours. You pay for that time up front.</Step>
   <Step title="Choose how to pay">Credits or x402 USDC (pick the chain).</Step>
   <Step title="Launch">Confirm and deploy. The instance provisions and becomes reachable shortly after.</Step>
 </Steps>
@@ -22,11 +22,11 @@ You prepay for the time you pick, at the plan's hourly price.
 | Rental length | Price |
 | --- | --- |
 | 1 day or more | The hourly price times the hours |
-| 1 to 23 hours | The hourly price **+15%** for machines, **+20%** for GPUs |
+| Under 1 day (machines from 1 hour, GPUs from 2 hours) | The hourly price **+15%** for machines, **+20%** for GPUs |
 
-The minimum is 1 hour. Extending works the same way: adding less than a day costs the hourly price +15% (machines) or +20% (GPUs), a day or more is the normal price. When the time runs out the machine is deleted, so extend before then to keep it. Agent Pods and Grid node machines are rented by the day.
+The minimum is 1 hour for machines and 2 hours for GPUs and AI machines. Extending works the same way, with the same minimums: adding less than a day costs the hourly price +15% (machines) or +20% (GPUs), a day or more is the normal price. When the time runs out the machine is deleted, so extend before then to keep it. Agent Pods and Grid node machines are rented by the day.
 
-Over the API, `GET /compute/plans` shows the offer (`hourly`) and whether each plan is a GPU (`is_gpu`). Send `max_total_usd` with a deploy to refuse any higher price (nothing is charged).
+Over the API, `GET /compute/plans` shows the offer (`hourly`, with `min_hours_by_kind`) and whether each plan is a GPU (`is_gpu`). A GPU for 1 hour is refused with a 400 before any payment. Send `max_total_usd` with a deploy to refuse any higher price (nothing is charged).
 
 ## SSH keys
 
