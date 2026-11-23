@@ -5531,7 +5531,7 @@
           "Agent Pods"
         ],
         "summary": "Open a Coding sandbox terminal",
-        "description": "Mints a single-use ticket for the terminal of a Coding sandbox (an Agent Pod running Claude Code, Codex, OpenCode or Pi). It is the same path the browser terminal uses: the WebSocket is relayed through the sandbox's own outbound connection, with no SSH and no open port.\n\nOpen `wss://compute.x402layer.cc` + `path` within `ttl_seconds` (60). The ticket works once. On the socket, send a text frame `{\"cols\": N, \"rows\": M}` to set the terminal size; binary frames you send are keystrokes and binary frames you receive are terminal output. Close code `4006` means the terminal closed after 10 idle minutes.\n\nAuth: a compute API key (`X-API-Key`) with `pods:control:write`, or a wallet signature, same as `/compute/*`. Keys from a Google, GitHub or X login work here. A sleeping sandbox wakes when you connect.",
+        "description": "Mints a single-use ticket for the terminal of a Coding sandbox (an Agent Pod running Claude Code, Codex, OpenCode or Pi). It is the same path the browser terminal uses: the WebSocket is relayed through the sandbox's own outbound connection, with no open port.\n\nOpen `wss://compute.x402layer.cc` + `path` within `ttl_seconds` (60). The ticket works once. On the socket, send a text frame `{\"cols\": N, \"rows\": M}` to set the terminal size; binary frames you send are keystrokes and binary frames you receive are terminal output. Close code `4006` means the terminal closed after 10 idle minutes.\n\nAuth: a compute API key (`X-API-Key`) with `pods:control:write`, or a wallet signature, same as `/compute/*`. Keys from a Google, GitHub or X login work here. A sleeping sandbox wakes when you connect.",
         "parameters": [
           {
             "name": "id",
@@ -13684,6 +13684,102 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/pods/{id}/coding/ssh": {
+      "servers": [
+        {
+          "url": "https://compute.x402layer.cc"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Agent Pods"
+        ],
+        "summary": "Open an SSH connection to a Coding sandbox",
+        "description": "Mints a single-use ticket for one SSH connection to a Coding sandbox. Most people use the CLI instead (`singularity sandbox ssh-config`, from CLI 0.6.0), which runs this as ssh's ProxyCommand so ssh, scp, sftp, port forwarding and VS Code / Cursor Remote-SSH work.\n\nThe ticket is bound to the public key you send: the sandbox starts an SSH server for this one connection that accepts only that key, and logs you in as the sandbox user (`user` in the answer). No passwords. Open `wss://compute.x402layer.cc` + `path` within `ttl_seconds` (60); the ticket works once. Binary frames carry the SSH byte stream both ways.\n\nA sandbox made before SSH existed answers `409` with code `ssh_setting_up` and `retry_after_seconds` the first time: SSH is being set up on it (about a minute, once). A sleeping sandbox wakes. An open connection keeps it awake (awake hours count as usual).\n\nAuth: a compute API key (`X-API-Key`) with `pods:control:write`, or a wallet signature, same as `/compute/*`. Keys from a Google, GitHub or X login work here.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Coding sandbox (pod) id."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "public_key"
+                ],
+                "properties": {
+                  "public_key": {
+                    "type": "string",
+                    "description": "One OpenSSH public key line: ed25519, ECDSA, a security key (sk-...), or RSA of 2048 bits or more.",
+                    "example": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... me@laptop"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ticket": {
+                      "type": "string",
+                      "description": "Single-use ticket."
+                    },
+                    "ttl_seconds": {
+                      "type": "integer",
+                      "example": 60
+                    },
+                    "path": {
+                      "type": "string",
+                      "example": "/pods/screen/<ticket>",
+                      "description": "Append to wss://compute.x402layer.cc to open the SSH stream."
+                    },
+                    "user": {
+                      "type": "string",
+                      "example": "node",
+                      "description": "The user you log in as."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No public key, or not an accepted key type."
+          },
+          "401": {
+            "description": "Missing or invalid credential."
+          },
+          "403": {
+            "description": "The key lacks pods:control:write."
+          },
+          "404": {
+            "description": "Not a Coding sandbox on this account."
+          },
+          "409": {
+            "description": "`ssh_setting_up` (wait `retry_after_seconds`, then ask again), `waking`, or `not_available`."
+          },
+          "429": {
+            "description": "Too many connections at once."
           }
         }
       }

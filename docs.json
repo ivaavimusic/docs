@@ -408,6 +408,7 @@
               "api-reference/pods-api-keys-create",
               "api-reference/pods-api-keys-revoke",
               "api-reference/pods-coding-terminal",
+              "api-reference/pods-coding-ssh",
               "api-reference/pods-adapter-models",
               "api-reference/pods-adapter-chat"
             ]
