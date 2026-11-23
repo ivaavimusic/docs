@@ -158,7 +158,7 @@ python scripts/provision.py vcg-a100-1c-2g-6gb lax --months 1 --ssh-key-file ~/.
 
 ### 1a) By the hour
 
-Machines can be rented from 1 hour, GPUs and AI machines from 2 hours (`hourly.min_hours_by_kind`; a GPU for 1 hour is refused with 400, nothing charged). Under 24 hours costs the plan's hourly price **+15% for machines, +20% for GPUs** (`is_gpu` on each plan in `GET /compute/plans` says which; the `hourly` block there shows the offer). 24 hours or more is the normal price. Extensions under 24 hours are priced the same way, with the same minimums. Agent Pods and Grid node deploys stay at 24 hours or more.
+Machines can be rented from 1 hour, GPUs and AI machines from 2 hours (`hourly.min_hours_by_kind`; a GPU for 1 hour is refused with 400, nothing charged). Under 24 hours costs the plan's hourly price **+15% for machines, +20% for GPUs and AI machines** (`is_gpu` on each plan in `GET /compute/plans` says which; an AI machine is always +20%, even on a CPU plan; the `hourly` block there shows the offer). 24 hours or more is the normal price. Extensions under 24 hours are priced the same way, with the same minimums. Agent Pods and Grid node deploys stay at 24 hours or more.
 
 ```bash
 python scripts/provision.py vcg-a100-1c-2g-6gb lax --hours 3 --ssh-key-file ~/.ssh/id_ed25519.pub
