@@ -22,9 +22,9 @@ You prepay for the time you pick, at the plan's hourly price.
 | Rental length | Price |
 | --- | --- |
 | 1 day or more | The hourly price times the hours |
-| Under 1 day (machines from 1 hour, GPUs from 2 hours) | The hourly price **+15%** for machines, **+20%** for GPUs |
+| Under 1 day (machines from 1 hour, GPUs and AI machines from 2 hours) | The hourly price **+15%** for machines, **+20%** for GPUs and AI machines |
 
-The minimum is 1 hour for machines and 2 hours for GPUs and AI machines. Extending works the same way, with the same minimums: adding less than a day costs the hourly price +15% (machines) or +20% (GPUs), a day or more is the normal price. When the time runs out the machine is deleted, so extend before then to keep it. Agent Pods and Grid node machines are rented by the day.
+The minimum is 1 hour for machines and 2 hours for GPUs and AI machines. Extending works the same way, with the same minimums: adding less than a day costs the hourly price +15% (machines) or +20% (GPUs and AI machines, even on a CPU plan), a day or more is the normal price. When the time runs out the machine is deleted, so extend before then to keep it. Agent Pods and Grid node machines are rented by the day.
 
 Over the API, `GET /compute/plans` shows the offer (`hourly`, with `min_hours_by_kind`) and whether each plan is a GPU (`is_gpu`). A GPU for 1 hour is refused with a 400 before any payment. Send `max_total_usd` with a deploy to refuse any higher price (nothing is charged).
 
