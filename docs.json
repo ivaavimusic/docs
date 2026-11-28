@@ -574,5 +574,32 @@
       "x": "https://x.com/ivaavimusic",
       "github": "https://github.com/ivaavimusic/x402Studio-frontend"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/docs/:slug*",
+      "destination": "/:slug*",
+      "permanent": true
+    },
+    {
+      "source": "/user-guide/creating-endpoints.mdx",
+      "destination": "/user-guide/creating-endpoints",
+      "permanent": true
+    },
+    {
+      "source": "/user-guide/webhooks.mdx",
+      "destination": "/user-guide/webhooks",
+      "permanent": true
+    },
+    {
+      "source": "/backups",
+      "destination": "/cloud/vault/overview",
+      "permanent": true
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/user-guide/dashboard",
+      "permanent": true
+    }
+  ]
 }
